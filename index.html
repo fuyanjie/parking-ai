@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent for Phoenix Parking Lot Planning</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0e1a; color: #e0e0e0; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0f1629 0%, #1a1f3a 100%);
+            border-bottom: 1px solid rgba(99, 179, 237, 0.2);
+            padding: 20px 40px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .header h1 { font-size: 1.6rem; color: #63b3ed; }
+        .header h1 span { color: #f6ad55; }
+        .header .subtitle { color: #a0aec0; font-size: 0.9rem; margin-top: 4px; }
+
+        /* Layout */
+        .main { display: flex; height: calc(100vh - 80px); }
+        .sidebar { width: 380px; background: #0f1629; border-right: 1px solid rgba(99, 179, 237, 0.15); overflow-y: auto; flex-shrink: 0; }
+        .content { flex: 1; display: flex; flex-direction: column; }
+
+        /* Agent Pipeline */
+        .pipeline-title {
+            padding: 16px 20px; font-size: 0.85rem; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #63b3ed; border-bottom: 1px solid rgba(99, 179, 237, 0.1);
+        }
+        .agent-step {
+            padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .agent-step:hover { background: rgba(99, 179, 237, 0.05); }
+        .agent-step.active { background: rgba(99, 179, 237, 0.1); border-left: 3px solid #63b3ed; }
+        .agent-step.completed .step-icon { background: #48bb78; }
+        .agent-step.running .step-icon { background: #f6ad55; animation: pulse 1.5s infinite; }
+        .step-header { display: flex; align-items: center; gap: 12px; }
+        .step-icon {
+            width: 32px; height: 32px; border-radius: 50%; background: #2d3748;
+            display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;
+        }
+        .step-title { font-size: 0.95rem; font-weight: 600; }
+        .step-desc { font-size: 0.78rem; color: #718096; margin-top: 4px; margin-left: 44px; }
+        .step-sources { margin-top: 8px; margin-left: 44px; display: flex; flex-wrap: wrap; gap: 4px; }
+        .source-tag {
+            font-size: 0.68rem; padding: 2px 8px; border-radius: 10px;
+            background: rgba(99, 179, 237, 0.12); color: #63b3ed;
+        }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Top bar */
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 24px; background: #111827; border-bottom: 1px solid rgba(99, 179, 237, 0.1);
+        }
+        .btn {
+            padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 0.85rem; font-weight: 600; transition: all 0.3s;
+        }
+        .btn-primary { background: #3182ce; color: white; }
+        .btn-primary:hover { background: #2b6cb0; }
+        .btn-primary:disabled { background: #2d3748; color: #4a5568; cursor: not-allowed; }
+        .btn-reset { background: transparent; color: #a0aec0; border: 1px solid #4a5568; }
+        .btn-reset:hover { border-color: #a0aec0; }
+        .status-text { color: #a0aec0; font-size: 0.85rem; }
+        .status-text .highlight { color: #48bb78; font-weight: 600; }
+
+        /* Map */
+        #map { flex: 1; }
+        .leaflet-container { background: #1a202c; }
+
+        /* Bottom Panel */
+        .bottom-panel {
+            height: 0; background: #111827; border-top: 1px solid rgba(99, 179, 237, 0.15);
+            overflow-y: auto; transition: height 0.4s ease;
+        }
+        .bottom-panel.open { height: 340px; }
+        .panel-toggle {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            background: #1a1f3a; border: 1px solid rgba(99, 179, 237, 0.2);
+            border-bottom: none; color: #63b3ed; padding: 4px 20px; border-radius: 8px 8px 0 0;
+            cursor: pointer; font-size: 0.8rem; z-index: 1000;
+        }
+        .panel-content { padding: 20px 24px; }
+        .panel-title { font-size: 1.1rem; font-weight: 700; color: #63b3ed; margin-bottom: 16px; }
+
+        /* Results Table */
+        .results-table { width: 100%; border-collapse: collapse; }
+        .results-table th {
+            text-align: left; padding: 8px 12px; font-size: 0.75rem; text-transform: uppercase;
+            letter-spacing: 1px; color: #718096; border-bottom: 1px solid #2d3748;
+        }
+        .results-table td { padding: 10px 12px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .results-table tr:hover td { background: rgba(99, 179, 237, 0.05); }
+        .priority-high { color: #fc8181; font-weight: 600; }
+        .priority-medium { color: #f6ad55; font-weight: 600; }
+        .priority-low { color: #68d391; font-weight: 600; }
+        .score-bar { display: inline-block; height: 6px; border-radius: 3px; background: #3182ce; }
+
+        /* Agent Log */
+        .agent-log {
+            position: fixed; bottom: 20px; right: 20px; width: 420px; max-height: 300px;
+            background: #1a1f3a; border: 1px solid rgba(99, 179, 237, 0.2); border-radius: 12px;
+            overflow: hidden; z-index: 2000; display: none;
+        }
+        .agent-log.show { display: block; }
+        .log-header {
+            padding: 10px 16px; background: rgba(99, 179, 237, 0.1);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .log-header span { font-size: 0.85rem; font-weight: 600; color: #63b3ed; }
+        .log-close { background: none; border: none; color: #718096; cursor: pointer; font-size: 1.2rem; }
+        .log-body { padding: 12px 16px; max-height: 240px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 0.75rem; }
+        .log-entry { padding: 3px 0; color: #a0aec0; }
+        .log-entry .time { color: #4a5568; }
+        .log-entry .agent { color: #f6ad55; }
+        .log-entry .action { color: #68d391; }
+        .log-entry .data { color: #63b3ed; }
+
+        /* Info popup */
+        .info-popup { max-width: 280px; }
+        .info-popup h3 { color: #1a202c; font-size: 1rem; margin-bottom: 6px; }
+        .info-popup .meta { font-size: 0.8rem; color: #4a5568; line-height: 1.6; }
+        .info-popup .capacity-badge {
+            display: inline-block; background: #3182ce; color: white;
+            padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-top: 4px;
+        }
+
+        /* Data cards in step detail */
+        .data-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; margin-left: 44px; }
+        .data-card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(99, 179, 237, 0.1);
+            border-radius: 6px; padding: 8px 12px;
+        }
+        .data-card .label { font-size: 0.68rem; color: #718096; text-transform: uppercase; }
+        .data-card .value { font-size: 1.1rem; font-weight: 700; color: #63b3ed; margin-top: 2px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+
+        /* Architecture Diagram */
+        .arch-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000; display: none;
+            justify-content: center; align-items: center;
+        }
+        .arch-overlay.show { display: flex; }
+        .arch-diagram {
+            background: #0f1629; border: 1px solid rgba(99, 179, 237, 0.3);
+            border-radius: 16px; padding: 40px; max-width: 900px; width: 90%; position: relative;
+        }
+        .arch-close {
+            position: absolute; top: 16px; right: 20px;
+            background: none; border: none; color: #718096; font-size: 1.5rem; cursor: pointer;
+        }
+        .arch-title { font-size: 1.3rem; color: #63b3ed; text-align: center; margin-bottom: 30px; }
+
+        .arch-flow { display: flex; align-items: flex-start; justify-content: center; gap: 16px; flex-wrap: wrap; }
+        .arch-node {
+            background: rgba(99, 179, 237, 0.08); border: 1px solid rgba(99, 179, 237, 0.25);
+            border-radius: 10px; padding: 16px; width: 160px; text-align: center;
+        }
+        .arch-node .icon { font-size: 1.8rem; margin-bottom: 8px; }
+        .arch-node .name { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; }
+        .arch-node .desc { font-size: 0.7rem; color: #718096; margin-top: 4px; }
+        .arch-arrow { color: #4a5568; font-size: 1.5rem; align-self: center; margin-top: 20px; }
+
+        .btn-arch { background: transparent; color: #63b3ed; border: 1px solid rgba(99, 179, 237, 0.3); margin-left: 8px; }
+        .btn-arch:hover { background: rgba(99, 179, 237, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>AI Agent <span>Phoenix Parking Lot Planner</span></h1>
+        <div class="subtitle">Multi-Agent System for Data-Driven Parking Infrastructure Planning</div>
+    </div>
+    <div style="display:flex; gap:8px;">
+        <button class="btn btn-arch" onclick="showArch()">System Architecture</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="sidebar">
+        <div class="pipeline-title">Agent Pipeline</div>
+        <div id="steps-container"></div>
+    </div>
+    <div class="content" style="position: relative;">
+        <div class="top-bar">
+            <div>
+                <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">Run Agent Pipeline</button>
+                <button class="btn btn-reset" onclick="resetPipeline()" style="margin-left: 8px;">Reset</button>
+            </div>
+            <div class="status-text" id="statusText">Ready to analyze Phoenix metro area</div>
+        </div>
+        <div id="map"></div>
+        <div class="bottom-panel" id="bottomPanel">
+            <div class="panel-content" id="panelContent"></div>
+        </div>
+        <div class="panel-toggle" id="panelToggle" onclick="togglePanel()">Show Recommendations</div>
+    </div>
+</div>
+
+<!-- Agent Log -->
+<div class="agent-log" id="agentLog">
+    <div class="log-header">
+        <span>Agent Activity Log</span>
+        <button class="log-close" onclick="toggleLog()">x</button>
+    </div>
+    <div class="log-body" id="logBody"></div>
+</div>
+
+<!-- Architecture Overlay -->
+<div class="arch-overlay" id="archOverlay">
+    <div class="arch-diagram">
+        <button class="arch-close" onclick="hideArch()">x</button>
+        <div class="arch-title">Multi-Agent System Architecture</div>
+        <div class="arch-flow">
+            <div class="arch-node">
+                <div class="icon">🎯</div>
+                <div class="name">Orchestrator Agent</div>
+                <div class="desc">Coordinates sub-agents, manages pipeline flow</div>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node">
+                <div class="icon">🌐</div>
+                <div class="name">Data Collector Agents</div>
+                <div class="desc">Web scraping, API calls, public datasets</div>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node">
+                <div class="icon">🧹</div>
+                <div class="name">Data Processor</div>
+                <div class="desc">Clean, normalize, geocode data</div>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node">
+                <div class="icon">🧠</div>
+                <div class="name">Analysis Engine</div>
+                <div class="desc">Spatial analysis, demand modeling, scoring</div>
+            </div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node">
+                <div class="icon">📊</div>
+                <div class="name">Recommendation Agent</div>
+                <div class="desc">Generate optimal locations &amp; capacities</div>
+            </div>
+        </div>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(99,179,237,0.15);">
+            <div style="text-align: center; font-size: 0.85rem; color: #718096; margin-bottom: 16px;">Data Sources</div>
+            <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">City of Phoenix Open Data</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Census / ACS</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Google Maps / Places API</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">OpenStreetMap</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Yelp / Events API</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Valley Metro Transit</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">MAG Traffic Counts</span>
+                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Parking Violation Records</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const PHOENIX_CENTER = [33.4484, -112.074];
+
+const agentSteps = [
+    {
+        id: 'collect-traffic',
+        icon: '🚗',
+        title: 'Traffic Data Collection Agent',
+        desc: 'Collecting traffic volume & congestion data from MAG and ADOT',
+        sources: ['MAG Traffic Counts', 'ADOT API', 'Google Traffic'],
+        stats: { 'Intersections': '2,847', 'Avg AADT': '34,200', 'Peak Hours': '7-9am, 4-7pm' },
+        logs: [
+            { agent: 'TrafficAgent', action: 'FETCH', data: 'MAG traffic count API → 2,847 intersections loaded' },
+            { agent: 'TrafficAgent', action: 'FETCH', data: 'ADOT real-time feed → 156 sensor stations' },
+            { agent: 'TrafficAgent', action: 'PROCESS', data: 'Computing peak-hour congestion index per corridor' },
+            { agent: 'TrafficAgent', action: 'COMPLETE', data: 'Traffic heatmap generated, 12 high-congestion zones identified' },
+        ]
+    },
+    {
+        id: 'collect-poi',
+        icon: '📍',
+        title: 'POI & Business Data Agent',
+        desc: 'Gathering points of interest, business density, and event venues',
+        sources: ['Google Places', 'Yelp API', 'Phoenix Events'],
+        stats: { 'POIs Found': '18,432', 'Event Venues': '127', 'Restaurants': '4,891' },
+        logs: [
+            { agent: 'POIAgent', action: 'FETCH', data: 'Google Places API → 18,432 POIs in Phoenix metro' },
+            { agent: 'POIAgent', action: 'FETCH', data: 'Yelp Fusion API → business density scoring for 340 zones' },
+            { agent: 'POIAgent', action: 'CLASSIFY', data: 'Categorizing: retail (6,201), dining (4,891), office (3,412), medical (1,890)...' },
+            { agent: 'POIAgent', action: 'COMPLETE', data: 'Business density index computed, top 20 hotspots identified' },
+        ]
+    },
+    {
+        id: 'collect-parking',
+        icon: '🅿️',
+        title: 'Existing Parking Inventory Agent',
+        desc: 'Mapping current parking facilities, utilization rates, and gaps',
+        sources: ['OpenStreetMap', 'City Records', 'ParkMe API'],
+        stats: { 'Parking Lots': '1,203', 'Total Spaces': '89,400', 'Avg Utilization': '78%' },
+        logs: [
+            { agent: 'ParkingAgent', action: 'FETCH', data: 'OpenStreetMap → 1,203 parking facilities extracted' },
+            { agent: 'ParkingAgent', action: 'FETCH', data: 'City of Phoenix open data → 342 public lots with capacity' },
+            { agent: 'ParkingAgent', action: 'ANALYZE', data: 'Computing utilization: Downtown 94%, Midtown 81%, Suburbs 52%' },
+            { agent: 'ParkingAgent', action: 'IDENTIFY', data: 'Gap analysis: 8 zones with >90% utilization flagged as critical' },
+            { agent: 'ParkingAgent', action: 'COMPLETE', data: 'Parking deficit map generated' },
+        ]
+    },
+    {
+        id: 'collect-transit',
+        icon: '🚌',
+        title: 'Transit & Mobility Data Agent',
+        desc: 'Analyzing public transit coverage, ridership, and last-mile gaps',
+        sources: ['Valley Metro GTFS', 'Census Commute', 'Bike Share'],
+        stats: { 'Bus Routes': '58', 'Light Rail Stops': '35', 'Park-n-Ride': '8' },
+        logs: [
+            { agent: 'TransitAgent', action: 'FETCH', data: 'Valley Metro GTFS feed → 58 bus routes, 35 light rail stops' },
+            { agent: 'TransitAgent', action: 'FETCH', data: 'Census commute patterns → 1.2M workers, 76% drive alone' },
+            { agent: 'TransitAgent', action: 'ANALYZE', data: 'Computing transit desert index: 14 underserved zones found' },
+            { agent: 'TransitAgent', action: 'COMPLETE', data: 'Park-and-ride demand model ready, 5 candidate expansion sites' },
+        ]
+    },
+    {
+        id: 'collect-demographics',
+        icon: '👥',
+        title: 'Demographics & Growth Agent',
+        desc: 'Population density, growth trends, and development permits',
+        sources: ['Census ACS', 'MAG Projections', 'City Permits'],
+        stats: { 'Population': '1.65M', 'Growth Rate': '+1.8%/yr', 'New Permits': '3,240' },
+        logs: [
+            { agent: 'DemoAgent', action: 'FETCH', data: 'Census ACS 2024 → tract-level population: 1.65M in city limits' },
+            { agent: 'DemoAgent', action: 'FETCH', data: 'MAG 2030 projections → +1.8% annual growth, south & west corridors' },
+            { agent: 'DemoAgent', action: 'FETCH', data: 'City building permits → 3,240 new commercial/residential in 2024-2025' },
+            { agent: 'DemoAgent', action: 'MODEL', data: 'Future demand projection: 2030 parking deficit estimated at 12,400 spaces' },
+            { agent: 'DemoAgent', action: 'COMPLETE', data: 'Growth overlay mapped to parking demand zones' },
+        ]
+    },
+    {
+        id: 'analyze',
+        icon: '🧠',
+        title: 'Spatial Analysis & Scoring Agent',
+        desc: 'Multi-criteria scoring: traffic, demand, gap analysis, growth potential',
+        sources: ['Internal Models', 'GIS Engine'],
+        stats: { 'Zones Analyzed': '340', 'Criteria Used': '12', 'Model': 'Weighted Spatial' },
+        logs: [
+            { agent: 'AnalysisAgent', action: 'MERGE', data: 'Combining 5 data layers → unified geo-grid (340 zones)' },
+            { agent: 'AnalysisAgent', action: 'SCORE', data: 'Applying 12-criteria weighted model (traffic 25%, gap 25%, growth 20%, POI 15%, transit 15%)' },
+            { agent: 'AnalysisAgent', action: 'RANK', data: 'Generating priority ranking for all 340 zones' },
+            { agent: 'AnalysisAgent', action: 'OPTIMIZE', data: 'Running capacity optimizer with land-use constraints' },
+            { agent: 'AnalysisAgent', action: 'COMPLETE', data: 'Top 8 recommended sites identified with optimal capacities' },
+        ]
+    },
+    {
+        id: 'recommend',
+        icon: '📊',
+        title: 'Recommendation Generation Agent',
+        desc: 'Final site selection, capacity planning, and ROI estimation',
+        sources: ['Analysis Results', 'Cost Models'],
+        stats: { 'Sites Selected': '8', 'Total Capacity': '4,850', 'Est. ROI': '18.5%' },
+        logs: [
+            { agent: 'RecommendAgent', action: 'SELECT', data: 'Finalizing top 8 sites from 340 candidate zones' },
+            { agent: 'RecommendAgent', action: 'CAPACITY', data: 'Optimizing capacity per site: range 350-900 spaces' },
+            { agent: 'RecommendAgent', action: 'COST', data: 'Estimating construction: $15K-$25K per space (surface vs structure)' },
+            { agent: 'RecommendAgent', action: 'ROI', data: 'Projected ROI: 18.5% avg over 10 years based on demand models' },
+            { agent: 'RecommendAgent', action: 'REPORT', data: 'Final recommendations ready — rendering to map and table' },
+        ]
+    }
+];
+
+const recommendedSites = [
+    {
+        id: 1, name: 'Downtown Core - Jefferson & 3rd St',
+        lat: 33.4468, lng: -112.0740, capacity: 900, type: 'Multi-Story Garage',
+        priority: 'high', score: 96,
+        reason: 'Highest traffic density, 94% existing utilization, major event venues nearby (Chase Field, Convention Center)',
+        cost: '$22.5M', roi: '21%'
+    },
+    {
+        id: 2, name: 'Midtown - Central Ave & Camelback',
+        lat: 33.5092, lng: -112.0740, capacity: 650, type: 'Multi-Story Garage',
+        priority: 'high', score: 91,
+        reason: 'Rapid commercial growth, light rail corridor, restaurant/retail density peak',
+        cost: '$16.3M', roi: '19%'
+    },
+    {
+        id: 3, name: 'Tempe Town Lake Area',
+        lat: 33.4314, lng: -111.9425, capacity: 750, type: 'Multi-Story Garage',
+        priority: 'high', score: 89,
+        reason: 'ASU proximity, entertainment district, severe weekend parking deficit',
+        cost: '$18.8M', roi: '20%'
+    },
+    {
+        id: 4, name: 'Scottsdale Old Town',
+        lat: 33.4942, lng: -111.9261, capacity: 550, type: 'Mixed-Use with Parking',
+        priority: 'high', score: 87,
+        reason: 'Tourism hotspot, nightlife district, 92% weekend utilization',
+        cost: '$16.5M', roi: '18%'
+    },
+    {
+        id: 5, name: 'Desert Ridge Marketplace',
+        lat: 33.6784, lng: -111.9981, capacity: 600, type: 'Surface + Structure',
+        priority: 'medium', score: 82,
+        reason: 'Fastest-growing north Phoenix corridor, new residential developments',
+        cost: '$12.0M', roi: '17%'
+    },
+    {
+        id: 6, name: 'West Phoenix - 43rd Ave & McDowell',
+        lat: 33.4647, lng: -112.1531, capacity: 450, type: 'Surface Lot',
+        priority: 'medium', score: 78,
+        reason: 'Transit desert, high commuter traffic, affordable land availability',
+        cost: '$6.8M', roi: '16%'
+    },
+    {
+        id: 7, name: 'Mesa Downtown - Main St & Center',
+        lat: 33.4152, lng: -111.8315, capacity: 500, type: 'Multi-Story Garage',
+        priority: 'medium', score: 75,
+        reason: 'Light rail terminus, growing arts district, city revitalization zone',
+        cost: '$12.5M', roi: '15%'
+    },
+    {
+        id: 8, name: 'Chandler Innovation District',
+        lat: 33.3062, lng: -111.8413, capacity: 450, type: 'Smart Surface Lot',
+        priority: 'low', score: 71,
+        reason: 'Tech corridor growth, Intel/Microchip expansion, projected 2028 demand surge',
+        cost: '$7.2M', roi: '14%'
+    }
+];
+
+// ===================== MAP =====================
+const map = L.map('map', { zoomControl: true }).setView(PHOENIX_CENTER, 11);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 19
+}).addTo(map);
+
+let markers = [];
+let heatZones = [];
+
+function clearMap() {
+    markers.forEach(m => map.removeLayer(m));
+    heatZones.forEach(z => map.removeLayer(z));
+    markers = [];
+    heatZones = [];
+}
+
+function addRecommendedSites() {
+    recommendedSites.forEach(site => {
+        const color = site.priority === 'high' ? '#fc8181' : site.priority === 'medium' ? '#f6ad55' : '#68d391';
+        const radius = Math.sqrt(site.capacity) * 1.2;
+
+        const circle = L.circleMarker([site.lat, site.lng], {
+            radius: radius,
+            fillColor: color,
+            fillOpacity: 0.35,
+            color: color,
+            weight: 2
+        }).addTo(map);
+
+        const marker = L.marker([site.lat, site.lng], {
+            icon: L.divIcon({
+                className: '',
+                html: `<div style="
+                    background: ${color}; color: #1a202c; font-weight: 800;
+                    width: 26px; height: 26px; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 0.75rem; box-shadow: 0 0 12px ${color}80;
+                ">${site.id}</div>`,
+                iconSize: [26, 26],
+                iconAnchor: [13, 13]
+            })
+        }).addTo(map);
+
+        marker.bindPopup(`
+            <div class="info-popup">
+                <h3>${site.name}</h3>
+                <div class="meta">
+                    <strong>Type:</strong> ${site.type}<br>
+                    <strong>Priority:</strong> <span style="color:${color}">${site.priority.toUpperCase()}</span><br>
+                    <strong>Score:</strong> ${site.score}/100<br>
+                    <strong>Est. Cost:</strong> ${site.cost}<br>
+                    <strong>Projected ROI:</strong> ${site.roi}<br><br>
+                    ${site.reason}
+                </div>
+                <div class="capacity-badge">${site.capacity} spaces</div>
+            </div>
+        `, { maxWidth: 300 });
+
+        markers.push(marker);
+        markers.push(circle);
+    });
+}
+
+function addTrafficHeat() {
+    const trafficZones = [
+        [33.448, -112.074, 3000], [33.510, -112.074, 2500], [33.465, -112.153, 1800],
+        [33.431, -111.943, 2200], [33.494, -111.926, 2000], [33.678, -111.998, 1500],
+        [33.415, -111.832, 1400], [33.306, -111.841, 1200],
+        [33.530, -112.050, 1600], [33.485, -112.110, 1300],
+        [33.445, -112.020, 1900], [33.470, -111.980, 1700],
+    ];
+    trafficZones.forEach(([lat, lng, intensity]) => {
+        const r = Math.sqrt(intensity) * 25;
+        const opacity = Math.min(intensity / 4000, 0.4);
+        const circle = L.circle([lat, lng], {
+            radius: r, fillColor: '#f56565', fillOpacity: opacity,
+            color: '#f56565', weight: 1, opacity: 0.3
+        }).addTo(map);
+        heatZones.push(circle);
+    });
+}
+
+function addPOIHeat() {
+    const poiZones = [
+        [33.448, -112.074, 0.5], [33.510, -112.074, 0.4], [33.494, -111.926, 0.45],
+        [33.431, -111.943, 0.35], [33.415, -111.832, 0.25], [33.678, -111.998, 0.3],
+        [33.530, -112.050, 0.2], [33.485, -112.005, 0.28],
+    ];
+    poiZones.forEach(([lat, lng, intensity]) => {
+        const circle = L.circle([lat, lng], {
+            radius: 1500, fillColor: '#9f7aea', fillOpacity: intensity * 0.5,
+            color: '#9f7aea', weight: 1, opacity: 0.2
+        }).addTo(map);
+        heatZones.push(circle);
+    });
+}
+
+function addParkingExisting() {
+    const existingLots = [
+        [33.4455, -112.0680], [33.4510, -112.0770], [33.4490, -112.0650],
+        [33.5050, -112.0720], [33.5120, -112.0760], [33.4350, -111.9400],
+        [33.4280, -111.9450], [33.4900, -111.9300], [33.4960, -111.9220],
+        [33.6750, -112.0000], [33.4130, -111.8350], [33.3100, -111.8450],
+    ];
+    existingLots.forEach(([lat, lng]) => {
+        const m = L.circleMarker([lat, lng], {
+            radius: 5, fillColor: '#4299e1', fillOpacity: 0.6,
+            color: '#4299e1', weight: 1
+        }).addTo(map);
+        heatZones.push(m);
+    });
+}
+
+function addTransitLines() {
+    const lightRail = [
+        [33.4080, -111.8340], [33.4152, -111.8315], [33.4260, -111.9170],
+        [33.4314, -111.9425], [33.4350, -111.9640], [33.4400, -111.9900],
+        [33.4468, -112.0200], [33.4484, -112.0500], [33.4484, -112.0740],
+        [33.4600, -112.0740], [33.4800, -112.0740], [33.5000, -112.0740],
+        [33.5092, -112.0740], [33.5200, -112.0740], [33.5350, -112.0740],
+    ];
+    const line = L.polyline(lightRail, { color: '#48bb78', weight: 3, opacity: 0.6, dashArray: '8 4' }).addTo(map);
+    heatZones.push(line);
+
+    lightRail.forEach(([lat, lng]) => {
+        const stop = L.circleMarker([lat, lng], {
+            radius: 4, fillColor: '#48bb78', fillOpacity: 0.8, color: '#48bb78', weight: 2
+        }).addTo(map);
+        heatZones.push(stop);
+    });
+}
+
+// ===================== PIPELINE =====================
+let currentStep = -1;
+let running = false;
+
+function renderSteps() {
+    const container = document.getElementById('steps-container');
+    container.innerHTML = agentSteps.map((step, i) => `
+        <div class="agent-step ${i < currentStep ? 'completed' : ''} ${i === currentStep ? 'running' : ''} ${i === currentStep ? 'active' : ''}"
+             id="step-${i}" onclick="showStepDetail(${i})">
+            <div class="step-header">
+                <div class="step-icon">${step.icon}</div>
+                <div class="step-title">${step.title}</div>
+            </div>
+            <div class="step-desc">${step.desc}</div>
+            <div class="step-sources">${step.sources.map(s => `<span class="source-tag">${s}</span>`).join('')}</div>
+            ${i <= currentStep ? `<div class="data-cards">
+                ${Object.entries(step.stats).map(([k, v]) => `
+                    <div class="data-card"><div class="label">${k}</div><div class="value">${v}</div></div>
+                `).join('')}
+            </div>` : ''}
+        </div>
+    `).join('');
+}
+
+function showStepDetail(idx) {
+    if (idx > currentStep) return;
+    document.querySelectorAll('.agent-step').forEach(el => el.classList.remove('active'));
+    document.getElementById(`step-${idx}`).classList.add('active');
+}
+
+async function runPipeline() {
+    if (running) return;
+    running = true;
+    document.getElementById('runBtn').disabled = true;
+    document.getElementById('agentLog').classList.add('show');
+
+    for (let i = 0; i < agentSteps.length; i++) {
+        currentStep = i;
+        const step = agentSteps[i];
+        document.getElementById('statusText').innerHTML = `<span class="highlight">Running:</span> ${step.title}`;
+        renderSteps();
+
+        // Scroll step into view
+        document.getElementById(`step-${i}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Map visualization per step
+        clearMap();
+        if (i === 0) addTrafficHeat();
+        else if (i === 1) addPOIHeat();
+        else if (i === 2) addParkingExisting();
+        else if (i === 3) { addTransitLines(); addParkingExisting(); }
+        else if (i === 4) { addTrafficHeat(); addPOIHeat(); }
+        else if (i >= 5) { addRecommendedSites(); }
+
+        // Animate logs
+        for (const log of step.logs) {
+            await sleep(400);
+            addLog(log);
+        }
+        await sleep(600);
+    }
+
+    currentStep = agentSteps.length;
+    renderSteps();
+    document.getElementById('statusText').innerHTML = '<span class="highlight">Complete!</span> 8 optimal parking sites identified';
+
+    clearMap();
+    addRecommendedSites();
+    map.setView([33.48, -112.0], 11);
+
+    // Show bottom panel
+    showResultsTable();
+    document.getElementById('bottomPanel').classList.add('open');
+    document.getElementById('panelToggle').textContent = 'Hide Recommendations';
+
+    running = false;
+    document.getElementById('runBtn').disabled = true;
+}
+
+function resetPipeline() {
+    currentStep = -1;
+    running = false;
+    clearMap();
+    renderSteps();
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('statusText').textContent = 'Ready to analyze Phoenix metro area';
+    document.getElementById('bottomPanel').classList.remove('open');
+    document.getElementById('panelToggle').textContent = 'Show Recommendations';
+    document.getElementById('logBody').innerHTML = '';
+    document.getElementById('agentLog').classList.remove('show');
+}
+
+function showResultsTable() {
+    document.getElementById('panelContent').innerHTML = `
+        <div class="panel-title">Recommended Parking Lot Sites</div>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>#</th><th>Location</th><th>Type</th><th>Capacity</th>
+                    <th>Priority</th><th>Score</th><th>Est. Cost</th><th>ROI</th><th>Key Factors</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${recommendedSites.map(s => `
+                    <tr onclick="map.setView([${s.lat}, ${s.lng}], 14); markers.forEach(m => { if(m.getLatLng && Math.abs(m.getLatLng().lat - ${s.lat}) < 0.001) m.openPopup(); });" style="cursor:pointer;">
+                        <td><strong>${s.id}</strong></td>
+                        <td>${s.name}</td>
+                        <td>${s.type}</td>
+                        <td><strong>${s.capacity}</strong> spaces</td>
+                        <td class="priority-${s.priority}">${s.priority.toUpperCase()}</td>
+                        <td><span class="score-bar" style="width:${s.score}px;"></span> ${s.score}</td>
+                        <td>${s.cost}</td>
+                        <td>${s.roi}</td>
+                        <td style="font-size:0.78rem;color:#a0aec0;max-width:250px;">${s.reason}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        <div style="margin-top: 16px; font-size: 0.8rem; color: #718096;">
+            Total recommended capacity: <strong style="color:#63b3ed;">4,850 spaces</strong> across 8 sites |
+            Total estimated investment: <strong style="color:#63b3ed;">$112.6M</strong> |
+            Weighted avg ROI: <strong style="color:#48bb78;">18.5%</strong> (10-year projection)
+        </div>
+    `;
+}
+
+function togglePanel() {
+    const panel = document.getElementById('bottomPanel');
+    const toggle = document.getElementById('panelToggle');
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        toggle.textContent = 'Show Recommendations';
+    } else {
+        if (currentStep >= agentSteps.length) {
+            showResultsTable();
+            panel.classList.add('open');
+            toggle.textContent = 'Hide Recommendations';
+        }
+    }
+}
+
+function addLog(log) {
+    const body = document.getElementById('logBody');
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    body.innerHTML += `<div class="log-entry">
+        <span class="time">[${time}]</span>
+        <span class="agent">${log.agent}</span>
+        <span class="action">${log.action}</span>
+        <span class="data">${log.data}</span>
+    </div>`;
+    body.scrollTop = body.scrollHeight;
+}
+
+function toggleLog() {
+    document.getElementById('agentLog').classList.toggle('show');
+}
+
+function showArch() { document.getElementById('archOverlay').classList.add('show'); }
+function hideArch() { document.getElementById('archOverlay').classList.remove('show'); }
+document.getElementById('archOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) hideArch(); });
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// Init
+renderSteps();
+</script>
+
+</body>
+</html>
