@@ -3,741 +3,885 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Agent for Phoenix Parking Lot Planning</title>
+    <title>AI Agent — Phoenix Parking Lot Planner</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0e1a; color: #e0e0e0; }
+/* ========== 1. RESET & VARIABLES ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+:root {
+    --bg-primary: #0a0e1a; --bg-secondary: #0f1629; --bg-card: #111827;
+    --accent: #63b3ed; --orange: #f6ad55; --green: #48bb78; --red: #fc8181; --purple: #9f7aea;
+    --text: #e2e8f0; --text2: #a0aec0; --text3: #718096;
+    --border: rgba(99,179,237,0.15);
+}
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text); overflow-x: hidden; }
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
 
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #0f1629 0%, #1a1f3a 100%);
-            border-bottom: 1px solid rgba(99, 179, 237, 0.2);
-            padding: 20px 40px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .header h1 { font-size: 1.6rem; color: #63b3ed; }
-        .header h1 span { color: #f6ad55; }
-        .header .subtitle { color: #a0aec0; font-size: 0.9rem; margin-top: 4px; }
+/* ========== 2. NAVIGATION ========== */
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 5000; padding: 0 32px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(10,14,26,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+    transform: translateY(-100%); transition: transform 0.3s; }
+.nav.show { transform: translateY(0); }
+.nav-logo { font-weight: 800; font-size: 0.95rem; color: var(--accent); }
+.nav-logo span { color: var(--orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--text3); text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
-        /* Layout */
-        .main { display: flex; height: calc(100vh - 80px); }
-        .sidebar { width: 380px; background: #0f1629; border-right: 1px solid rgba(99, 179, 237, 0.15); overflow-y: auto; flex-shrink: 0; }
-        .content { flex: 1; display: flex; flex-direction: column; }
+/* ========== 3. HERO ========== */
+.hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; position: relative;
+    background: radial-gradient(ellipse at 50% 30%, rgba(99,179,237,0.06) 0%, transparent 60%); }
+.hero-badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--orange); border: 1px solid rgba(246,173,85,0.3); padding: 6px 16px; border-radius: 20px; margin-bottom: 24px; }
+.hero h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 900; line-height: 1.15; max-width: 800px; }
+.hero h1 .gradient { background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero .subtitle { font-size: 1.1rem; color: var(--text2); max-width: 600px; margin: 20px auto 40px; line-height: 1.7; }
+.stats-row { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; }
+.stat-item { text-align: center; }
+.stat-num { font-size: 2.8rem; font-weight: 900; color: var(--accent); font-family: 'Inter'; }
+.stat-num.orange { color: var(--orange); } .stat-num.red { color: var(--red); }
+.stat-label { font-size: 0.78rem; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.scroll-cta { position: absolute; bottom: 32px; animation: bounce 2s infinite; color: var(--text3); font-size: 0.8rem; text-decoration: none; }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+.hero-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: linear-gradient(135deg, #3182ce, #2b6cb0); color: white; border-radius: 10px; font-weight: 700; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 50px; }
+.hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(49,130,206,0.3); }
 
-        /* Agent Pipeline */
-        .pipeline-title {
-            padding: 16px 20px; font-size: 0.85rem; text-transform: uppercase;
-            letter-spacing: 1.5px; color: #63b3ed; border-bottom: 1px solid rgba(99, 179, 237, 0.1);
-        }
-        .agent-step {
-            padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
-            cursor: pointer; transition: all 0.3s;
-        }
-        .agent-step:hover { background: rgba(99, 179, 237, 0.05); }
-        .agent-step.active { background: rgba(99, 179, 237, 0.1); border-left: 3px solid #63b3ed; }
-        .agent-step.completed .step-icon { background: #48bb78; }
-        .agent-step.running .step-icon { background: #f6ad55; animation: pulse 1.5s infinite; }
-        .step-header { display: flex; align-items: center; gap: 12px; }
-        .step-icon {
-            width: 32px; height: 32px; border-radius: 50%; background: #2d3748;
-            display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;
-        }
-        .step-title { font-size: 0.95rem; font-weight: 600; }
-        .step-desc { font-size: 0.78rem; color: #718096; margin-top: 4px; margin-left: 44px; }
-        .step-sources { margin-top: 8px; margin-left: 44px; display: flex; flex-wrap: wrap; gap: 4px; }
-        .source-tag {
-            font-size: 0.68rem; padding: 2px 8px; border-radius: 10px;
-            background: rgba(99, 179, 237, 0.12); color: #63b3ed;
-        }
+/* ========== 4. SECTION COMMON ========== */
+.section { padding: 80px 40px; max-width: 1400px; margin: 0 auto; }
+.section-title { font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 12px; }
+.section-sub { font-size: 1rem; color: var(--text2); text-align: center; margin-bottom: 48px; max-width: 700px; margin-left: auto; margin-right: auto; }
+.fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.6s, transform 0.6s; }
+.fade-in.visible { opacity: 1; transform: translateY(0); }
 
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+/* ========== 5. ARCHITECTURE ========== */
+.arch-grid { display: flex; flex-direction: column; gap: 32px; align-items: center; }
+.arch-row { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.arch-node { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 16px; width: 155px; text-align: center; transition: border-color 0.3s, transform 0.3s; }
+.arch-node:hover { border-color: var(--accent); transform: translateY(-4px); }
+.arch-node .icon { font-size: 2rem; margin-bottom: 8px; }
+.arch-node .name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.arch-node .desc { font-size: 0.68rem; color: var(--text3); margin-top: 4px; }
+.arch-arrow { color: var(--text3); font-size: 1.5rem; }
+.arch-arrow.down { transform: rotate(90deg); }
+.arch-sources { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.source-tag { font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; background: rgba(99,179,237,0.1); color: var(--accent); }
 
-        /* Top bar */
-        .top-bar {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 24px; background: #111827; border-bottom: 1px solid rgba(99, 179, 237, 0.1);
-        }
-        .btn {
-            padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;
-            font-size: 0.85rem; font-weight: 600; transition: all 0.3s;
-        }
-        .btn-primary { background: #3182ce; color: white; }
-        .btn-primary:hover { background: #2b6cb0; }
-        .btn-primary:disabled { background: #2d3748; color: #4a5568; cursor: not-allowed; }
-        .btn-reset { background: transparent; color: #a0aec0; border: 1px solid #4a5568; }
-        .btn-reset:hover { border-color: #a0aec0; }
-        .status-text { color: #a0aec0; font-size: 0.85rem; }
-        .status-text .highlight { color: #48bb78; font-weight: 600; }
+/* ========== 6. DASHBOARD ========== */
+.dashboard { background: var(--bg-secondary); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0; max-width: none; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); }
+.dash-header h2 { font-size: 1.1rem; color: var(--accent); }
+.dash-body { display: grid; grid-template-columns: 310px 1fr 280px; height: 75vh; min-height: 550px; }
 
-        /* Map */
-        #map { flex: 1; }
-        .leaflet-container { background: #1a202c; }
+/* Sidebar Pipeline */
+.sidebar { background: var(--bg-primary); border-right: 1px solid var(--border); overflow-y: auto; }
+.pipe-title { padding: 12px 16px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.04); }
+.agent-step { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: background 0.2s; position: relative; }
+.agent-step:hover { background: rgba(99,179,237,0.04); }
+.agent-step.active { background: rgba(99,179,237,0.08); border-left: 3px solid var(--accent); }
+.agent-step.completed .step-icon { background: var(--green); color: #fff; }
+.agent-step.running .step-icon { background: var(--orange); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.step-header { display: flex; align-items: center; gap: 10px; }
+.step-icon { width: 28px; height: 28px; border-radius: 50%; background: #2d3748; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; }
+.step-title { font-size: 0.82rem; font-weight: 600; }
+.step-desc { font-size: 0.7rem; color: var(--text3); margin-top: 3px; margin-left: 38px; }
+.step-sources-row { margin-top: 6px; margin-left: 38px; display: flex; flex-wrap: wrap; gap: 3px; }
+.step-cot { margin: 8px 0 0 38px; padding: 8px 10px; background: rgba(0,0,0,0.3); border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 0.65rem; color: var(--green); line-height: 1.6; display: none; }
+.agent-step.active .step-cot, .agent-step.completed .step-cot { display: block; }
+.step-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; margin-left: 38px; }
+.mini-stat { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 4px 8px; }
+.mini-stat .l { font-size: 0.6rem; color: var(--text3); text-transform: uppercase; }
+.mini-stat .v { font-size: 0.9rem; font-weight: 700; color: var(--accent); }
 
-        /* Bottom Panel */
-        .bottom-panel {
-            height: 0; background: #111827; border-top: 1px solid rgba(99, 179, 237, 0.15);
-            overflow-y: auto; transition: height 0.4s ease;
-        }
-        .bottom-panel.open { height: 340px; }
-        .panel-toggle {
-            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-            background: #1a1f3a; border: 1px solid rgba(99, 179, 237, 0.2);
-            border-bottom: none; color: #63b3ed; padding: 4px 20px; border-radius: 8px 8px 0 0;
-            cursor: pointer; font-size: 0.8rem; z-index: 1000;
-        }
-        .panel-content { padding: 20px 24px; }
-        .panel-title { font-size: 1.1rem; font-weight: 700; color: #63b3ed; margin-bottom: 16px; }
+/* Map area */
+.map-area { position: relative; display: flex; flex-direction: column; }
+#map { flex: 1; }
+.leaflet-container { background: #1a202c; }
+.layer-ctrl { position: absolute; top: 12px; right: 12px; z-index: 1000; background: rgba(15,22,41,0.92); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+.layer-ctrl h4 { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.layer-toggle { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.75rem; color: var(--text2); cursor: pointer; }
+.layer-toggle input { display: none; }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--text3); transition: all 0.2s; }
+.layer-toggle input:checked ~ .layer-dot { border-color: currentColor; background: currentColor; box-shadow: 0 0 6px currentColor; }
+.map-legend { position: absolute; bottom: 12px; left: 12px; z-index: 1000; background: rgba(15,22,41,0.9); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.68rem; color: var(--text3); }
+.legend-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.legend-color { width: 12px; height: 12px; border-radius: 2px; }
 
-        /* Results Table */
-        .results-table { width: 100%; border-collapse: collapse; }
-        .results-table th {
-            text-align: left; padding: 8px 12px; font-size: 0.75rem; text-transform: uppercase;
-            letter-spacing: 1px; color: #718096; border-bottom: 1px solid #2d3748;
-        }
-        .results-table td { padding: 10px 12px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .results-table tr:hover td { background: rgba(99, 179, 237, 0.05); }
-        .priority-high { color: #fc8181; font-weight: 600; }
-        .priority-medium { color: #f6ad55; font-weight: 600; }
-        .priority-low { color: #68d391; font-weight: 600; }
-        .score-bar { display: inline-block; height: 6px; border-radius: 3px; background: #3182ce; }
+/* Right Panel */
+.right-panel { background: var(--bg-primary); border-left: 1px solid var(--border); overflow-y: auto; padding: 16px; }
+.panel-section { margin-bottom: 20px; }
+.panel-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 10px; font-weight: 600; }
+.slider-group { margin-bottom: 12px; }
+.slider-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text2); margin-bottom: 4px; }
+.slider-val { color: var(--accent); font-weight: 700; }
+input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: #2d3748; border-radius: 2px; outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+.whatif-toggle { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.75rem; color: var(--text2); border-bottom: 1px solid rgba(255,255,255,0.04); }
+.toggle-switch { width: 36px; height: 20px; background: #2d3748; border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; }
+.toggle-switch.on { background: var(--accent); }
+.toggle-switch::after { content: ''; position: absolute; width: 16px; height: 16px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
+.toggle-switch.on::after { transform: translateX(16px); }
+.btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
+.btn-sm { padding: 6px 12px; font-size: 0.72rem; }
+.btn-primary { background: #3182ce; color: white; } .btn-primary:hover { background: #2b6cb0; }
+.btn-primary:disabled { background: #2d3748; color: #4a5568; cursor: not-allowed; }
+.btn-outline { background: transparent; color: var(--text2); border: 1px solid #4a5568; } .btn-outline:hover { border-color: var(--text2); }
 
-        /* Agent Log */
-        .agent-log {
-            position: fixed; bottom: 20px; right: 20px; width: 420px; max-height: 300px;
-            background: #1a1f3a; border: 1px solid rgba(99, 179, 237, 0.2); border-radius: 12px;
-            overflow: hidden; z-index: 2000; display: none;
-        }
-        .agent-log.show { display: block; }
-        .log-header {
-            padding: 10px 16px; background: rgba(99, 179, 237, 0.1);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .log-header span { font-size: 0.85rem; font-weight: 600; color: #63b3ed; }
-        .log-close { background: none; border: none; color: #718096; cursor: pointer; font-size: 1.2rem; }
-        .log-body { padding: 12px 16px; max-height: 240px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 0.75rem; }
-        .log-entry { padding: 3px 0; color: #a0aec0; }
-        .log-entry .time { color: #4a5568; }
-        .log-entry .agent { color: #f6ad55; }
-        .log-entry .action { color: #68d391; }
-        .log-entry .data { color: #63b3ed; }
+/* ========== 7. CHARTS ========== */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.chart-card h3 { font-size: 0.85rem; color: var(--text); margin-bottom: 16px; }
+.chart-card canvas { max-height: 260px; }
 
-        /* Info popup */
-        .info-popup { max-width: 280px; }
-        .info-popup h3 { color: #1a202c; font-size: 1rem; margin-bottom: 6px; }
-        .info-popup .meta { font-size: 0.8rem; color: #4a5568; line-height: 1.6; }
-        .info-popup .capacity-badge {
-            display: inline-block; background: #3182ce; color: white;
-            padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-top: 4px;
-        }
+/* ========== 8. RESULTS TABLE ========== */
+.results-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.results-summary { display: flex; gap: 24px; }
+.results-summary .item { text-align: center; }
+.results-summary .num { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+.results-summary .lab { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; }
+table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.res-table th { text-align: left; padding: 10px 12px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); border-bottom: 2px solid #2d3748; cursor: pointer; user-select: none; }
+.res-table th:hover { color: var(--accent); }
+.res-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.res-table tr:hover td { background: rgba(99,179,237,0.05); }
+.res-table tr.selected td { background: rgba(99,179,237,0.1); }
+.priority-high { color: var(--red); font-weight: 600; } .priority-medium { color: var(--orange); font-weight: 600; } .priority-low { color: var(--green); font-weight: 600; }
+.score-bar-bg { width: 60px; height: 6px; background: #2d3748; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.score-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
 
-        /* Data cards in step detail */
-        .data-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; margin-left: 44px; }
-        .data-card {
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(99, 179, 237, 0.1);
-            border-radius: 6px; padding: 8px 12px;
-        }
-        .data-card .label { font-size: 0.68rem; color: #718096; text-transform: uppercase; }
-        .data-card .value { font-size: 1.1rem; font-weight: 700; color: #63b3ed; margin-top: 2px; }
+/* Comparison Panel */
+.compare-panel { display: none; margin-top: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.compare-panel.show { display: block; }
+.compare-grid { display: grid; gap: 0; }
+.compare-row { display: grid; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.compare-row.header { background: rgba(99,179,237,0.05); border-radius: 8px 8px 0 0; }
+.compare-cell { padding: 10px 16px; font-size: 0.8rem; }
+.compare-cell.label { color: var(--text3); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; }
+.compare-cell.best { color: var(--green); font-weight: 700; }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+/* ========== 9. EXPLAINABILITY ========== */
+.explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.explain-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.explain-card h3 { font-size: 0.95rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.rejected-item { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.rejected-item .rname { font-weight: 600; font-size: 0.85rem; }
+.rejected-item .rreason { font-size: 0.75rem; color: var(--red); margin-top: 2px; }
+.rejected-item .rscore { font-size: 0.7rem; color: var(--text3); }
+details.reasoning { margin-bottom: 8px; }
+details.reasoning summary { cursor: pointer; padding: 8px 0; font-size: 0.82rem; font-weight: 600; color: var(--text2); }
+details.reasoning summary:hover { color: var(--accent); }
+.reason-chain { padding: 8px 16px; font-family: 'Fira Code', monospace; font-size: 0.7rem; line-height: 1.7; color: var(--text3); background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 4px; }
+.reason-chain .step { color: var(--green); } .reason-chain .val { color: var(--accent); } .reason-chain .warn { color: var(--orange); }
 
-        /* Architecture Diagram */
-        .arch-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 3000; display: none;
-            justify-content: center; align-items: center;
-        }
-        .arch-overlay.show { display: flex; }
-        .arch-diagram {
-            background: #0f1629; border: 1px solid rgba(99, 179, 237, 0.3);
-            border-radius: 16px; padding: 40px; max-width: 900px; width: 90%; position: relative;
-        }
-        .arch-close {
-            position: absolute; top: 16px; right: 20px;
-            background: none; border: none; color: #718096; font-size: 1.5rem; cursor: pointer;
-        }
-        .arch-title { font-size: 1.3rem; color: #63b3ed; text-align: center; margin-bottom: 30px; }
+/* ========== 10. CHAT ========== */
+.chat-fab { position: fixed; bottom: 24px; right: 24px; z-index: 4000; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3182ce, #2b6cb0); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(49,130,206,0.4); transition: transform 0.2s; }
+.chat-fab:hover { transform: scale(1.1); }
+.chat-panel { position: fixed; bottom: 90px; right: 24px; z-index: 4000; width: 400px; height: 500px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+.chat-panel.open { display: flex; }
+.chat-head { padding: 14px 18px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.chat-head h3 { font-size: 0.9rem; color: var(--accent); }
+.chat-head button { background: none; border: none; color: var(--text3); font-size: 1.2rem; cursor: pointer; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.82rem; line-height: 1.5; }
+.msg.bot { background: var(--bg-card); color: var(--text2); align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg.user { background: #3182ce; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.chat-input input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 0.82rem; outline: none; }
+.chat-input input:focus { border-color: var(--accent); }
+.chat-input button { background: #3182ce; color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
 
-        .arch-flow { display: flex; align-items: flex-start; justify-content: center; gap: 16px; flex-wrap: wrap; }
-        .arch-node {
-            background: rgba(99, 179, 237, 0.08); border: 1px solid rgba(99, 179, 237, 0.25);
-            border-radius: 10px; padding: 16px; width: 160px; text-align: center;
-        }
-        .arch-node .icon { font-size: 1.8rem; margin-bottom: 8px; }
-        .arch-node .name { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; }
-        .arch-node .desc { font-size: 0.7rem; color: #718096; margin-top: 4px; }
-        .arch-arrow { color: #4a5568; font-size: 1.5rem; align-self: center; margin-top: 20px; }
-
-        .btn-arch { background: transparent; color: #63b3ed; border: 1px solid rgba(99, 179, 237, 0.3); margin-left: 8px; }
-        .btn-arch:hover { background: rgba(99, 179, 237, 0.1); }
+/* ========== 11. FOOTER ========== */
+.footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text3); }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div>
-        <h1>AI Agent <span>Phoenix Parking Lot Planner</span></h1>
-        <div class="subtitle">Multi-Agent System for Data-Driven Parking Infrastructure Planning</div>
+<!-- ========== NAVIGATION ========== -->
+<nav class="nav" id="nav">
+    <div class="nav-logo">AI Agent <span>Parking Planner</span></div>
+    <div class="nav-links">
+        <a href="#hero">Home</a>
+        <a href="#arch-section">Architecture</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#results-section">Results</a>
+        <a href="#explain-section">Explainability</a>
     </div>
-    <div style="display:flex; gap:8px;">
-        <button class="btn btn-arch" onclick="showArch()">System Architecture</button>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero">
+    <div class="hero-badge">Multi-Agent AI System</div>
+    <h1>Phoenix Has a <span class="gradient">Parking Crisis</span></h1>
+    <p class="subtitle">Our AI agent system autonomously collects and analyzes urban data from 8+ sources to identify optimal parking lot locations, capacities, and investment priorities across the Phoenix metropolitan area.</p>
+    <div class="stats-row fade-in">
+        <div class="stat-item"><div class="stat-num" data-target="1.65" data-suffix="M">0</div><div class="stat-label">Residents</div></div>
+        <div class="stat-item"><div class="stat-num orange" data-target="94" data-suffix="%">0</div><div class="stat-label">Downtown Utilization</div></div>
+        <div class="stat-item"><div class="stat-num red" data-target="12400" data-suffix="">0</div><div class="stat-label">Space Deficit by 2030</div></div>
+        <div class="stat-item"><div class="stat-num" data-target="76" data-suffix="%">0</div><div class="stat-label">Drive Alone Rate</div></div>
+    </div>
+    <br>
+    <a href="#dashboard" class="hero-cta">Launch Agent Dashboard &darr;</a>
+    <a href="#arch-section" class="scroll-cta">Scroll to explore &darr;</a>
+</section>
+
+<!-- ========== ARCHITECTURE ========== -->
+<section class="section" id="arch-section">
+    <h2 class="section-title fade-in">Multi-Agent System Architecture</h2>
+    <p class="section-sub fade-in">An orchestrated pipeline of specialized AI agents that autonomously collect, process, analyze, and recommend optimal parking infrastructure investments.</p>
+    <div class="arch-grid fade-in">
+        <div class="arch-sources">
+            <span class="source-tag">City of Phoenix Open Data</span><span class="source-tag">Census / ACS</span><span class="source-tag">Google Places API</span><span class="source-tag">OpenStreetMap</span><span class="source-tag">Yelp API</span><span class="source-tag">Valley Metro GTFS</span><span class="source-tag">MAG Traffic Counts</span><span class="source-tag">FEMA Flood Maps</span><span class="source-tag">Parking Violations DB</span>
+        </div>
+        <div class="arch-arrow down" style="font-size:1.2rem;">&#8595; Data Ingestion</div>
+        <div class="arch-row">
+            <div class="arch-node"><div class="icon">🚗</div><div class="name">Traffic Agent</div><div class="desc">Volume, congestion, peak hours</div></div>
+            <div class="arch-node"><div class="icon">📍</div><div class="name">POI Agent</div><div class="desc">Business density, event venues</div></div>
+            <div class="arch-node"><div class="icon">🅿️</div><div class="name">Parking Agent</div><div class="desc">Existing inventory, utilization</div></div>
+            <div class="arch-node"><div class="icon">🚌</div><div class="name">Transit Agent</div><div class="desc">Coverage, ridership, gaps</div></div>
+            <div class="arch-node"><div class="icon">👥</div><div class="name">Demographics Agent</div><div class="desc">Population, growth, permits</div></div>
+        </div>
+        <div class="arch-arrow down" style="font-size:1.2rem;">&#8595; Merge & Score</div>
+        <div class="arch-row">
+            <div class="arch-node" style="width:200px; border-color: var(--accent);"><div class="icon">🎯</div><div class="name">Orchestrator Agent</div><div class="desc">Coordinates pipeline, manages state</div></div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node" style="width:200px; border-color: var(--purple);"><div class="icon">🧠</div><div class="name">Analysis Engine</div><div class="desc">Spatial scoring, capacity optimization</div></div>
+            <div class="arch-arrow">&#8594;</div>
+            <div class="arch-node" style="width:200px; border-color: var(--green);"><div class="icon">📊</div><div class="name">Recommendation Agent</div><div class="desc">Site selection, ROI, final report</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== DASHBOARD ========== -->
+<section class="dashboard" id="dashboard">
+    <div class="dash-header">
+        <h2>Interactive Agent Dashboard</h2>
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">Run Agent Pipeline</button>
+            <button class="btn btn-outline" onclick="resetPipeline()">Reset</button>
+            <span class="status-text" id="statusText" style="margin-left:12px;font-size:0.82rem;color:var(--text2);">Ready</span>
+        </div>
+    </div>
+    <div class="dash-body">
+        <!-- LEFT: Pipeline -->
+        <div class="sidebar" id="sidebarSteps"></div>
+
+        <!-- CENTER: Map -->
+        <div class="map-area">
+            <div id="map"></div>
+            <div class="layer-ctrl" id="layerCtrl">
+                <h4>Map Layers</h4>
+                <label class="layer-toggle" style="color:var(--red);"><input type="checkbox" data-layer="traffic"> <span class="layer-dot" style="color:var(--red);"></span> Traffic Density</label>
+                <label class="layer-toggle" style="color:var(--purple);"><input type="checkbox" data-layer="poi"> <span class="layer-dot" style="color:var(--purple);"></span> POI / Business</label>
+                <label class="layer-toggle" style="color:#4299e1;"><input type="checkbox" data-layer="parking"> <span class="layer-dot" style="color:#4299e1;"></span> Existing Parking</label>
+                <label class="layer-toggle" style="color:var(--green);"><input type="checkbox" data-layer="transit"> <span class="layer-dot" style="color:var(--green);"></span> Transit Lines</label>
+                <label class="layer-toggle" style="color:var(--orange);"><input type="checkbox" data-layer="recommendations" checked> <span class="layer-dot" style="color:var(--orange);"></span> Recommendations</label>
+            </div>
+            <div class="map-legend">
+                <div class="legend-row"><div class="legend-color" style="background:var(--red);"></div> High Priority</div>
+                <div class="legend-row"><div class="legend-color" style="background:var(--orange);"></div> Medium Priority</div>
+                <div class="legend-row"><div class="legend-color" style="background:var(--green);"></div> Growth Opportunity</div>
+                <div class="legend-row"><div class="legend-color" style="background:#4299e1;"></div> Existing Facilities</div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Parameters -->
+        <div class="right-panel">
+            <div class="panel-section">
+                <div class="panel-label">Scoring Weights</div>
+                <div class="slider-group"><div class="slider-header"><span>Traffic Demand</span><span class="slider-val" id="w-traffic-val">25%</span></div><input type="range" min="0" max="50" value="25" id="w-traffic" oninput="updateWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span>Parking Gap</span><span class="slider-val" id="w-gap-val">25%</span></div><input type="range" min="0" max="50" value="25" id="w-gap" oninput="updateWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span>Growth Potential</span><span class="slider-val" id="w-growth-val">20%</span></div><input type="range" min="0" max="50" value="20" id="w-growth" oninput="updateWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span>POI Density</span><span class="slider-val" id="w-poi-val">15%</span></div><input type="range" min="0" max="50" value="15" id="w-poi" oninput="updateWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span>Transit Access</span><span class="slider-val" id="w-transit-val">15%</span></div><input type="range" min="0" max="50" value="15" id="w-transit" oninput="updateWeights()"></div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Constraints</div>
+                <div class="slider-group"><div class="slider-header"><span>Max Budget</span><span class="slider-val" id="budget-val">$150M</span></div><input type="range" min="20" max="150" value="150" id="budget-slider" oninput="updateConstraints()"></div>
+                <div class="slider-group"><div class="slider-header"><span>Min Capacity</span><span class="slider-val" id="cap-val">100</span></div><input type="range" min="100" max="800" value="100" step="50" id="cap-slider" oninput="updateConstraints()"></div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">What-If Scenarios</div>
+                <div class="whatif-toggle"><span>Exclude Flood Zones</span><div class="toggle-switch" id="wif-flood" onclick="toggleWhatIf(this)"></div></div>
+                <div class="whatif-toggle"><span>Transit Priority Mode</span><div class="toggle-switch" id="wif-transit" onclick="toggleWhatIf(this)"></div></div>
+                <div class="whatif-toggle"><span>Include Future Dev Areas</span><div class="toggle-switch" id="wif-future" onclick="toggleWhatIf(this)"></div></div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="recalculate()">Apply & Recalculate</button>
+        </div>
+    </div>
+</section>
+
+<!-- ========== ANALYTICS ========== -->
+<section class="section" id="analytics">
+    <h2 class="section-title fade-in">Data Analytics & Insights</h2>
+    <p class="section-sub fade-in">Comprehensive visual analysis of parking demand, utilization patterns, growth trends, and investment efficiency across the Phoenix metro area.</p>
+    <div class="charts-grid fade-in">
+        <div class="chart-card"><h3>Parking Utilization by Area</h3><canvas id="chartBar"></canvas></div>
+        <div class="chart-card"><h3>Top Site — Score Breakdown (Radar)</h3><canvas id="chartRadar"></canvas></div>
+        <div class="chart-card"><h3>Parking Supply vs Demand Trend (2020-2030)</h3><canvas id="chartLine"></canvas></div>
+        <div class="chart-card"><h3>Cost vs ROI — Site Comparison</h3><canvas id="chartScatter"></canvas></div>
+    </div>
+</section>
+
+<!-- ========== RESULTS ========== -->
+<section class="section" id="results-section">
+    <h2 class="section-title fade-in">Recommended Sites</h2>
+    <p class="section-sub fade-in">AI-selected optimal parking lot locations ranked by composite score. Click rows to view on map. Select sites to compare.</p>
+    <div class="fade-in">
+        <div class="results-bar">
+            <div class="results-summary">
+                <div class="item"><div class="num" id="totalSites">8</div><div class="lab">Sites</div></div>
+                <div class="item"><div class="num" id="totalCap">4,850</div><div class="lab">Total Spaces</div></div>
+                <div class="item"><div class="num" id="totalCost">$112.6M</div><div class="lab">Investment</div></div>
+                <div class="item"><div class="num" id="avgRoi" style="color:var(--green);">18.5%</div><div class="lab">Avg ROI</div></div>
+            </div>
+            <button class="btn btn-outline btn-sm" id="compareBtn" onclick="showComparison()" disabled>Compare Selected (0)</button>
+        </div>
+        <table class="res-table" id="resultsTable"><thead><tr>
+            <th style="width:30px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+            <th onclick="sortTable('id')">#</th>
+            <th onclick="sortTable('name')">Location</th>
+            <th onclick="sortTable('type')">Type</th>
+            <th onclick="sortTable('capacity')">Capacity</th>
+            <th onclick="sortTable('priority')">Priority</th>
+            <th onclick="sortTable('score')">Score</th>
+            <th onclick="sortTable('costNum')">Est. Cost</th>
+            <th onclick="sortTable('roiNum')">ROI</th>
+        </tr></thead><tbody id="resultsBody"></tbody></table>
+        <div class="compare-panel" id="comparePanel"></div>
+    </div>
+</section>
+
+<!-- ========== EXPLAINABILITY ========== -->
+<section class="section" id="explain-section">
+    <h2 class="section-title fade-in">AI Explainability</h2>
+    <p class="section-sub fade-in">Transparent decision-making: understand why sites were selected or rejected, and trace the full reasoning chain for each recommendation.</p>
+    <div class="explain-grid fade-in">
+        <div class="explain-card">
+            <h3><span style="color:var(--red);">&#10005;</span> Rejected Candidate Sites</h3>
+            <div id="rejectedList"></div>
+        </div>
+        <div class="explain-card">
+            <h3><span style="color:var(--green);">&#10003;</span> Reasoning Chain — Selected Sites</h3>
+            <div id="reasoningList"></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<div class="footer">
+    Powered by Multi-Agent AI System &middot; Data sources: City of Phoenix, Census ACS, OpenStreetMap, MAG, Valley Metro &middot; Demo built for research purposes
+</div>
+
+<!-- ========== CHAT ========== -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()">💬</button>
+<div class="chat-panel" id="chatPanel">
+    <div class="chat-head"><h3>Ask the Agent</h3><button onclick="toggleChat()">&#10005;</button></div>
+    <div class="chat-messages" id="chatMessages">
+        <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent. Ask me anything about the analysis — locations, methodology, data sources, or recommendations.</div>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Ask about parking analysis..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">Send</button>
     </div>
 </div>
 
-<div class="main">
-    <div class="sidebar">
-        <div class="pipeline-title">Agent Pipeline</div>
-        <div id="steps-container"></div>
-    </div>
-    <div class="content" style="position: relative;">
-        <div class="top-bar">
-            <div>
-                <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">Run Agent Pipeline</button>
-                <button class="btn btn-reset" onclick="resetPipeline()" style="margin-left: 8px;">Reset</button>
-            </div>
-            <div class="status-text" id="statusText">Ready to analyze Phoenix metro area</div>
-        </div>
-        <div id="map"></div>
-        <div class="bottom-panel" id="bottomPanel">
-            <div class="panel-content" id="panelContent"></div>
-        </div>
-        <div class="panel-toggle" id="panelToggle" onclick="togglePanel()">Show Recommendations</div>
-    </div>
-</div>
-
-<!-- Agent Log -->
-<div class="agent-log" id="agentLog">
-    <div class="log-header">
-        <span>Agent Activity Log</span>
-        <button class="log-close" onclick="toggleLog()">x</button>
-    </div>
-    <div class="log-body" id="logBody"></div>
-</div>
-
-<!-- Architecture Overlay -->
-<div class="arch-overlay" id="archOverlay">
-    <div class="arch-diagram">
-        <button class="arch-close" onclick="hideArch()">x</button>
-        <div class="arch-title">Multi-Agent System Architecture</div>
-        <div class="arch-flow">
-            <div class="arch-node">
-                <div class="icon">🎯</div>
-                <div class="name">Orchestrator Agent</div>
-                <div class="desc">Coordinates sub-agents, manages pipeline flow</div>
-            </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-                <div class="icon">🌐</div>
-                <div class="name">Data Collector Agents</div>
-                <div class="desc">Web scraping, API calls, public datasets</div>
-            </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-                <div class="icon">🧹</div>
-                <div class="name">Data Processor</div>
-                <div class="desc">Clean, normalize, geocode data</div>
-            </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-                <div class="icon">🧠</div>
-                <div class="name">Analysis Engine</div>
-                <div class="desc">Spatial analysis, demand modeling, scoring</div>
-            </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-                <div class="icon">📊</div>
-                <div class="name">Recommendation Agent</div>
-                <div class="desc">Generate optimal locations &amp; capacities</div>
-            </div>
-        </div>
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(99,179,237,0.15);">
-            <div style="text-align: center; font-size: 0.85rem; color: #718096; margin-bottom: 16px;">Data Sources</div>
-            <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">City of Phoenix Open Data</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Census / ACS</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Google Maps / Places API</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">OpenStreetMap</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Yelp / Events API</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Valley Metro Transit</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">MAG Traffic Counts</span>
-                <span class="source-tag" style="font-size: 0.78rem; padding: 4px 12px;">Parking Violation Records</span>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- ==================== JAVASCRIPT ==================== -->
 <script>
-// ===================== DATA =====================
-const PHOENIX_CENTER = [33.4484, -112.074];
+// ========== A. DATA LAYER ==========
+const PHOENIX = [33.4484, -112.074];
 
 const agentSteps = [
-    {
-        id: 'collect-traffic',
-        icon: '🚗',
-        title: 'Traffic Data Collection Agent',
-        desc: 'Collecting traffic volume & congestion data from MAG and ADOT',
-        sources: ['MAG Traffic Counts', 'ADOT API', 'Google Traffic'],
-        stats: { 'Intersections': '2,847', 'Avg AADT': '34,200', 'Peak Hours': '7-9am, 4-7pm' },
-        logs: [
-            { agent: 'TrafficAgent', action: 'FETCH', data: 'MAG traffic count API → 2,847 intersections loaded' },
-            { agent: 'TrafficAgent', action: 'FETCH', data: 'ADOT real-time feed → 156 sensor stations' },
-            { agent: 'TrafficAgent', action: 'PROCESS', data: 'Computing peak-hour congestion index per corridor' },
-            { agent: 'TrafficAgent', action: 'COMPLETE', data: 'Traffic heatmap generated, 12 high-congestion zones identified' },
-        ]
-    },
-    {
-        id: 'collect-poi',
-        icon: '📍',
-        title: 'POI & Business Data Agent',
-        desc: 'Gathering points of interest, business density, and event venues',
-        sources: ['Google Places', 'Yelp API', 'Phoenix Events'],
-        stats: { 'POIs Found': '18,432', 'Event Venues': '127', 'Restaurants': '4,891' },
-        logs: [
-            { agent: 'POIAgent', action: 'FETCH', data: 'Google Places API → 18,432 POIs in Phoenix metro' },
-            { agent: 'POIAgent', action: 'FETCH', data: 'Yelp Fusion API → business density scoring for 340 zones' },
-            { agent: 'POIAgent', action: 'CLASSIFY', data: 'Categorizing: retail (6,201), dining (4,891), office (3,412), medical (1,890)...' },
-            { agent: 'POIAgent', action: 'COMPLETE', data: 'Business density index computed, top 20 hotspots identified' },
-        ]
-    },
-    {
-        id: 'collect-parking',
-        icon: '🅿️',
-        title: 'Existing Parking Inventory Agent',
-        desc: 'Mapping current parking facilities, utilization rates, and gaps',
-        sources: ['OpenStreetMap', 'City Records', 'ParkMe API'],
-        stats: { 'Parking Lots': '1,203', 'Total Spaces': '89,400', 'Avg Utilization': '78%' },
-        logs: [
-            { agent: 'ParkingAgent', action: 'FETCH', data: 'OpenStreetMap → 1,203 parking facilities extracted' },
-            { agent: 'ParkingAgent', action: 'FETCH', data: 'City of Phoenix open data → 342 public lots with capacity' },
-            { agent: 'ParkingAgent', action: 'ANALYZE', data: 'Computing utilization: Downtown 94%, Midtown 81%, Suburbs 52%' },
-            { agent: 'ParkingAgent', action: 'IDENTIFY', data: 'Gap analysis: 8 zones with >90% utilization flagged as critical' },
-            { agent: 'ParkingAgent', action: 'COMPLETE', data: 'Parking deficit map generated' },
-        ]
-    },
-    {
-        id: 'collect-transit',
-        icon: '🚌',
-        title: 'Transit & Mobility Data Agent',
-        desc: 'Analyzing public transit coverage, ridership, and last-mile gaps',
-        sources: ['Valley Metro GTFS', 'Census Commute', 'Bike Share'],
-        stats: { 'Bus Routes': '58', 'Light Rail Stops': '35', 'Park-n-Ride': '8' },
-        logs: [
-            { agent: 'TransitAgent', action: 'FETCH', data: 'Valley Metro GTFS feed → 58 bus routes, 35 light rail stops' },
-            { agent: 'TransitAgent', action: 'FETCH', data: 'Census commute patterns → 1.2M workers, 76% drive alone' },
-            { agent: 'TransitAgent', action: 'ANALYZE', data: 'Computing transit desert index: 14 underserved zones found' },
-            { agent: 'TransitAgent', action: 'COMPLETE', data: 'Park-and-ride demand model ready, 5 candidate expansion sites' },
-        ]
-    },
-    {
-        id: 'collect-demographics',
-        icon: '👥',
-        title: 'Demographics & Growth Agent',
-        desc: 'Population density, growth trends, and development permits',
-        sources: ['Census ACS', 'MAG Projections', 'City Permits'],
-        stats: { 'Population': '1.65M', 'Growth Rate': '+1.8%/yr', 'New Permits': '3,240' },
-        logs: [
-            { agent: 'DemoAgent', action: 'FETCH', data: 'Census ACS 2024 → tract-level population: 1.65M in city limits' },
-            { agent: 'DemoAgent', action: 'FETCH', data: 'MAG 2030 projections → +1.8% annual growth, south & west corridors' },
-            { agent: 'DemoAgent', action: 'FETCH', data: 'City building permits → 3,240 new commercial/residential in 2024-2025' },
-            { agent: 'DemoAgent', action: 'MODEL', data: 'Future demand projection: 2030 parking deficit estimated at 12,400 spaces' },
-            { agent: 'DemoAgent', action: 'COMPLETE', data: 'Growth overlay mapped to parking demand zones' },
-        ]
-    },
-    {
-        id: 'analyze',
-        icon: '🧠',
-        title: 'Spatial Analysis & Scoring Agent',
-        desc: 'Multi-criteria scoring: traffic, demand, gap analysis, growth potential',
-        sources: ['Internal Models', 'GIS Engine'],
-        stats: { 'Zones Analyzed': '340', 'Criteria Used': '12', 'Model': 'Weighted Spatial' },
-        logs: [
-            { agent: 'AnalysisAgent', action: 'MERGE', data: 'Combining 5 data layers → unified geo-grid (340 zones)' },
-            { agent: 'AnalysisAgent', action: 'SCORE', data: 'Applying 12-criteria weighted model (traffic 25%, gap 25%, growth 20%, POI 15%, transit 15%)' },
-            { agent: 'AnalysisAgent', action: 'RANK', data: 'Generating priority ranking for all 340 zones' },
-            { agent: 'AnalysisAgent', action: 'OPTIMIZE', data: 'Running capacity optimizer with land-use constraints' },
-            { agent: 'AnalysisAgent', action: 'COMPLETE', data: 'Top 8 recommended sites identified with optimal capacities' },
-        ]
-    },
-    {
-        id: 'recommend',
-        icon: '📊',
-        title: 'Recommendation Generation Agent',
-        desc: 'Final site selection, capacity planning, and ROI estimation',
-        sources: ['Analysis Results', 'Cost Models'],
-        stats: { 'Sites Selected': '8', 'Total Capacity': '4,850', 'Est. ROI': '18.5%' },
-        logs: [
-            { agent: 'RecommendAgent', action: 'SELECT', data: 'Finalizing top 8 sites from 340 candidate zones' },
-            { agent: 'RecommendAgent', action: 'CAPACITY', data: 'Optimizing capacity per site: range 350-900 spaces' },
-            { agent: 'RecommendAgent', action: 'COST', data: 'Estimating construction: $15K-$25K per space (surface vs structure)' },
-            { agent: 'RecommendAgent', action: 'ROI', data: 'Projected ROI: 18.5% avg over 10 years based on demand models' },
-            { agent: 'RecommendAgent', action: 'REPORT', data: 'Final recommendations ready — rendering to map and table' },
-        ]
-    }
+    { id:'traffic', icon:'🚗', title:'Traffic Data Collection', desc:'Collecting traffic volume & congestion data',
+      sources:['MAG Traffic','ADOT API','Google Traffic'], stats:{Intersections:'2,847','Avg AADT':'34,200','Peak Hours':'7-9a, 4-7p'},
+      cot:'> Querying MAG API for AADT counts...\n> 2,847 intersections loaded\n> Computing peak-hour congestion index\n> Identified 12 high-congestion zones\n> Generating spatial traffic heatmap ✓' },
+    { id:'poi', icon:'📍', title:'POI & Business Density', desc:'Gathering points of interest and event venues',
+      sources:['Google Places','Yelp API','Events DB'], stats:{'POIs':'18,432','Venues':'127','Density Zones':'340'},
+      cot:'> Google Places API → 18,432 POIs\n> Yelp Fusion → density scoring 340 zones\n> Classifying: retail 6,201, dining 4,891\n> Business density index computed ✓' },
+    { id:'parking', icon:'🅿️', title:'Parking Inventory Analysis', desc:'Mapping existing facilities and utilization gaps',
+      sources:['OpenStreetMap','City Records','ParkMe'], stats:{'Lots':'1,203','Spaces':'89,400','Utilization':'78%'},
+      cot:'> OSM Overpass → 1,203 facilities\n> City open data → 342 public lots\n> Utilization: Downtown 94%, Midtown 81%\n> Gap analysis: 8 zones >90% flagged ✓' },
+    { id:'transit', icon:'🚌', title:'Transit & Mobility Analysis', desc:'Public transit coverage, ridership, last-mile gaps',
+      sources:['Valley Metro GTFS','Census Commute','Bike Share'], stats:{'Bus Routes':'58','Rail Stops':'35','P&R Sites':'8'},
+      cot:'> Valley Metro GTFS → 58 routes, 35 stops\n> Census commute: 76% drive alone\n> Transit desert index: 14 zones underserved\n> Park-and-ride expansion model ready ✓' },
+    { id:'demo', icon:'👥', title:'Demographics & Growth', desc:'Population density, trends, development permits',
+      sources:['Census ACS','MAG Projections','Permits'], stats:{'Population':'1.65M','Growth':'+1.8%/yr','Permits':'3,240'},
+      cot:'> Census ACS → tract-level pop 1.65M\n> MAG 2030: +1.8% annual, south & west\n> 3,240 new commercial/residential permits\n> 2030 parking deficit: 12,400 spaces ✓' },
+    { id:'analyze', icon:'🧠', title:'Spatial Analysis & Scoring', desc:'Multi-criteria weighted scoring across all zones',
+      sources:['GIS Engine','ML Models'], stats:{'Zones':'340','Criteria':'12','Model':'Weighted Spatial'},
+      cot:'> Merging 5 data layers → 340 zones\n> Applying weighted model:\n  traffic 25%, gap 25%, growth 20%\n  POI 15%, transit 15%\n> Ranking all zones by composite score\n> Running capacity optimizer ✓' },
+    { id:'recommend', icon:'📊', title:'Recommendation Generation', desc:'Final site selection, capacity planning, ROI',
+      sources:['Analysis','Cost Models'], stats:{'Sites':'8','Capacity':'4,850','Avg ROI':'18.5%'},
+      cot:'> Selecting top 8 from 340 zones\n> Capacity optimization: 350-900 spaces\n> Cost estimation: $15K-$25K per space\n> ROI projection: 18.5% avg (10yr)\n> Final report generated ✓' }
 ];
 
-const recommendedSites = [
-    {
-        id: 1, name: 'Downtown Core - Jefferson & 3rd St',
-        lat: 33.4468, lng: -112.0740, capacity: 900, type: 'Multi-Story Garage',
-        priority: 'high', score: 96,
-        reason: 'Highest traffic density, 94% existing utilization, major event venues nearby (Chase Field, Convention Center)',
-        cost: '$22.5M', roi: '21%'
-    },
-    {
-        id: 2, name: 'Midtown - Central Ave & Camelback',
-        lat: 33.5092, lng: -112.0740, capacity: 650, type: 'Multi-Story Garage',
-        priority: 'high', score: 91,
-        reason: 'Rapid commercial growth, light rail corridor, restaurant/retail density peak',
-        cost: '$16.3M', roi: '19%'
-    },
-    {
-        id: 3, name: 'Tempe Town Lake Area',
-        lat: 33.4314, lng: -111.9425, capacity: 750, type: 'Multi-Story Garage',
-        priority: 'high', score: 89,
-        reason: 'ASU proximity, entertainment district, severe weekend parking deficit',
-        cost: '$18.8M', roi: '20%'
-    },
-    {
-        id: 4, name: 'Scottsdale Old Town',
-        lat: 33.4942, lng: -111.9261, capacity: 550, type: 'Mixed-Use with Parking',
-        priority: 'high', score: 87,
-        reason: 'Tourism hotspot, nightlife district, 92% weekend utilization',
-        cost: '$16.5M', roi: '18%'
-    },
-    {
-        id: 5, name: 'Desert Ridge Marketplace',
-        lat: 33.6784, lng: -111.9981, capacity: 600, type: 'Surface + Structure',
-        priority: 'medium', score: 82,
-        reason: 'Fastest-growing north Phoenix corridor, new residential developments',
-        cost: '$12.0M', roi: '17%'
-    },
-    {
-        id: 6, name: 'West Phoenix - 43rd Ave & McDowell',
-        lat: 33.4647, lng: -112.1531, capacity: 450, type: 'Surface Lot',
-        priority: 'medium', score: 78,
-        reason: 'Transit desert, high commuter traffic, affordable land availability',
-        cost: '$6.8M', roi: '16%'
-    },
-    {
-        id: 7, name: 'Mesa Downtown - Main St & Center',
-        lat: 33.4152, lng: -111.8315, capacity: 500, type: 'Multi-Story Garage',
-        priority: 'medium', score: 75,
-        reason: 'Light rail terminus, growing arts district, city revitalization zone',
-        cost: '$12.5M', roi: '15%'
-    },
-    {
-        id: 8, name: 'Chandler Innovation District',
-        lat: 33.3062, lng: -111.8413, capacity: 450, type: 'Smart Surface Lot',
-        priority: 'low', score: 71,
-        reason: 'Tech corridor growth, Intel/Microchip expansion, projected 2028 demand surge',
-        cost: '$7.2M', roi: '14%'
-    }
+const allSites = [
+    { id:1, name:'Downtown Core — Jefferson & 3rd St', lat:33.4468, lng:-112.074, capacity:900, type:'Multi-Story Garage',
+      priority:'high', score:96, cost:'$22.5M', costNum:22.5, roi:'21%', roiNum:21, floodZone:false, futureArea:false,
+      subScores:{traffic:95,gap:98,growth:82,poi:90,transit:78},
+      reason:'Highest traffic density, 94% existing utilization, major event venues (Chase Field, Convention Center)' },
+    { id:2, name:'Midtown — Central Ave & Camelback', lat:33.5092, lng:-112.074, capacity:650, type:'Multi-Story Garage',
+      priority:'high', score:91, cost:'$16.3M', costNum:16.3, roi:'19%', roiNum:19, floodZone:false, futureArea:false,
+      subScores:{traffic:85,gap:88,growth:90,poi:92,transit:88},
+      reason:'Rapid commercial growth, light rail corridor, restaurant/retail density peak' },
+    { id:3, name:'Tempe Town Lake Area', lat:33.4314, lng:-111.9425, capacity:750, type:'Multi-Story Garage',
+      priority:'high', score:89, cost:'$18.8M', costNum:18.8, roi:'20%', roiNum:20, floodZone:true, futureArea:false,
+      subScores:{traffic:82,gap:90,growth:88,poi:85,transit:80},
+      reason:'ASU proximity, entertainment district, severe weekend parking deficit' },
+    { id:4, name:'Scottsdale Old Town', lat:33.4942, lng:-111.9261, capacity:550, type:'Mixed-Use + Parking',
+      priority:'high', score:87, cost:'$16.5M', costNum:16.5, roi:'18%', roiNum:18, floodZone:false, futureArea:false,
+      subScores:{traffic:80,gap:92,growth:78,poi:95,transit:62},
+      reason:'Tourism hotspot, nightlife district, 92% weekend utilization' },
+    { id:5, name:'Desert Ridge Marketplace', lat:33.6784, lng:-111.9981, capacity:600, type:'Surface + Structure',
+      priority:'medium', score:82, cost:'$12.0M', costNum:12, roi:'17%', roiNum:17, floodZone:false, futureArea:true,
+      subScores:{traffic:70,gap:72,growth:95,poi:75,transit:55},
+      reason:'Fastest-growing north Phoenix corridor, new residential developments' },
+    { id:6, name:'West Phoenix — 43rd Ave & McDowell', lat:33.4647, lng:-112.1531, capacity:450, type:'Surface Lot',
+      priority:'medium', score:78, cost:'$6.8M', costNum:6.8, roi:'16%', roiNum:16, floodZone:false, futureArea:false,
+      subScores:{traffic:75,gap:80,growth:72,poi:60,transit:45},
+      reason:'Transit desert, high commuter traffic, affordable land availability' },
+    { id:7, name:'Mesa Downtown — Main St & Center', lat:33.4152, lng:-111.8315, capacity:500, type:'Multi-Story Garage',
+      priority:'medium', score:75, cost:'$12.5M', costNum:12.5, roi:'15%', roiNum:15, floodZone:false, futureArea:false,
+      subScores:{traffic:68,gap:75,growth:80,poi:70,transit:72},
+      reason:'Light rail terminus, growing arts district, city revitalization zone' },
+    { id:8, name:'Chandler Innovation District', lat:33.3062, lng:-111.8413, capacity:450, type:'Smart Surface Lot',
+      priority:'low', score:71, cost:'$7.2M', costNum:7.2, roi:'14%', roiNum:14, floodZone:false, futureArea:true,
+      subScores:{traffic:55,gap:60,growth:92,poi:58,transit:40},
+      reason:'Tech corridor growth, Intel/Microchip expansion, projected 2028 demand surge' },
+    // Future dev area candidates (hidden by default)
+    { id:9, name:'Laveen Town Center', lat:33.3640, lng:-112.1700, capacity:400, type:'Surface Lot',
+      priority:'low', score:65, cost:'$5.5M', costNum:5.5, roi:'12%', roiNum:12, floodZone:true, futureArea:true, hidden:true,
+      subScores:{traffic:50,gap:55,growth:88,poi:45,transit:35},
+      reason:'Emerging residential corridor, affordable land, 2028+ demand' },
+    { id:10, name:'Gilbert Heritage District', lat:33.3528, lng:-111.7890, capacity:350, type:'Surface Lot',
+      priority:'low', score:62, cost:'$4.8M', costNum:4.8, roi:'11%', roiNum:11, floodZone:false, futureArea:true, hidden:true,
+      subScores:{traffic:45,gap:50,growth:85,poi:55,transit:30},
+      reason:'Fast-growing suburb, downtown revitalization, family entertainment zone' }
 ];
 
-// ===================== MAP =====================
-const map = L.map('map', { zoomControl: true }).setView(PHOENIX_CENTER, 11);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    maxZoom: 19
-}).addTo(map);
+const rejectedSites = [
+    { name:'South Mountain Foothills', reason:'FEMA Flood Zone AE — high environmental risk', score:58 },
+    { name:'Sky Harbor Airport Perimeter', reason:'FAA height restrictions, noise ordinance conflicts', score:52 },
+    { name:'Ahwatukee Foothills', reason:'Insufficient projected demand (<150 spaces needed by 2030)', score:48 },
+    { name:'Maryvale 75th Ave Corridor', reason:'Land acquisition cost prohibitive ($45/sqft vs $12 avg)', score:44 },
+    { name:'Carefree Highway & I-17', reason:'ROI below threshold (<8% projected over 10 years)', score:41 },
+    { name:'Baseline & Rural Rd (Tempe)', reason:'Existing parking surplus — utilization only 38%', score:37 }
+];
 
-let markers = [];
-let heatZones = [];
+let activeSites = [];
+let selectedIds = new Set();
+let sortField = 'score'; let sortDir = -1;
 
-function clearMap() {
-    markers.forEach(m => map.removeLayer(m));
-    heatZones.forEach(z => map.removeLayer(z));
-    markers = [];
-    heatZones = [];
+// ========== B. MAP MODULE ==========
+const map = L.map('map', { zoomControl: true }).setView(PHOENIX, 11);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'OpenStreetMap & CARTO', maxZoom:19 }).addTo(map);
+
+const layers = { traffic: L.layerGroup(), poi: L.layerGroup(), parking: L.layerGroup(), transit: L.layerGroup(), recommendations: L.layerGroup() };
+layers.recommendations.addTo(map); // default on
+
+// Traffic heatmap data
+function buildTrafficLayer() {
+    layers.traffic.clearLayers();
+    [[33.448,-112.074,3000],[33.510,-112.074,2500],[33.465,-112.153,1800],[33.431,-111.943,2200],[33.494,-111.926,2000],
+     [33.678,-111.998,1500],[33.415,-111.832,1400],[33.306,-111.841,1200],[33.530,-112.050,1600],[33.485,-112.110,1300],
+     [33.445,-112.020,1900],[33.470,-111.980,1700]].forEach(([la,ln,v]) => {
+        L.circle([la,ln], { radius: Math.sqrt(v)*25, fillColor:'#f56565', fillOpacity: Math.min(v/4000,0.35), color:'#f56565', weight:1, opacity:0.3 }).addTo(layers.traffic);
+    });
 }
+function buildPOILayer() {
+    layers.poi.clearLayers();
+    [[33.448,-112.074,0.5],[33.510,-112.074,0.4],[33.494,-111.926,0.45],[33.431,-111.943,0.35],[33.415,-111.832,0.25],
+     [33.678,-111.998,0.3],[33.530,-112.050,0.2],[33.485,-112.005,0.28]].forEach(([la,ln,v]) => {
+        L.circle([la,ln], { radius:1500, fillColor:'#9f7aea', fillOpacity:v*0.45, color:'#9f7aea', weight:1, opacity:0.2 }).addTo(layers.poi);
+    });
+}
+function buildParkingLayer() {
+    layers.parking.clearLayers();
+    [[33.4455,-112.068],[33.451,-112.077],[33.449,-112.065],[33.505,-112.072],[33.512,-112.076],
+     [33.435,-111.940],[33.428,-111.945],[33.490,-111.930],[33.496,-111.922],[33.675,-112.000],[33.413,-111.835],[33.310,-111.845]].forEach(([la,ln]) => {
+        L.circleMarker([la,ln], { radius:5, fillColor:'#4299e1', fillOpacity:0.6, color:'#4299e1', weight:1 }).addTo(layers.parking);
+    });
+}
+function buildTransitLayer() {
+    layers.transit.clearLayers();
+    const rail = [[33.408,-111.834],[33.415,-111.832],[33.426,-111.917],[33.431,-111.943],[33.435,-111.964],[33.440,-111.990],
+                  [33.447,-112.020],[33.448,-112.050],[33.448,-112.074],[33.460,-112.074],[33.480,-112.074],[33.500,-112.074],[33.509,-112.074],[33.520,-112.074],[33.535,-112.074]];
+    L.polyline(rail, { color:'#48bb78', weight:3, opacity:0.6, dashArray:'8 4' }).addTo(layers.transit);
+    rail.forEach(([la,ln]) => L.circleMarker([la,ln], { radius:4, fillColor:'#48bb78', fillOpacity:0.8, color:'#48bb78', weight:2 }).addTo(layers.transit));
+}
+buildTrafficLayer(); buildPOILayer(); buildParkingLayer(); buildTransitLayer();
 
-function addRecommendedSites() {
-    recommendedSites.forEach(site => {
-        const color = site.priority === 'high' ? '#fc8181' : site.priority === 'medium' ? '#f6ad55' : '#68d391';
-        const radius = Math.sqrt(site.capacity) * 1.2;
-
-        const circle = L.circleMarker([site.lat, site.lng], {
-            radius: radius,
-            fillColor: color,
-            fillOpacity: 0.35,
-            color: color,
-            weight: 2
-        }).addTo(map);
-
-        const marker = L.marker([site.lat, site.lng], {
-            icon: L.divIcon({
-                className: '',
-                html: `<div style="
-                    background: ${color}; color: #1a202c; font-weight: 800;
-                    width: 26px; height: 26px; border-radius: 50%;
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 0.75rem; box-shadow: 0 0 12px ${color}80;
-                ">${site.id}</div>`,
-                iconSize: [26, 26],
-                iconAnchor: [13, 13]
-            })
-        }).addTo(map);
-
-        marker.bindPopup(`
-            <div class="info-popup">
-                <h3>${site.name}</h3>
-                <div class="meta">
-                    <strong>Type:</strong> ${site.type}<br>
-                    <strong>Priority:</strong> <span style="color:${color}">${site.priority.toUpperCase()}</span><br>
-                    <strong>Score:</strong> ${site.score}/100<br>
-                    <strong>Est. Cost:</strong> ${site.cost}<br>
-                    <strong>Projected ROI:</strong> ${site.roi}<br><br>
-                    ${site.reason}
-                </div>
-                <div class="capacity-badge">${site.capacity} spaces</div>
-            </div>
-        `, { maxWidth: 300 });
-
-        markers.push(marker);
-        markers.push(circle);
+function buildRecommendations() {
+    layers.recommendations.clearLayers();
+    activeSites.forEach(site => {
+        const color = site.priority==='high'?'var(--red)':site.priority==='medium'?'var(--orange)':'var(--green)';
+        const rawColor = site.priority==='high'?'#fc8181':site.priority==='medium'?'#f6ad55':'#68d391';
+        L.circleMarker([site.lat,site.lng], { radius: Math.sqrt(site.capacity)*1.1, fillColor:rawColor, fillOpacity:0.3, color:rawColor, weight:2 }).addTo(layers.recommendations);
+        const mk = L.marker([site.lat,site.lng], { icon: L.divIcon({ className:'',
+            html:`<div style="background:${rawColor};color:#1a202c;font-weight:800;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;box-shadow:0 0 10px ${rawColor}80;">${site.id}</div>`,
+            iconSize:[24,24], iconAnchor:[12,12] }) }).addTo(layers.recommendations);
+        mk.bindPopup(`<div style="max-width:260px;"><h3 style="color:#1a202c;font-size:0.95rem;margin-bottom:4px;">${site.name}</h3>
+            <div style="font-size:0.78rem;color:#4a5568;line-height:1.6;">
+            <b>Type:</b> ${site.type}<br><b>Score:</b> ${site.score}/100<br><b>Cost:</b> ${site.cost} | <b>ROI:</b> ${site.roi}<br><br>${site.reason}</div>
+            <span style="display:inline-block;background:#3182ce;color:#fff;padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;margin-top:4px;">${site.capacity} spaces</span></div>`, { maxWidth:300 });
     });
 }
 
-function addTrafficHeat() {
-    const trafficZones = [
-        [33.448, -112.074, 3000], [33.510, -112.074, 2500], [33.465, -112.153, 1800],
-        [33.431, -111.943, 2200], [33.494, -111.926, 2000], [33.678, -111.998, 1500],
-        [33.415, -111.832, 1400], [33.306, -111.841, 1200],
-        [33.530, -112.050, 1600], [33.485, -112.110, 1300],
-        [33.445, -112.020, 1900], [33.470, -111.980, 1700],
-    ];
-    trafficZones.forEach(([lat, lng, intensity]) => {
-        const r = Math.sqrt(intensity) * 25;
-        const opacity = Math.min(intensity / 4000, 0.4);
-        const circle = L.circle([lat, lng], {
-            radius: r, fillColor: '#f56565', fillOpacity: opacity,
-            color: '#f56565', weight: 1, opacity: 0.3
-        }).addTo(map);
-        heatZones.push(circle);
+// Layer toggle wiring
+document.querySelectorAll('.layer-ctrl input').forEach(cb => {
+    cb.addEventListener('change', e => {
+        const name = e.target.dataset.layer;
+        if (e.target.checked) map.addLayer(layers[name]); else map.removeLayer(layers[name]);
     });
+});
+
+// ========== C. PIPELINE MODULE ==========
+let currentStep = -1, pipeRunning = false;
+
+function renderPipeline() {
+    document.getElementById('sidebarSteps').innerHTML = '<div class="pipe-title">Agent Pipeline</div>' +
+    agentSteps.map((s,i) => `
+        <div class="agent-step ${i<currentStep?'completed':''} ${i===currentStep?'running active':''}" id="step-${i}" onclick="focusStep(${i})">
+            <div class="step-header"><div class="step-icon">${s.icon}</div><div class="step-title">${s.title}</div></div>
+            <div class="step-desc">${s.desc}</div>
+            <div class="step-sources-row">${s.sources.map(x=>`<span class="source-tag">${x}</span>`).join('')}</div>
+            ${i<=currentStep?`<div class="step-stats">${Object.entries(s.stats).map(([k,v])=>`<div class="mini-stat"><div class="l">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+            <div class="step-cot" style="display:block;"><pre style="margin:0;white-space:pre-wrap;">${s.cot}</pre></div>`:''}
+        </div>`).join('');
 }
-
-function addPOIHeat() {
-    const poiZones = [
-        [33.448, -112.074, 0.5], [33.510, -112.074, 0.4], [33.494, -111.926, 0.45],
-        [33.431, -111.943, 0.35], [33.415, -111.832, 0.25], [33.678, -111.998, 0.3],
-        [33.530, -112.050, 0.2], [33.485, -112.005, 0.28],
-    ];
-    poiZones.forEach(([lat, lng, intensity]) => {
-        const circle = L.circle([lat, lng], {
-            radius: 1500, fillColor: '#9f7aea', fillOpacity: intensity * 0.5,
-            color: '#9f7aea', weight: 1, opacity: 0.2
-        }).addTo(map);
-        heatZones.push(circle);
-    });
-}
-
-function addParkingExisting() {
-    const existingLots = [
-        [33.4455, -112.0680], [33.4510, -112.0770], [33.4490, -112.0650],
-        [33.5050, -112.0720], [33.5120, -112.0760], [33.4350, -111.9400],
-        [33.4280, -111.9450], [33.4900, -111.9300], [33.4960, -111.9220],
-        [33.6750, -112.0000], [33.4130, -111.8350], [33.3100, -111.8450],
-    ];
-    existingLots.forEach(([lat, lng]) => {
-        const m = L.circleMarker([lat, lng], {
-            radius: 5, fillColor: '#4299e1', fillOpacity: 0.6,
-            color: '#4299e1', weight: 1
-        }).addTo(map);
-        heatZones.push(m);
-    });
-}
-
-function addTransitLines() {
-    const lightRail = [
-        [33.4080, -111.8340], [33.4152, -111.8315], [33.4260, -111.9170],
-        [33.4314, -111.9425], [33.4350, -111.9640], [33.4400, -111.9900],
-        [33.4468, -112.0200], [33.4484, -112.0500], [33.4484, -112.0740],
-        [33.4600, -112.0740], [33.4800, -112.0740], [33.5000, -112.0740],
-        [33.5092, -112.0740], [33.5200, -112.0740], [33.5350, -112.0740],
-    ];
-    const line = L.polyline(lightRail, { color: '#48bb78', weight: 3, opacity: 0.6, dashArray: '8 4' }).addTo(map);
-    heatZones.push(line);
-
-    lightRail.forEach(([lat, lng]) => {
-        const stop = L.circleMarker([lat, lng], {
-            radius: 4, fillColor: '#48bb78', fillOpacity: 0.8, color: '#48bb78', weight: 2
-        }).addTo(map);
-        heatZones.push(stop);
-    });
-}
-
-// ===================== PIPELINE =====================
-let currentStep = -1;
-let running = false;
-
-function renderSteps() {
-    const container = document.getElementById('steps-container');
-    container.innerHTML = agentSteps.map((step, i) => `
-        <div class="agent-step ${i < currentStep ? 'completed' : ''} ${i === currentStep ? 'running' : ''} ${i === currentStep ? 'active' : ''}"
-             id="step-${i}" onclick="showStepDetail(${i})">
-            <div class="step-header">
-                <div class="step-icon">${step.icon}</div>
-                <div class="step-title">${step.title}</div>
-            </div>
-            <div class="step-desc">${step.desc}</div>
-            <div class="step-sources">${step.sources.map(s => `<span class="source-tag">${s}</span>`).join('')}</div>
-            ${i <= currentStep ? `<div class="data-cards">
-                ${Object.entries(step.stats).map(([k, v]) => `
-                    <div class="data-card"><div class="label">${k}</div><div class="value">${v}</div></div>
-                `).join('')}
-            </div>` : ''}
-        </div>
-    `).join('');
-}
-
-function showStepDetail(idx) {
-    if (idx > currentStep) return;
-    document.querySelectorAll('.agent-step').forEach(el => el.classList.remove('active'));
-    document.getElementById(`step-${idx}`).classList.add('active');
-}
+function focusStep(i) { if(i>currentStep) return; document.querySelectorAll('.agent-step').forEach(el=>el.classList.remove('active')); document.getElementById('step-'+i).classList.add('active'); }
 
 async function runPipeline() {
-    if (running) return;
-    running = true;
+    if (pipeRunning) return;
+    pipeRunning = true;
     document.getElementById('runBtn').disabled = true;
-    document.getElementById('agentLog').classList.add('show');
-
-    for (let i = 0; i < agentSteps.length; i++) {
+    for (let i=0; i<agentSteps.length; i++) {
         currentStep = i;
-        const step = agentSteps[i];
-        document.getElementById('statusText').innerHTML = `<span class="highlight">Running:</span> ${step.title}`;
-        renderSteps();
-
-        // Scroll step into view
-        document.getElementById(`step-${i}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-        // Map visualization per step
-        clearMap();
-        if (i === 0) addTrafficHeat();
-        else if (i === 1) addPOIHeat();
-        else if (i === 2) addParkingExisting();
-        else if (i === 3) { addTransitLines(); addParkingExisting(); }
-        else if (i === 4) { addTrafficHeat(); addPOIHeat(); }
-        else if (i >= 5) { addRecommendedSites(); }
-
-        // Animate logs
-        for (const log of step.logs) {
-            await sleep(400);
-            addLog(log);
-        }
-        await sleep(600);
+        document.getElementById('statusText').innerHTML = `<span style="color:var(--green);font-weight:600;">Running:</span> ${agentSteps[i].title}`;
+        renderPipeline();
+        document.getElementById('step-'+i).scrollIntoView({behavior:'smooth',block:'nearest'});
+        // toggle map layers per step
+        Object.values(layers).forEach(l=>map.removeLayer(l));
+        if(i===0) map.addLayer(layers.traffic);
+        else if(i===1) map.addLayer(layers.poi);
+        else if(i===2) map.addLayer(layers.parking);
+        else if(i===3) { map.addLayer(layers.transit); map.addLayer(layers.parking); }
+        else if(i===4) { map.addLayer(layers.traffic); map.addLayer(layers.poi); }
+        else { map.addLayer(layers.recommendations); }
+        // update layer checkboxes
+        document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = map.hasLayer(layers[cb.dataset.layer]); });
+        await sleep(1800);
     }
-
     currentStep = agentSteps.length;
-    renderSteps();
-    document.getElementById('statusText').innerHTML = '<span class="highlight">Complete!</span> 8 optimal parking sites identified';
-
-    clearMap();
-    addRecommendedSites();
-    map.setView([33.48, -112.0], 11);
-
-    // Show bottom panel
-    showResultsTable();
-    document.getElementById('bottomPanel').classList.add('open');
-    document.getElementById('panelToggle').textContent = 'Hide Recommendations';
-
-    running = false;
-    document.getElementById('runBtn').disabled = true;
+    renderPipeline();
+    document.getElementById('statusText').innerHTML = '<span style="color:var(--green);font-weight:700;">Complete!</span> ' + activeSites.length + ' optimal sites identified';
+    Object.values(layers).forEach(l=>map.removeLayer(l));
+    map.addLayer(layers.recommendations);
+    document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer==='recommendations'; });
+    pipeRunning = false;
 }
-
 function resetPipeline() {
-    currentStep = -1;
-    running = false;
-    clearMap();
-    renderSteps();
+    currentStep = -1; pipeRunning = false; renderPipeline();
     document.getElementById('runBtn').disabled = false;
-    document.getElementById('statusText').textContent = 'Ready to analyze Phoenix metro area';
-    document.getElementById('bottomPanel').classList.remove('open');
-    document.getElementById('panelToggle').textContent = 'Show Recommendations';
-    document.getElementById('logBody').innerHTML = '';
-    document.getElementById('agentLog').classList.remove('show');
+    document.getElementById('statusText').textContent = 'Ready';
+    Object.values(layers).forEach(l=>map.removeLayer(l));
+    map.addLayer(layers.recommendations);
+    document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer==='recommendations'; });
 }
 
-function showResultsTable() {
-    document.getElementById('panelContent').innerHTML = `
-        <div class="panel-title">Recommended Parking Lot Sites</div>
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th>#</th><th>Location</th><th>Type</th><th>Capacity</th>
-                    <th>Priority</th><th>Score</th><th>Est. Cost</th><th>ROI</th><th>Key Factors</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${recommendedSites.map(s => `
-                    <tr onclick="map.setView([${s.lat}, ${s.lng}], 14); markers.forEach(m => { if(m.getLatLng && Math.abs(m.getLatLng().lat - ${s.lat}) < 0.001) m.openPopup(); });" style="cursor:pointer;">
-                        <td><strong>${s.id}</strong></td>
-                        <td>${s.name}</td>
-                        <td>${s.type}</td>
-                        <td><strong>${s.capacity}</strong> spaces</td>
-                        <td class="priority-${s.priority}">${s.priority.toUpperCase()}</td>
-                        <td><span class="score-bar" style="width:${s.score}px;"></span> ${s.score}</td>
-                        <td>${s.cost}</td>
-                        <td>${s.roi}</td>
-                        <td style="font-size:0.78rem;color:#a0aec0;max-width:250px;">${s.reason}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-        <div style="margin-top: 16px; font-size: 0.8rem; color: #718096;">
-            Total recommended capacity: <strong style="color:#63b3ed;">4,850 spaces</strong> across 8 sites |
-            Total estimated investment: <strong style="color:#63b3ed;">$112.6M</strong> |
-            Weighted avg ROI: <strong style="color:#48bb78;">18.5%</strong> (10-year projection)
-        </div>
-    `;
+// ========== D. PARAMETER & RECALCULATION MODULE ==========
+function getWeights() {
+    const t=+document.getElementById('w-traffic').value, g=+document.getElementById('w-gap').value,
+          gr=+document.getElementById('w-growth').value, p=+document.getElementById('w-poi').value, tr=+document.getElementById('w-transit').value;
+    const sum = t+g+gr+p+tr || 1;
+    return { traffic:t/sum, gap:g/sum, growth:gr/sum, poi:p/sum, transit:tr/sum };
 }
+function updateWeights() {
+    ['traffic','gap','growth','poi','transit'].forEach(k => {
+        document.getElementById('w-'+k+'-val').textContent = document.getElementById('w-'+k).value+'%';
+    });
+}
+function updateConstraints() {
+    document.getElementById('budget-val').textContent = '$'+document.getElementById('budget-slider').value+'M';
+    document.getElementById('cap-val').textContent = document.getElementById('cap-slider').value;
+}
+function toggleWhatIf(el) { el.classList.toggle('on'); }
 
-function togglePanel() {
-    const panel = document.getElementById('bottomPanel');
-    const toggle = document.getElementById('panelToggle');
-    if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
-        toggle.textContent = 'Show Recommendations';
-    } else {
-        if (currentStep >= agentSteps.length) {
-            showResultsTable();
-            panel.classList.add('open');
-            toggle.textContent = 'Hide Recommendations';
-        }
+function recalculate() {
+    const w = getWeights();
+    const maxBudget = +document.getElementById('budget-slider').value;
+    const minCap = +document.getElementById('cap-slider').value;
+    const excludeFlood = document.getElementById('wif-flood').classList.contains('on');
+    const transitPriority = document.getElementById('wif-transit').classList.contains('on');
+    const includeFuture = document.getElementById('wif-future').classList.contains('on');
+
+    let wLocal = {...w};
+    if (transitPriority) { wLocal.transit = 0.4; const rest = 0.6; const others = w.traffic+w.gap+w.growth+w.poi||1; wLocal.traffic=w.traffic/others*rest; wLocal.gap=w.gap/others*rest; wLocal.growth=w.growth/others*rest; wLocal.poi=w.poi/others*rest; }
+
+    let sites = allSites.filter(s => {
+        if (s.hidden && !includeFuture && s.futureArea) return false;
+        if (!s.hidden) return true;
+        return includeFuture;
+    });
+    if (excludeFlood) sites = sites.filter(s => !s.floodZone);
+    sites = sites.filter(s => s.capacity >= minCap);
+
+    // Recalculate scores
+    sites.forEach(s => {
+        s.score = Math.round(s.subScores.traffic*wLocal.traffic + s.subScores.gap*wLocal.gap + s.subScores.growth*wLocal.growth + s.subScores.poi*wLocal.poi + s.subScores.transit*wLocal.transit);
+        s.priority = s.score >= 85 ? 'high' : s.score >= 70 ? 'medium' : 'low';
+    });
+    sites.sort((a,b) => b.score - a.score);
+
+    // Apply budget constraint (cumulative)
+    let cumCost = 0;
+    activeSites = [];
+    for (const s of sites) {
+        if (cumCost + s.costNum <= maxBudget) { activeSites.push(s); cumCost += s.costNum; }
     }
+
+    buildRecommendations();
+    renderResultsTable();
+    updateSummary();
+    updateCharts();
+    renderExplainability();
 }
 
-function addLog(log) {
-    const body = document.getElementById('logBody');
-    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-    body.innerHTML += `<div class="log-entry">
-        <span class="time">[${time}]</span>
-        <span class="agent">${log.agent}</span>
-        <span class="action">${log.action}</span>
-        <span class="data">${log.data}</span>
-    </div>`;
-    body.scrollTop = body.scrollHeight;
+// ========== E. RESULTS TABLE MODULE ==========
+function renderResultsTable() {
+    const sorted = [...activeSites].sort((a,b) => {
+        let va = a[sortField], vb = b[sortField];
+        if (typeof va === 'string') { va=va.toLowerCase(); vb=vb.toLowerCase(); }
+        return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    });
+    document.getElementById('resultsBody').innerHTML = sorted.map(s => `
+        <tr class="${selectedIds.has(s.id)?'selected':''}" onclick="map.setView([${s.lat},${s.lng}],14);" style="cursor:pointer;">
+            <td onclick="event.stopPropagation();toggleSelect(${s.id})"><input type="checkbox" ${selectedIds.has(s.id)?'checked':''} onchange="toggleSelect(${s.id})"></td>
+            <td><strong>${s.id}</strong></td><td>${s.name}</td><td style="font-size:0.75rem;">${s.type}</td>
+            <td><strong>${s.capacity}</strong></td><td class="priority-${s.priority}">${s.priority.toUpperCase()}</td>
+            <td><div class="score-bar-bg"><div class="score-bar-fill" style="width:${s.score}%;"></div></div>${s.score}</td>
+            <td>${s.cost}</td><td>${s.roi}</td>
+        </tr>`).join('');
+}
+function sortTable(field) { if(sortField===field) sortDir*=-1; else { sortField=field; sortDir=-1; } renderResultsTable(); }
+function toggleSelect(id) { if(selectedIds.has(id)) selectedIds.delete(id); else if(selectedIds.size<3) selectedIds.add(id); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
+function toggleSelectAll() { if(selectedIds.size>0) selectedIds.clear(); else activeSites.slice(0,3).forEach(s=>selectedIds.add(s.id)); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
+
+function updateSummary() {
+    document.getElementById('totalSites').textContent = activeSites.length;
+    document.getElementById('totalCap').textContent = activeSites.reduce((a,s)=>a+s.capacity,0).toLocaleString();
+    const tc = activeSites.reduce((a,s)=>a+s.costNum,0);
+    document.getElementById('totalCost').textContent = '$'+tc.toFixed(1)+'M';
+    const ar = activeSites.length ? (activeSites.reduce((a,s)=>a+s.roiNum,0)/activeSites.length).toFixed(1) : 0;
+    document.getElementById('avgRoi').textContent = ar+'%';
 }
 
-function toggleLog() {
-    document.getElementById('agentLog').classList.toggle('show');
+function showComparison() {
+    const panel = document.getElementById('comparePanel');
+    const sites = activeSites.filter(s => selectedIds.has(s.id));
+    if (sites.length < 2) return;
+    const cols = sites.length + 1;
+    const fields = [
+        ['Location', s=>s.name], ['Type', s=>s.type], ['Capacity', s=>s.capacity+' spaces'],
+        ['Score', s=>s.score+'/100'], ['Priority', s=>`<span class="priority-${s.priority}">${s.priority.toUpperCase()}</span>`],
+        ['Est. Cost', s=>s.cost], ['ROI', s=>s.roi],
+        ['Traffic Score', s=>s.subScores.traffic], ['Gap Score', s=>s.subScores.gap],
+        ['Growth Score', s=>s.subScores.growth], ['POI Score', s=>s.subScores.poi], ['Transit Score', s=>s.subScores.transit],
+        ['Flood Zone', s=>s.floodZone?'<span style="color:var(--red)">Yes</span>':'No']
+    ];
+    panel.innerHTML = '<h3 style="margin-bottom:16px;font-size:1rem;">Side-by-Side Comparison</h3>' +
+        '<div class="compare-grid" style="grid-template-columns:160px repeat('+(cols-1)+',1fr);">' +
+        fields.map(([label, fn]) => {
+            const vals = sites.map(fn);
+            const numVals = vals.map(v => typeof v==='string'? parseFloat(v)||0 : v);
+            const maxVal = Math.max(...numVals);
+            return `<div class="compare-row" style="grid-template-columns:160px repeat(${cols-1},1fr);">
+                <div class="compare-cell label">${label}</div>
+                ${sites.map((s,i) => `<div class="compare-cell ${numVals[i]===maxVal && maxVal>0 && typeof vals[i]!=='string'?'best':''}">${vals[i]}</div>`).join('')}
+            </div>`;
+        }).join('') + '</div>';
+    panel.classList.add('show');
 }
 
-function showArch() { document.getElementById('archOverlay').classList.add('show'); }
-function hideArch() { document.getElementById('archOverlay').classList.remove('show'); }
-document.getElementById('archOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) hideArch(); });
+// ========== F. CHARTS MODULE ==========
+Chart.defaults.color = '#a0aec0'; Chart.defaults.borderColor = 'rgba(99,179,237,0.08)';
+let chartBar, chartRadar, chartLine, chartScatter;
 
-function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function initCharts() {
+    // Bar chart
+    chartBar = new Chart(document.getElementById('chartBar'), { type:'bar', data: {
+        labels:['Downtown','Midtown','Tempe','Scottsdale','Desert Ridge','West Phx','Mesa','Chandler'],
+        datasets:[
+            { label:'Current Utilization %', data:[94,81,85,92,68,55,62,48], backgroundColor:'rgba(99,179,237,0.6)', borderRadius:4 },
+            { label:'Projected 2030 %', data:[99,91,93,97,82,72,78,71], backgroundColor:'rgba(246,173,85,0.5)', borderRadius:4 }
+        ]}, options:{ responsive:true, plugins:{legend:{labels:{font:{size:11}}}}, scales:{y:{beginAtZero:true,max:100}} } });
 
-// Init
-renderSteps();
+    // Radar chart
+    chartRadar = new Chart(document.getElementById('chartRadar'), { type:'radar', data: {
+        labels:['Traffic','Gap','Growth','POI','Transit'],
+        datasets:[
+            { label:'#1 Downtown', data:[95,98,82,90,78], borderColor:'#fc8181', backgroundColor:'rgba(252,129,129,0.15)', pointRadius:3 },
+            { label:'#2 Midtown', data:[85,88,90,92,88], borderColor:'#63b3ed', backgroundColor:'rgba(99,179,237,0.15)', pointRadius:3 },
+            { label:'#3 Tempe', data:[82,90,88,85,80], borderColor:'#48bb78', backgroundColor:'rgba(72,187,120,0.15)', pointRadius:3 }
+        ]}, options:{ responsive:true, scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20,color:'#4a5568'},grid:{color:'rgba(99,179,237,0.1)'},pointLabels:{font:{size:11}}}}, plugins:{legend:{labels:{font:{size:11}}}} } });
+
+    // Line chart
+    chartLine = new Chart(document.getElementById('chartLine'), { type:'line', data: {
+        labels:['2020','2021','2022','2023','2024','2025','2026','2027','2028','2029','2030'],
+        datasets:[
+            { label:'Parking Supply (spaces)', data:[82000,83500,85000,86200,87500,89400,90500,91500,92000,93000,94000], borderColor:'#48bb78', tension:0.3, fill:false },
+            { label:'Parking Demand (spaces)', data:[80000,83000,86000,89500,93000,96500,99000,101500,103500,105000,106400], borderColor:'#fc8181', tension:0.3, fill:false },
+        ]}, options:{ responsive:true, plugins:{legend:{labels:{font:{size:11}}}}, scales:{y:{beginAtZero:false}} } });
+
+    // Scatter (bubble) chart
+    chartScatter = new Chart(document.getElementById('chartScatter'), { type:'bubble', data: {
+        datasets: activeSites.map(s => ({
+            label: '#'+s.id+' '+s.name.split('—')[0].trim(), data:[{x:s.costNum, y:s.roiNum, r:Math.sqrt(s.capacity)/2.5}],
+            backgroundColor: s.priority==='high'?'rgba(252,129,129,0.5)':s.priority==='medium'?'rgba(246,173,85,0.5)':'rgba(104,211,145,0.5)',
+            borderColor: s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391'
+        }))
+    }, options:{ responsive:true, scales:{x:{title:{display:true,text:'Est. Cost ($M)'}},y:{title:{display:true,text:'ROI %'},beginAtZero:true}}, plugins:{legend:{display:false}} } });
+}
+
+function updateCharts() {
+    if (!chartRadar || !chartScatter) return;
+    // Update radar with top 3
+    const top3 = activeSites.slice(0,3);
+    const colors = ['#fc8181','#63b3ed','#48bb78'];
+    chartRadar.data.datasets = top3.map((s,i) => ({
+        label: '#'+s.id+' '+s.name.split('—')[0].trim(),
+        data: [s.subScores.traffic, s.subScores.gap, s.subScores.growth, s.subScores.poi, s.subScores.transit],
+        borderColor: colors[i], backgroundColor: colors[i]+'25', pointRadius:3
+    }));
+    chartRadar.update();
+
+    // Update scatter
+    chartScatter.data.datasets = activeSites.map(s => ({
+        label: '#'+s.id, data:[{x:s.costNum, y:s.roiNum, r:Math.sqrt(s.capacity)/2.5}],
+        backgroundColor: s.priority==='high'?'rgba(252,129,129,0.5)':s.priority==='medium'?'rgba(246,173,85,0.5)':'rgba(104,211,145,0.5)',
+        borderColor: s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391'
+    }));
+    chartScatter.update();
+}
+
+// ========== G. EXPLAINABILITY MODULE ==========
+function renderExplainability() {
+    document.getElementById('rejectedList').innerHTML = rejectedSites.map(s => `
+        <div class="rejected-item"><div class="rname">${s.name}</div><div class="rreason">${s.reason}</div><div class="rscore">Score: ${s.score}/100 — Below selection threshold</div></div>`).join('');
+
+    document.getElementById('reasoningList').innerHTML = activeSites.slice(0,6).map(s => `
+        <details class="reasoning"><summary>#${s.id} ${s.name} — Score ${s.score}</summary>
+        <div class="reason-chain">
+<span class="step">1. Data Gathered:</span> Traffic AADT near site, POI count, existing parking utilization, transit stops within 0.5mi, census tract growth rate
+<span class="step">2. Sub-Scores:</span> Traffic <span class="val">${s.subScores.traffic}</span>, Gap <span class="val">${s.subScores.gap}</span>, Growth <span class="val">${s.subScores.growth}</span>, POI <span class="val">${s.subScores.poi}</span>, Transit <span class="val">${s.subScores.transit}</span>
+<span class="step">3. Weighted Score:</span> <span class="val">${s.score}/100</span>
+<span class="step">4. Constraint Check:</span> Budget ${s.floodZone?'<span class="warn">⚠ Flood zone</span>':'✓'}, Capacity ✓, Zoning ✓
+<span class="step">5. Decision:</span> <span class="val">SELECTED</span> — Rank #${activeSites.indexOf(s)+1}
+<span class="step">6. Rationale:</span> ${s.reason}
+        </div></details>`).join('');
+}
+
+// ========== H. CHAT MODULE ==========
+const chatResponses = [
+    { patterns: [/downtown|core|jefferson/i], response: "Downtown Core (Site #1) scored highest at 96/100. Key factors: it has the highest traffic density in Phoenix, 94% existing parking utilization, and proximity to Chase Field and the Convention Center. The recommended capacity is 900 spaces in a multi-story garage, with estimated cost of $22.5M and 21% projected ROI." },
+    { patterns: [/budget|cost|invest|expensive/i], response: "The total recommended investment across all 8 sites is $112.6M. Individual costs range from $6.8M (West Phoenix surface lot) to $22.5M (Downtown garage). Cost per space varies from $15K (surface) to $25K (multi-story). You can adjust the budget cap in the parameter panel to see how it affects site selection." },
+    { patterns: [/roi|return|profit/i], response: "The weighted average ROI is 18.5% over a 10-year projection. Highest ROI: Downtown Core at 21% (high demand guarantees utilization). Lowest: Chandler at 14% (depends on future Intel expansion). These projections factor in construction costs, maintenance, revenue from parking fees, and demand growth." },
+    { patterns: [/method|how|approach|model|scoring/i], response: "We use a 12-criteria weighted spatial analysis model. The 5 main dimensions are: Traffic Demand (25%), Parking Gap (25%), Growth Potential (20%), POI Density (15%), and Transit Access (15%). Each candidate zone receives sub-scores, which are combined into a composite score. You can adjust these weights in the parameter panel!" },
+    { patterns: [/data|source|where.*from/i], response: "We collect data from 8+ sources: MAG Traffic Counts (2,847 intersections), Census ACS (tract-level demographics), Google Places & Yelp (18,432 POIs), OpenStreetMap (1,203 parking facilities), Valley Metro GTFS (transit routes), City of Phoenix (building permits, zoning), and FEMA (flood maps)." },
+    { patterns: [/transit|bus|rail|light rail/i], response: "Transit analysis shows Phoenix has 58 bus routes and 35 light rail stops. 76% of workers drive alone — among the highest in the US. We identified 14 'transit desert' zones with no service within 0.5 miles. Park-and-ride facilities are a key strategy, especially along the light rail corridor." },
+    { patterns: [/flood|risk|environment/i], response: "FEMA flood zone data is integrated into our analysis. Two candidate sites (Tempe Town Lake, Laveen) fall in flood risk areas. You can toggle 'Exclude Flood Zones' in the What-If panel to see how removing these sites affects the recommendations. Environmental constraints also include heat island effect and noise ordinances." },
+    { patterns: [/tempe|asu|university/i], response: "Tempe Town Lake (Site #3) scored 89/100. It benefits from ASU proximity (70K+ students), a growing entertainment district, and severe weekend parking deficit. However, note that it's in a FEMA flood zone — you can toggle this constraint in the What-If panel." },
+    { patterns: [/scottsdale|old town/i], response: "Scottsdale Old Town (Site #4) scored 87/100 with the highest POI density score (95) due to its concentration of restaurants, galleries, and nightlife venues. Weekend utilization hits 92%. We recommend a 550-space mixed-use development combining parking with retail." },
+    { patterns: [/growth|future|2030|project/i], response: "Phoenix is growing at +1.8% annually. By 2030, we project a parking deficit of 12,400 spaces if no new facilities are built. The fastest-growing corridors are north Phoenix (Desert Ridge), south (Chandler/Gilbert), and west (Laveen). 3,240 new commercial/residential permits were issued in 2024-2025 alone." },
+    { patterns: [/compare|vs|versus|difference/i], response: "You can compare sites using the comparison feature! In the Results table, check the boxes next to 2-3 sites and click 'Compare Selected'. This shows a side-by-side breakdown of all metrics including sub-scores, costs, and constraints." },
+    { patterns: [/reject|why not|eliminated|excluded/i], response: "We evaluated over 340 candidate zones. Sites were rejected for reasons including: flood zone risk (South Mountain), FAA restrictions (Sky Harbor area), low demand (<150 spaces needed by 2030), prohibitive land costs ($45/sqft vs $12 avg), or insufficient ROI (<8%). See the Explainability section for full details." },
+    { patterns: [/weight|adjust|change|parameter/i], response: "You can adjust scoring weights in the right panel of the Dashboard! Try increasing 'Transit Access' weight to prioritize park-and-ride locations, or boost 'Growth Potential' to favor emerging areas. Click 'Apply & Recalculate' to see updated rankings in real-time." },
+    { patterns: [/hello|hi|hey|help/i], response: "Hello! I can help you understand our parking analysis. Try asking about: specific locations (e.g., 'tell me about downtown'), methodology, data sources, ROI projections, growth trends, or how to use the interactive features. What would you like to know?" }
+];
+
+function toggleChat() {
+    document.getElementById('chatPanel').classList.toggle('open');
+}
+function sendChat() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML += `<div class="msg user">${text}</div>`;
+    input.value = '';
+
+    let reply = "That's a great question! I can provide detailed information about specific locations, our methodology, data sources, budget analysis, growth projections, and more. Try asking about 'downtown', 'ROI', 'methodology', or 'data sources'.";
+    for (const r of chatResponses) {
+        if (r.patterns.some(p => p.test(text))) { reply = r.response; break; }
+    }
+    setTimeout(() => {
+        msgs.innerHTML += `<div class="msg bot">${reply}</div>`;
+        msgs.scrollTop = msgs.scrollHeight;
+    }, 500);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ========== I. SCROLL & ANIMATION MODULE ==========
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Sticky nav
+const heroEl = document.getElementById('hero');
+const navEl = document.getElementById('nav');
+const navObs = new IntersectionObserver(([e]) => { navEl.classList.toggle('show', !e.isIntersecting); }, { threshold: 0 });
+navObs.observe(heroEl);
+
+// Nav active highlight
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+const secObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+            navLinks.forEach(a => a.classList.remove('active'));
+            const link = document.querySelector('.nav-links a[href="#'+e.target.id+'"]');
+            if(link) link.classList.add('active');
+        }
+    });
+}, { threshold: 0.3 });
+sections.forEach(s => secObs.observe(s));
+
+// Hero counter animation
+let countersAnimated = false;
+const heroObs = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !countersAnimated) {
+        countersAnimated = true;
+        document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+            const target = parseFloat(el.dataset.target);
+            const suffix = el.dataset.suffix;
+            const isDecimal = target < 100 && target % 1 !== 0;
+            let current = 0;
+            const step = target / 60;
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(timer); }
+                el.textContent = (isDecimal ? current.toFixed(2) : Math.round(current).toLocaleString()) + suffix;
+            }, 25);
+        });
+    }
+}, { threshold: 0.5 });
+heroObs.observe(document.querySelector('.stats-row'));
+
+// ========== J. INIT ==========
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function init() {
+    recalculate();
+    renderPipeline();
+    initCharts();
+    renderExplainability();
+}
+init();
 </script>
-
 </body>
 </html>
