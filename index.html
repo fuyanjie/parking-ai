@@ -541,10 +541,10 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         <a href="#hero">Home</a>
         <a href="#arch-section">Architecture</a>
         <a href="#dashboard">Dashboard</a>
-        <a href="#analytics">Analytics</a>
         <a href="#results-section">Results</a>
         <a href="#beforeafter-section">Before/After</a>
         <a href="#explain-section">Explainability</a>
+        <a href="#analytics">Analytics</a>
     </div>
 </nav>
 
@@ -746,21 +746,6 @@ Or ask any question about the analysis!</div>
     </div>
 </section>
 
-<!-- ========== ANALYTICS ========== -->
-<section class="section" id="analytics">
-    <h2 class="section-title fade-in">Data Analytics & Insights</h2>
-    <p class="section-sub fade-in">Comprehensive visual analysis of parking demand, utilization patterns, growth trends, and investment efficiency across the Phoenix metro area.</p>
-    <div class="charts-grid fade-in">
-        <div class="chart-card"><h3>Site Score Breakdown</h3><canvas id="chartBar"></canvas></div>
-        <div class="chart-card"><h3>Top Site — Score Breakdown (Radar)</h3><canvas id="chartRadar"></canvas></div>
-        <div class="chart-card"><h3>Parking Supply vs Demand Trend (2020-2030)</h3><canvas id="chartLine"></canvas></div>
-        <div class="chart-card"><h3>Cost vs ROI — Site Comparison</h3><canvas id="chartScatter"></canvas></div>
-        <div class="chart-card"><h3>24-Hour Parking Demand Profile</h3><canvas id="chartHourly"></canvas></div>
-        <div class="chart-card"><h3>Investment Breakdown by Category</h3><canvas id="chartCost"></canvas><div class="chart-center-label" id="costCenterLabel"></div></div>
-        <div class="chart-card wide"><h3>ROI Distribution &mdash; Monte Carlo Simulation</h3><canvas id="chartMonteCarlo"></canvas><div class="mc-stats" id="mcStats"></div></div>
-    </div>
-</section>
-
 <!-- ========== RESULTS ========== -->
 <section class="section" id="results-section">
     <h2 class="section-title fade-in">Recommended Sites</h2>
@@ -847,6 +832,21 @@ Or ask any question about the analysis!</div>
             <h3><span style="color:var(--red);">&#10005;</span> Rejected Candidate Sites</h3>
             <div id="rejectedList"></div>
         </div>
+    </div>
+</section>
+
+<!-- ========== ANALYTICS ========== -->
+<section class="section" id="analytics">
+    <h2 class="section-title fade-in">Data Analytics & Insights</h2>
+    <p class="section-sub fade-in">Comprehensive visual analysis of parking demand, utilization patterns, growth trends, and investment efficiency across the Phoenix metro area.</p>
+    <div class="charts-grid fade-in">
+        <div class="chart-card"><h3>Site Score Breakdown</h3><canvas id="chartBar"></canvas></div>
+        <div class="chart-card"><h3>Top Site — Score Breakdown (Radar)</h3><canvas id="chartRadar"></canvas></div>
+        <div class="chart-card"><h3>Parking Supply vs Demand Trend (2020-2030)</h3><canvas id="chartLine"></canvas></div>
+        <div class="chart-card"><h3>Cost vs ROI — Site Comparison</h3><canvas id="chartScatter"></canvas></div>
+        <div class="chart-card"><h3>24-Hour Parking Demand Profile</h3><canvas id="chartHourly"></canvas></div>
+        <div class="chart-card"><h3>Investment Breakdown by Category</h3><canvas id="chartCost"></canvas><div class="chart-center-label" id="costCenterLabel"></div></div>
+        <div class="chart-card wide"><h3>ROI Distribution &mdash; Monte Carlo Simulation</h3><canvas id="chartMonteCarlo"></canvas><div class="mc-stats" id="mcStats"></div></div>
     </div>
 </section>
 
