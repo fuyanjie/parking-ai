@@ -2542,8 +2542,8 @@ function renderResultsTable() {
     }).join('');
 }
 function sortTable(field) { if(sortField===field) sortDir*=-1; else { sortField=field; sortDir=-1; } renderResultsTable(); }
-function toggleSelect(id) { if(selectedIds.has(id)) selectedIds.delete(id); else if(selectedIds.size<3) selectedIds.add(id); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
-function toggleSelectAll() { if(selectedIds.size>0) selectedIds.clear(); else activeSites.slice(0,3).forEach(s=>selectedIds.add(s.id)); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
+function toggleSelect(id) { if(selectedIds.has(id)) selectedIds.delete(id); else if(selectedIds.size<5) selectedIds.add(id); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
+function toggleSelectAll() { if(selectedIds.size>0) selectedIds.clear(); else activeSites.slice(0,5).forEach(s=>selectedIds.add(s.id)); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
 
 function updateSummary() {
     document.getElementById('totalSites').textContent = activeSites.length;
