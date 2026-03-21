@@ -143,6 +143,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 .preset-btn .pi { font-size: 1rem; flex-shrink: 0; }
 .preset-btn .pname { font-weight: 600; font-size: 0.73rem; transition: color 0.2s; }
 .preset-btn .pdesc { font-size: 0.65rem; color: var(--text3); transition: color 0.2s; }
+/* Chat results summary */
+.chat-results-box { margin-top: 10px; padding: 10px 12px; background: rgba(99,179,237,0.04); border: 1px solid rgba(99,179,237,0.1); border-radius: 10px; font-size: 0.72rem; }
+.chat-result-section { margin-bottom: 6px; color: var(--text2); line-height: 1.5; }
+.chat-result-section:last-child { margin-bottom: 0; }
+.chat-result-label { color: var(--accent); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.3px; }
+.chat-result-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.7rem; }
+.chat-result-table th { text-align: left; color: var(--text3); font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 6px; border-bottom: 1px solid rgba(99,179,237,0.1); }
+.chat-result-table td { padding: 3px 6px; color: var(--text2); border-bottom: 1px solid rgba(255,255,255,0.03); }
+.chat-result-table tr:first-child td { color: var(--green); font-weight: 600; }
+
 .preset-btn.flash { animation: presetFlash 1.5s ease; }
 @keyframes presetFlash { 0%,100% { box-shadow: 0 0 12px rgba(49,130,206,0.2); } 25%,75% { box-shadow: 0 0 24px rgba(49,130,206,0.6), 0 0 48px rgba(128,90,213,0.3); } 50% { box-shadow: 0 0 32px rgba(49,130,206,0.8), 0 0 64px rgba(128,90,213,0.4); } }
 
@@ -264,7 +274,7 @@ details.reasoning summary:hover { color: var(--accent); }
 .chat-status .fallback-badge { color: var(--orange); font-weight: 600; }
 
 /* Dashboard embedded chat */
-.dash-chat { display: flex; flex-direction: column; height: 380px; background: linear-gradient(180deg, rgba(10,15,30,0.97), rgba(15,22,41,0.97)); position: relative; overflow: hidden; border-radius: 16px; margin: 0 20px 16px; border: 1px solid rgba(99,179,237,0.1); box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(99,179,237,0.05); }
+.dash-chat { display: flex; flex-direction: column; height: 480px; background: linear-gradient(180deg, rgba(10,15,30,0.97), rgba(15,22,41,0.97)); position: relative; overflow: hidden; border-radius: 16px; margin: 0 20px 16px; border: 1px solid rgba(99,179,237,0.1); box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(99,179,237,0.05); }
 .dash-chat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), #805ad5, transparent); border-radius: 16px 16px 0 0; }
 .dash-chat .dash-chat-head { padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(99,179,237,0.1); background: linear-gradient(135deg, rgba(17,24,39,0.98), rgba(26,32,50,0.95)); flex-shrink: 0; position: relative; }
 .dash-chat .dash-chat-head::after { content: ''; position: absolute; bottom: -1px; left: 24px; right: 24px; height: 1px; background: linear-gradient(90deg, transparent, rgba(99,179,237,0.15), transparent); }
@@ -1793,6 +1803,55 @@ function toggleChat() {
     document.getElementById('chatPanel').classList.toggle('open');
 }
 
+function buildResultsSummary(actions) {
+    const parts = [];
+
+    // Current weights
+    const hasWeights = actions.some(a => ['weight', 'preset'].includes(a.type));
+    if (hasWeights) {
+        const w = { traffic: +document.getElementById('w-traffic').value, gap: +document.getElementById('w-gap').value,
+                     growth: +document.getElementById('w-growth').value, poi: +document.getElementById('w-poi').value,
+                     transit: +document.getElementById('w-transit').value };
+        parts.push(`<div class="chat-result-section"><span class="chat-result-label">Weights:</span> Traffic ${w.traffic}% · Gap ${w.gap}% · Growth ${w.growth}% · POI ${w.poi}% · Transit ${w.transit}%</div>`);
+    }
+
+    // Current constraints
+    const hasConstraints = actions.some(a => ['constraint', 'preset'].includes(a.type));
+    if (hasConstraints) {
+        parts.push(`<div class="chat-result-section"><span class="chat-result-label">Constraints:</span> Budget $${document.getElementById('budget-slider').value}M · Min Capacity ${document.getElementById('cap-slider').value}</div>`);
+    }
+
+    // What-if toggles
+    const hasToggles = actions.some(a => a.type === 'toggle' || a.type === 'preset');
+    if (hasToggles) {
+        const flood = document.getElementById('wif-flood').classList.contains('active') || document.getElementById('wif-flood').classList.contains('on');
+        const trans = document.getElementById('wif-transit').classList.contains('active') || document.getElementById('wif-transit').classList.contains('on');
+        const future = document.getElementById('wif-future').classList.contains('active') || document.getElementById('wif-future').classList.contains('on');
+        const tags = [];
+        if (flood) tags.push('🚫 Flood zones excluded');
+        if (trans) tags.push('🚌 Transit priority ON');
+        if (future) tags.push('🏗️ Future areas included');
+        if (tags.length) parts.push(`<div class="chat-result-section">${tags.join(' · ')}</div>`);
+    }
+
+    // Top sites ranking
+    if (activeSites.length > 0) {
+        const top5 = activeSites.slice(0, 5);
+        let rankHtml = '<div class="chat-result-section"><span class="chat-result-label">Current Rankings:</span></div>';
+        rankHtml += '<table class="chat-result-table">';
+        rankHtml += '<tr><th>#</th><th>Site</th><th>Score</th><th>Cap</th><th>Cost</th><th>ROI</th></tr>';
+        top5.forEach((s, i) => {
+            const highlight = i === 0 ? ' style="color:var(--green);font-weight:600;"' : '';
+            rankHtml += `<tr${highlight}><td>${i+1}</td><td>${s.name.split('—')[0].trim()}</td><td>${s.score}</td><td>${s.capacity}</td><td>${s.cost}</td><td>${s.roi}</td></tr>`;
+        });
+        rankHtml += '</table>';
+        if (activeSites.length > 5) rankHtml += `<div style="font-size:0.65rem;color:var(--text3);margin-top:2px;">+ ${activeSites.length - 5} more sites</div>`;
+        parts.push(rankHtml);
+    }
+
+    return parts.length > 0 ? `<div class="chat-results-box">${parts.join('')}</div>` : '';
+}
+
 async function sendDashChat() {
     const input = document.getElementById('dashChatInput');
     const text = input.value.trim();
@@ -1808,13 +1867,24 @@ async function sendDashChat() {
         const descriptions = applyParameterActions(paramActions);
         const actionHtml = descriptions.map(d => `<div class="msg-action">✓ ${d}</div>`).join('');
         const hasDataAction = paramActions.some(a => ['run', 'fetchLive', 'reset', 'scrollTo', 'zoomSite', 'zoomOverview', 'showLayer', 'hideLayer'].includes(a.type));
-        const summary = hasDataAction ? 'Executed:' : 'Done! Updated:';
+        const hasAnalytical = paramActions.some(a => ['weight', 'constraint', 'toggle', 'preset'].includes(a.type));
+
+        // Build result summary based on action types
+        let resultHtml = '';
+        if (hasAnalytical) {
+            resultHtml = buildResultsSummary(paramActions);
+        } else if (paramActions.some(a => a.type === 'run')) {
+            resultHtml = '<div style="font-size:0.75rem;color:var(--text3);margin-top:6px;">Pipeline running — results will appear in the dashboard below.</div>';
+        } else if (paramActions.some(a => a.type === 'fetchLive')) {
+            resultHtml = '<div style="font-size:0.75rem;color:var(--text3);margin-top:6px;">Loading live data from OSM + Census APIs... check the map for results.</div>';
+        }
+
         setTimeout(() => {
-            msgs.innerHTML += `<div class="msg bot">${summary}<br>${actionHtml}</div>`;
+            msgs.innerHTML += `<div class="msg bot">${hasDataAction ? 'Executed:' : 'Done! Updated:'}<br>${actionHtml}${resultHtml}</div>`;
             msgs.scrollTop = msgs.scrollHeight;
         }, 200);
-        // Also get LLM commentary for weight/constraint changes (non-blocking)
-        const hasAnalytical = paramActions.some(a => ['weight', 'constraint', 'toggle', 'preset'].includes(a.type));
+
+        // Also get LLM analysis for analytical changes (non-blocking)
         if (hasAnalytical && getGroqKey()?.startsWith('gsk_')) {
             callGroqDirect(`I just made these changes: ${descriptions.join('; ')}. In 1-2 sentences, briefly explain how this affects the analysis results. Reference the current top site scores.`).then(reply => {
                 msgs.innerHTML += `<div class="msg bot">${escapeHtml(reply)}<div class="msg-model">via ${GROQ_MODEL}</div></div>`;
