@@ -239,30 +239,47 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 
 /* ========== 9. EXPLAINABILITY ========== */
 .explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.explain-full { grid-column: 1 / -1; }
-.gap-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-top: 8px; }
-.gap-table th { text-align: left; padding: 8px 6px; color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--border); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-.gap-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text2); vertical-align: middle; }
-.gap-table tr:hover td { background: rgba(99,179,237,0.04); }
-.gap-table .gt-site { font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
-.gap-table .gt-id { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; color: #fff; flex-shrink: 0; }
-.gap-table .gt-deficit { color: var(--red); font-weight: 700; }
-.gap-table .gt-positive { color: var(--green); font-weight: 700; }
-.gap-table .gt-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); min-width: 60px; }
-.gap-table .gt-bar-fill { height: 100%; border-radius: 3px; }
-.gap-table .gt-impact { font-size: 0.65rem; color: var(--text3); max-width: 220px; line-height: 1.4; }
-.gap-table tfoot td { border-top: 2px solid var(--border); font-weight: 700; color: var(--text); padding-top: 10px; }
 .explain-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .explain-card h3 { font-size: 0.95rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 .rejected-item { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
 .rejected-item .rname { font-weight: 600; font-size: 0.85rem; }
 .rejected-item .rreason { font-size: 0.75rem; color: var(--red); margin-top: 2px; }
 .rejected-item .rscore { font-size: 0.7rem; color: var(--text3); }
-details.reasoning { margin-bottom: 8px; }
-details.reasoning summary { cursor: pointer; padding: 8px 0; font-size: 0.82rem; font-weight: 600; color: var(--text2); }
-details.reasoning summary:hover { color: var(--accent); }
-.reason-chain { padding: 8px 16px; font-family: 'Fira Code', monospace; font-size: 0.7rem; line-height: 1.7; color: var(--text3); background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 4px; }
-.reason-chain .step { color: var(--green); } .reason-chain .val { color: var(--accent); } .reason-chain .warn { color: var(--orange); }
+
+/* Reasoning Chain Cards */
+.rc-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; }
+.rc-card:hover { border-color: rgba(99,179,237,0.35); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.rc-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; }
+.rc-rank { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+.rc-header-info { flex: 1; min-width: 0; }
+.rc-header-info h4 { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-header-info .rc-tagline { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+.rc-score-pill { padding: 4px 14px; border-radius: 16px; font-size: 0.85rem; font-weight: 800; flex-shrink: 0; }
+.rc-live-badge { font-size: 0.6rem; color: var(--green); font-weight: 600; background: rgba(72,187,120,0.1); padding: 2px 8px; border-radius: 8px; flex-shrink: 0; }
+.rc-toggle { color: var(--text3); font-size: 0.9rem; flex-shrink: 0; transition: transform 0.3s; }
+.rc-card.open .rc-toggle { transform: rotate(180deg); }
+.rc-body { display: none; padding: 0 16px 16px; }
+.rc-card.open .rc-body { display: block; }
+.rc-scores-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+.rc-score-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px; text-align: center; }
+.rc-score-item .rc-sl { font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.rc-score-item .rc-sv { font-size: 1.1rem; font-weight: 800; }
+.rc-score-item .rc-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06); margin-top: 4px; }
+.rc-score-item .rc-bar-fill { height: 100%; border-radius: 2px; }
+.rc-pipeline { margin-bottom: 14px; }
+.rc-pipeline-step { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; position: relative; }
+.rc-pipeline-step::before { content: ''; position: absolute; left: 10px; top: 24px; bottom: -5px; width: 1px; background: rgba(99,179,237,0.15); }
+.rc-pipeline-step:last-child::before { display: none; }
+.rc-step-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; flex-shrink: 0; background: rgba(72,187,120,0.15); color: var(--green); border: 1px solid rgba(72,187,120,0.3); }
+.rc-step-text { font-size: 0.72rem; color: var(--text2); line-height: 1.5; flex: 1; }
+.rc-step-text b { color: var(--text); }
+.rc-step-text .rc-hl { color: var(--accent); font-weight: 600; }
+.rc-step-text .rc-warn { color: var(--orange); }
+.rc-step-text .rc-ok { color: var(--green); }
+.rc-rationale { background: rgba(99,179,237,0.06); border: 1px solid rgba(99,179,237,0.15); border-radius: 8px; padding: 10px 14px; font-size: 0.75rem; color: var(--text2); line-height: 1.6; }
+.rc-rationale strong { color: var(--accent); }
+.rc-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.rc-meta-tag { font-size: 0.65rem; padding: 3px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); color: var(--text3); }
 
 /* ========== 10. CHAT ========== */
 .chat-fab { position: fixed; bottom: 24px; right: 24px; z-index: 4000; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3182ce, #2b6cb0); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(49,130,206,0.4); transition: transform 0.2s; display: none; }
@@ -447,6 +464,8 @@ details.reasoning summary:hover { color: var(--accent); }
     .dash-chat { height: auto; min-height: 300px; margin: 0 8px 12px; }
     .section { padding: 40px 16px; }
     .explain-grid { grid-template-columns: 1fr; }
+    .rc-scores-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    .rc-header-info h4 { font-size: 0.78rem; }
     .arch-row { flex-direction: column; }
     .res-table { display: block; overflow-x: auto; white-space: nowrap; }
     .compare-panel { overflow-x: auto; }
@@ -768,6 +787,9 @@ Or ask any question about the analysis!</div>
             <th onclick="sortTable('capacity')">Capacity</th>
             <th onclick="sortTable('priority')">Priority</th>
             <th onclick="sortTable('score')">Score</th>
+            <th>Supply</th>
+            <th>Demand</th>
+            <th>Gap</th>
             <th onclick="sortTable('costNum')">Est. Cost</th>
             <th onclick="sortTable('roiNum')">ROI</th>
             <th style="width:30px;">&#128205;</th>
@@ -816,18 +838,14 @@ Or ask any question about the analysis!</div>
     <h2 class="section-title fade-in">AI Explainability</h2>
     <p class="section-sub fade-in">Transparent decision-making: understand why sites were selected or rejected, and trace the full reasoning chain for each recommendation.</p>
     <div class="explain-grid fade-in">
-        <div class="explain-card">
-            <h3><span style="color:var(--red);">&#10005;</span> Rejected Candidate Sites</h3>
-            <div id="rejectedList"></div>
-        </div>
-        <div class="explain-card">
+        <div class="explain-card" style="grid-column: 1 / -1;">
             <h3><span style="color:var(--green);">&#10003;</span> Reasoning Chain — Selected Sites</h3>
+            <p style="font-size:0.72rem;color:var(--text3);margin-bottom:16px;">Full decision pipeline for each AI-recommended site. Click any card to inspect the multi-criteria scoring, data sources, and final rationale.</p>
             <div id="reasoningList"></div>
         </div>
-        <div class="explain-card explain-full">
-            <h3><span style="color:var(--orange);">&#9888;</span> Supply-Demand Gap Evidence Table</h3>
-            <p style="font-size:0.72rem;color:var(--text3);margin-bottom:12px;">Data-driven justification for each recommended site — why current parking supply fails to meet demand, and the real-world impact on residents. Sources: OSM Overpass, PHX Meters ArcGIS, Census ACS B08301, ADOT AADT.</p>
-            <div style="overflow-x:auto;" id="gapTableWrap"></div>
+        <div class="explain-card" style="grid-column: 1 / -1;">
+            <h3><span style="color:var(--red);">&#10005;</span> Rejected Candidate Sites</h3>
+            <div id="rejectedList"></div>
         </div>
     </div>
 </section>
@@ -2033,6 +2051,9 @@ async function runPipeline() {
     map.addLayer(layers.recommendations);
     document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer==='recommendations'; });
     pipeRunning = false;
+    // Refresh gap analysis & explainability after pipeline
+    renderExplainability();
+    renderResultsTable();
 }
 function resetPipeline() {
     currentStep = -1; pipeRunning = false; renderPipeline();
@@ -2457,15 +2478,22 @@ function renderResultsTable() {
         if (typeof va === 'string') { va=va.toLowerCase(); vb=vb.toLowerCase(); }
         return va < vb ? -sortDir : va > vb ? sortDir : 0;
     });
-    document.getElementById('resultsBody').innerHTML = sorted.map(s => `
+    document.getElementById('resultsBody').innerHTML = sorted.map(s => {
+        const gd = lastGapData.find(g => g.id === s.id) || {};
+        const hasGap = gd.demand !== undefined;
+        return `
         <tr class="${selectedIds.has(s.id)?'selected':''}" onclick="map.setView([${s.lat},${s.lng}],14);" style="cursor:pointer;">
             <td onclick="event.stopPropagation();toggleSelect(${s.id})"><input type="checkbox" ${selectedIds.has(s.id)?'checked':''} onchange="toggleSelect(${s.id})"></td>
             <td><strong>${s.id}</strong></td><td>${s.name}</td><td style="font-size:0.75rem;">${s.type}</td>
             <td><strong>${s.capacity}</strong></td><td class="priority-${s.priority}">${s.priority.toUpperCase()}</td>
             <td><div class="score-bar-bg"><div class="score-bar-fill" style="width:${s.score}%;"></div></div>${s.score}</td>
+            <td style="color:var(--text2);font-size:0.75rem;">${hasGap ? gd.supply.toLocaleString() : '—'}</td>
+            <td style="color:var(--orange);font-size:0.75rem;font-weight:600;">${hasGap ? gd.demand.toLocaleString() : '—'}</td>
+            <td style="color:var(--red);font-weight:700;font-size:0.75rem;">${hasGap ? '-'+gd.gap.toLocaleString() : '—'}</td>
             <td>${s.cost}</td><td>${s.roi}</td>
             <td><a href="https://www.google.com/maps/@${s.lat},${s.lng},3a,75y,90t/data=!3m6!1e1!3m4!1s!2e0!7i16384!8i8192" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);text-decoration:none;font-size:0.72rem;" title="Street View">&#128205;</a></td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 function sortTable(field) { if(sortField===field) sortDir*=-1; else { sortField=field; sortDir=-1; } renderResultsTable(); }
 function toggleSelect(id) { if(selectedIds.has(id)) selectedIds.delete(id); else if(selectedIds.size<3) selectedIds.add(id); renderResultsTable(); document.getElementById('compareBtn').textContent='Compare Selected ('+selectedIds.size+')'; document.getElementById('compareBtn').disabled=selectedIds.size<2; }
@@ -2828,128 +2856,27 @@ function updateCharts() {
 }
 
 // ========== G. EXPLAINABILITY MODULE ==========
-function renderExplainability() {
-    document.getElementById('rejectedList').innerHTML = rejectedSites.map(s => `
-        <div class="rejected-item"><div class="rname">${s.name}</div><div class="rreason">${s.reason}</div><div class="rscore">Score: ${s.score}/100 — Below selection threshold</div></div>`).join('');
-
-    document.getElementById('reasoningList').innerHTML = activeSites.slice(0,6).map(s => {
-        const lf = s._liveFactors || {};
-        const hasLive = Object.keys(lf).length > 0;
-        const liveStr = hasLive ? `\n<span class="step" style="color:var(--green);">★ Live Data Factors:</span> ${
-            (lf.aadt ? 'ADOT AADT '+lf.aadt.toLocaleString()+' vpd nearby · ' : '') +
-            (lf.meters ? lf.meters+' meter clusters · ' : '') +
-            (lf.driveAlone ? 'Drive-alone '+lf.driveAlone+'% · ' : '') +
-            (lf.osmNearby ? lf.osmNearby+' OSM lots ('+lf.osmCap+' cap) · ' : '') +
-            (lf.commercialZone ? 'Commercial zoning ✓' : '')
-        }` : '';
-        const baseStr = s._baseSubScores ? `\n<span class="step">1b. Baseline:</span> T<span class="val">${s._baseSubScores.traffic}</span> G<span class="val">${s._baseSubScores.gap}</span> Gr<span class="val">${s._baseSubScores.growth}</span> P<span class="val">${s._baseSubScores.poi}</span> Tr<span class="val">${s._baseSubScores.transit}</span>` : '';
-        return `
-        <details class="reasoning"><summary>#${s.id} ${s.name} — Score ${s.score}${hasLive?' <span style="color:var(--green);font-size:0.75em;">LIVE-ADJUSTED</span>':''}</summary>
-        <div class="reason-chain">
-<span class="step">1. Data Sources:</span> ADOT AADT, OSM Overpass, PHX Meters, Census ACS, B08301 Commute, Zoning${baseStr}
-<span class="step">2. Sub-Scores${hasLive?' (adjusted)':''}:</span> Traffic <span class="val">${s.subScores.traffic}</span>, Gap <span class="val">${s.subScores.gap}</span>, Growth <span class="val">${s.subScores.growth}</span>, POI <span class="val">${s.subScores.poi}</span>, Transit <span class="val">${s.subScores.transit}</span>${liveStr}
-<span class="step">3. Weighted Score:</span> <span class="val">${s.score}/100</span>
-<span class="step">4. Constraint Check:</span> Budget ${s.floodZone?'<span class="warn">⚠ Flood zone</span>':'✓'}, Capacity ✓, Zoning ${lf.commercialZone?'<span class="val">✓ Commercial</span>':'✓'}
-<span class="step">5. Decision:</span> <span class="val">SELECTED</span> — Rank #${activeSites.indexOf(s)+1}
-<span class="step">6. Rationale:</span> ${s.reason}
-        </div></details>`;
-    }).join('');
-
-    // Render gap evidence table
-    renderGapTable();
-}
-
-function renderGapTable() {
-    const wrap = document.getElementById('gapTableWrap');
-    if (!wrap) return;
-
-    // If no live data, show a static summary from base site data
-    if (!liveDataLoaded || layers.osmParking.getLayers().length === 0) {
-        wrap.innerHTML = `<table class="gap-table">
-            <thead><tr><th>Site</th><th>Score</th><th>Capacity</th><th>Type</th><th>Priority</th><th>Rationale</th></tr></thead>
-            <tbody>${activeSites.map(s => {
-                const color = s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391';
-                return `<tr>
-                    <td><div class="gt-site"><span class="gt-id" style="background:${color};">${s.id}</span>${s.name.split('—')[0].trim()}</div></td>
-                    <td><b>${s.score}</b>/100</td><td>${s.capacity.toLocaleString()}</td><td>${s.type}</td>
-                    <td style="color:${color};font-weight:700;">${s.priority}</td>
-                    <td><div class="gt-impact">${s.reason}</div></td>
-                </tr>`;
-            }).join('')}</tbody>
-        </table>
-        <p style="color:var(--green);font-size:0.72rem;margin-top:10px;cursor:pointer;" onclick="fetchLiveData()">▶ Click "Fetch Live Data" to see full supply-demand gap analysis with data from 6 live sources</p>`;
-        return;
-    }
-
-    const gaps = computeGapAnalysis();
-    if (!gaps || gaps.length === 0) return;
-
-    const totalSupply = gaps.reduce((a,g) => a+g.supply.total, 0);
-    const totalDemand = gaps.reduce((a,g) => a+g.demand.totalDemand, 0);
-    const totalGap = gaps.reduce((a,g) => a+Math.max(0,g.gap), 0);
-    const totalNew = gaps.reduce((a,g) => a+g.newCap, 0);
-    const totalPop = gaps.reduce((a,g) => a+g.demand.pop, 0);
-    const maxDemand = Math.max(...gaps.map(g => g.demand.totalDemand));
-
-    wrap.innerHTML = `<table class="gap-table">
-        <thead><tr>
-            <th>Site</th><th>Supply</th><th>Demand</th><th>Gap</th><th>Demand Breakdown</th>
-            <th>AI +Cap</th><th>After</th><th>Resident Impact</th>
-        </tr></thead>
-        <tbody>${gaps.map(g => {
-            const color = g.priority==='high'?'#fc8181':g.priority==='medium'?'#f6ad55':'#68d391';
-            const supplyPct = maxDemand > 0 ? Math.round(g.supply.total / maxDemand * 100) : 0;
-            const demandPct = maxDemand > 0 ? Math.round(g.demand.totalDemand / maxDemand * 100) : 0;
-            const afterTotal = g.supply.total + g.newCap;
-            const coverPct = g.demand.totalDemand > 0 ? Math.round(afterTotal / g.demand.totalDemand * 100) : 0;
-            const shortImpact = g.narrative.pain.length > 120 ? g.narrative.pain.substring(0, 117) + '...' : g.narrative.pain;
-            return `<tr>
-                <td><div class="gt-site"><span class="gt-id" style="background:${color};">${g.id}</span>${g.shortName}</div></td>
-                <td>${g.supply.total > 0 ? g.supply.total.toLocaleString() : '<span style="color:var(--red);font-weight:700;">0</span>'}
-                    <div style="font-size:0.6rem;color:var(--text3);">${g.supply.osmCapacity?'OSM:'+g.supply.osmCapacity:''}${g.supply.meters?' M:'+g.supply.meters:''}</div></td>
-                <td><b>${g.demand.totalDemand.toLocaleString()}</b>
-                    <div class="gt-bar"><div class="gt-bar-fill" style="width:${demandPct}%;background:var(--orange);"></div></div></td>
-                <td class="gt-deficit">-${Math.max(0,g.gap).toLocaleString()}</td>
-                <td style="font-size:0.65rem;">
-                    <div>Pop: ${g.demand.pop.toLocaleString()} · Workers: ${g.demand.totalWorkers.toLocaleString()}</div>
-                    <div>Drive: <b>${g.demand.driveAlonePct}%</b>${g.demand.maxAADT?' · AADT: '+(g.demand.maxAADT/1000).toFixed(0)+'K':''}</div></td>
-                <td class="gt-positive">+${g.newCap.toLocaleString()}</td>
-                <td>${afterTotal.toLocaleString()} <span style="font-size:0.6rem;color:${coverPct>50?'var(--green)':'var(--red)'};">(${coverPct}%)</span></td>
-                <td><div class="gt-impact">${shortImpact}</div></td>
-            </tr>`;
-        }).join('')}</tbody>
-        <tfoot><tr>
-            <td><b>TOTAL</b></td>
-            <td>${totalSupply.toLocaleString()}</td>
-            <td><b>${totalDemand.toLocaleString()}</b></td>
-            <td class="gt-deficit">-${totalGap.toLocaleString()}</td>
-            <td style="font-size:0.65rem;">Avg drive-alone: <b>${commuteData.total>0?Math.round(commuteData.driveAlone/commuteData.total*100):0}%</b></td>
-            <td class="gt-positive">+${totalNew.toLocaleString()}</td>
-            <td>${(totalSupply+totalNew).toLocaleString()} <span style="font-size:0.6rem;color:var(--red);">(${totalDemand>0?Math.round((totalSupply+totalNew)/totalDemand*100):0}%)</span></td>
-            <td><div class="gt-impact"><b>${totalPop.toLocaleString()}</b> residents affected</div></td>
-        </tr></tfoot>
-    </table>`;
-}
-
-// ========== G2. GAP ANALYSIS MODULE ==========
+// ========== G2. GAP ANALYSIS DATA ==========
 const impactNarratives = {
-    1: { area: 'Downtown Phoenix', pain: 'Office workers circle blocks 15-25 min seeking parking during rush hours. Event nights (Chase Field, Convention Center) create gridlock with 94% lot utilization. Street meters are maxed — 1,977 meters serving 14,100+ daily commuters. Residents report missing appointments and avoiding downtown businesses due to parking frustration.', pop: 'Office workers, event-goers, tourists, downtown residents' },
-    2: { area: 'Midtown / Central Ave', pain: 'The fastest-growing commercial corridor has only 29 metered spaces for 30,000+ commuting workers. Light rail riders who drive to park-and-ride find lots full by 7:30am. Restaurant and retail workers compete with office workers — evening shift turnover causes secondary peak congestion. Residents of surrounding neighborhoods find streets clogged with overflow parking.', pop: 'Light rail commuters, retail/restaurant workers, corridor residents' },
-    3: { area: 'Tempe Town Lake / ASU', pain: 'ASU students and faculty face severe parking shortages — campus lots full by 8am. Weekend entertainment district visitors (Mill Ave) double-park or park in residential areas, causing friction with local homeowners. Only 60 documented capacity spaces for 15,000+ daily commuters. Game days and events at Tempe Diablo Stadium create parking emergencies.', pop: 'ASU students/faculty, Mill Ave visitors, Tempe residents' },
-    4: { area: 'Scottsdale Old Town', pain: 'Tourist hotspot with ZERO metered street parking and no documented capacity in 114 existing lots. Weekend nightlife creates 92% utilization. Gallery walk events force visitors to park 0.5+ miles away, reducing foot traffic to local businesses. Elderly visitors and ADA-dependent patrons struggle most. Tourism revenue loss estimated at $2.3M annually from parking-deterred visitors.', pop: 'Tourists, nightlife visitors, gallery-goers, local businesses' },
-    5: { area: 'Desert Ridge / North Phoenix', pain: 'Fastest-growing residential corridor with 130,000 residents but only 46 documented parking spaces. New housing developments lack adequate commercial parking. Families drive 20+ min to find shopping parking on weekends. No public transit alternative — 99% car-dependent. Medical facility visitors compete with retail shoppers during business hours.', pop: 'Families, shoppers, medical patients, new residents' },
-    6: { area: 'West Phoenix / 43rd Ave', pain: 'Transit desert — zero public transit options force 100% car dependency for 67,000+ residents. Zero metered parking, zero documented capacity. Industrial workers park on unpaved shoulders and residential streets. School pickup zones overlap with commercial areas, creating dangerous afternoon congestion. Low-income residents disproportionately affected — cannot afford paid lots elsewhere.', pop: 'Industrial workers, low-income families, school communities' },
-    7: { area: 'Mesa Downtown', pain: 'Light rail terminus area with growing arts district but zero parking infrastructure. The 16,594 commuters arriving daily have no formal parking — overflow fills residential streets blocks away. New breweries and restaurants see 30% customer loss on weekend evenings due to parking unavailability. City revitalization investment at risk without supporting parking infrastructure.', pop: 'Light rail riders, arts district visitors, restaurant patrons' },
-    8: { area: 'Chandler Innovation District', pain: 'Tech corridor (Intel, Microchip, NXP) expanding rapidly with 54,000+ workers but zero public parking infrastructure. Companies build private lots but no shared visitor/contractor parking exists. New employees report parking as #2 complaint after commute length. Projected 2028 expansion will add 8,000+ workers with no parking plan. Nearby residential streets already impacted by overflow.', pop: 'Tech workers, contractors, visiting engineers, nearby residents' }
+    1: { pain: 'Office workers circle 15-25 min seeking parking. Event nights create gridlock with 94% utilization.', pop: 14100 },
+    2: { pain: 'Fastest-growing corridor — park-and-ride lots full by 7:30am. Evening shift turnover causes secondary peak.', pop: 30000 },
+    3: { pain: 'ASU campus lots full by 8am. Weekend visitors double-park in residential areas.', pop: 15000 },
+    4: { pain: 'Zero metered parking, 92% utilization. Gallery walk forces 0.5+ mi walks, hurting local businesses.', pop: 8500 },
+    5: { pain: 'Fastest-growing residential area, 99% car-dependent. Families drive 20+ min for shopping parking.', pop: 130000 },
+    6: { pain: 'Transit desert — 100% car dependency. Industrial workers park on unpaved shoulders. Low-income areas hardest hit.', pop: 67000 },
+    7: { pain: 'Light rail terminus with growing arts district but zero parking. Restaurants lose 30% customers on weekends.', pop: 16594 },
+    8: { pain: 'Tech corridor expanding rapidly. Zero public parking. Employee #2 complaint after commute length.', pop: 54000 }
 };
+
+let lastGapData = [];
 
 function computeGapAnalysis() {
     const dist = (a,b,c,d) => Math.sqrt(Math.pow(a-c,2)+Math.pow(b-d,2));
     const R = 0.035;
 
-    return activeSites.map(s => {
+    lastGapData = activeSites.map(s => {
         let osmCount=0, osmCap=0;
-        layers.osmParking.eachLayer(l => {
+        if (layers.osmParking) layers.osmParking.eachLayer(l => {
             const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
                 const p=l.getPopup()?.getContent()||'';
                 const m=p.match(/Facilities:\s*(\d+)/); osmCount+=m?parseInt(m[1]):1;
@@ -2957,55 +2884,141 @@ function computeGapAnalysis() {
             }
         });
         let meterCount=0;
-        layers.meters.eachLayer(l => {
+        if (layers.meters) layers.meters.eachLayer(l => {
             const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
                 const p=l.getPopup()?.getContent()||''; const m=p.match(/Meters:\s*(\d+)/); if(m) meterCount+=parseInt(m[1]);
             }
         });
         let pop=0, income=0, incN=0;
-        layers.census.eachLayer(l => {
+        if (layers.census) layers.census.eachLayer(l => {
             const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
                 const p=l.getPopup()?.getContent()||'';
                 const pm=p.match(/Population:.*?<b>([\d,]+)<\/b>/); if(pm) pop+=parseInt(pm[1].replace(/,/g,''));
                 const im=p.match(/Income:.*?<b>\$([\d,]+)<\/b>/); if(im){income+=parseInt(im[1].replace(/,/g,'')); incN++;}
             }
         });
-        let driveW=0, totalW=0, transitW=0;
-        layers.commute.eachLayer(l => {
+        let driveW=0, totalW=0;
+        if (layers.commute) layers.commute.eachLayer(l => {
             const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
                 const p=l.getPopup()?.getContent()||'';
                 const wm=p.match(/Workers:\s*([\d,]+)/); if(wm) totalW+=parseInt(wm[1].replace(/,/g,''));
                 const dr=p.match(/Drive alone.*?<b>(\d+)%/);
                 if(dr&&wm) driveW+=Math.round(parseInt(wm[1].replace(/,/g,''))*parseInt(dr[1])/100);
-                const tr=p.match(/Transit:\s*([\d,]+)/); if(tr) transitW+=parseInt(tr[1].replace(/,/g,''));
             }
         });
-        let maxAADT=0, road='';
-        layers.aadt.eachLayer(l => {
+        let maxAADT=0;
+        if (layers.aadt) layers.aadt.eachLayer(l => {
             if(l.getLatLngs){const pts=l.getLatLngs();const md=Math.min(...pts.map(p=>dist(s.lat,s.lng,p.lat,p.lng)));
-                if(md<0.06){const p=l.getPopup()?.getContent()||'';const vm=p.match(/<b>([\d,]+)<\/b>/);const nm=p.match(/<b>([^<]+)<\/b>/);
-                    if(vm){const v=parseInt(vm[1].replace(/,/g,''));if(v>maxAADT){maxAADT=v;road=nm?nm[1]:'';}}}}
+                if(md<0.06){const p=l.getPopup()?.getContent()||'';const vm=p.match(/<b>([\d,]+)<\/b>/);
+                    if(vm){const v=parseInt(vm[1].replace(/,/g,''));if(v>maxAADT) maxAADT=v;}}}
         });
 
-        const commuteDemand = Math.round(driveW * 0.9);
-        const visitorDemand = Math.round(pop * 0.08);
+        const narr = impactNarratives[s.id] || { pain: s.reason, pop: pop || 5000 };
+        const areaPop = pop || narr.pop;
+        const driveAlonePct = totalW > 0 ? Math.round(driveW / totalW * 100) : 78;
+        const commuteDemand = totalW > 0 ? Math.round(driveW * 0.9) : Math.round(areaPop * 0.3);
+        const visitorDemand = Math.round(areaPop * 0.08);
         const totalDemand = commuteDemand + visitorDemand;
         const existingSupply = osmCap + meterCount;
-        const gap = totalDemand - existingSupply;
-        const driveAlonePct = totalW > 0 ? Math.round(driveW / totalW * 100) : 0;
-        const narrative = impactNarratives[s.id] || { area: s.name.split('—')[0].trim(), pain: s.reason, pop: 'Commuters, residents, visitors' };
+        const gap = Math.max(0, totalDemand - existingSupply);
 
         return {
-            id:s.id, name:s.name, shortName: s.name.split('—')[0].trim(), score:s.score, priority:s.priority, newCap:s.capacity,
-            supply: { osmFacilities:osmCount, osmCapacity:osmCap, meters:meterCount, total:existingSupply },
-            demand: { pop, avgIncome:incN>0?Math.round(income/incN):0, totalWorkers:totalW, driveWorkers:driveW, transitWorkers:transitW,
-                commuteDemand, visitorDemand, totalDemand, maxAADT, road, driveAlonePct },
-            gap, afterGap: Math.max(0, gap - s.capacity),
-            utilEst: existingSupply > 0 ? Math.min(999, Math.round(totalDemand / existingSupply * 100)) : 999,
-            narrative
+            id: s.id, supply: existingSupply, demand: totalDemand, gap, pop: areaPop,
+            driveAlonePct, maxAADT, pain: narr.pain, newCap: s.capacity
         };
     });
+    return lastGapData;
 }
+
+function renderExplainability() {
+    // Compute gap data
+    computeGapAnalysis();
+
+    document.getElementById('rejectedList').innerHTML = rejectedSites.map(s => `
+        <div class="rejected-item"><div class="rname">${s.name}</div><div class="rreason">${s.reason}</div><div class="rscore">Score: ${s.score}/100 — Below selection threshold</div></div>`).join('');
+
+    const scoreColors = {
+        traffic: '#fc8181', gap: '#63b3ed', growth: '#f6ad55', poi: '#9f7aea', transit: '#48bb78'
+    };
+    const scoreLabels = { traffic: 'Traffic', gap: 'Gap', growth: 'Growth', poi: 'POI', transit: 'Transit' };
+
+    document.getElementById('reasoningList').innerHTML = activeSites.map((s, idx) => {
+        const lf = s._liveFactors || {};
+        const hasLive = Object.keys(lf).length > 0;
+        const color = s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391';
+        const scoreBg = s.score >= 85 ? 'rgba(252,129,129,0.15)' : s.score >= 70 ? 'rgba(246,173,85,0.15)' : 'rgba(104,211,145,0.15)';
+        const rank = idx + 1;
+        const gd = lastGapData.find(g => g.id === s.id) || {};
+
+        // Sub-score bars
+        const subScoresHTML = Object.entries(s.subScores).map(([k, v]) => `
+            <div class="rc-score-item">
+                <div class="rc-sl">${scoreLabels[k]}</div>
+                <div class="rc-sv" style="color:${scoreColors[k]};">${v}</div>
+                <div class="rc-bar"><div class="rc-bar-fill" style="width:${v}%;background:${scoreColors[k]};"></div></div>
+            </div>`).join('');
+
+        // Gap insight row
+        const gapHTML = gd.demand ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+            <div class="rc-score-item"><div class="rc-sl">Supply</div><div class="rc-sv" style="color:var(--text2);">${gd.supply.toLocaleString()}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">Demand</div><div class="rc-sv" style="color:var(--orange);">${gd.demand.toLocaleString()}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">Gap</div><div class="rc-sv" style="color:var(--red);">-${gd.gap.toLocaleString()}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">Population</div><div class="rc-sv" style="color:var(--purple);">${(gd.pop/1000).toFixed(0)}K</div></div>
+        </div>` : '';
+
+        // Pipeline steps
+        const pipelineSteps = [
+            { icon: '①', text: `<b>Data Collection</b> — 6 sources: ADOT AADT, OSM, PHX Meters, Census ACS, B08301, Zoning` },
+            { icon: '②', text: `<b>Sub-Scores</b> — Traffic <span class="rc-hl">${s.subScores.traffic}</span>, Gap <span class="rc-hl">${s.subScores.gap}</span>, Growth <span class="rc-hl">${s.subScores.growth}</span>, POI <span class="rc-hl">${s.subScores.poi}</span>, Transit <span class="rc-hl">${s.subScores.transit}</span>` },
+            ...(hasLive ? [{ icon: '★', text: `<b>Live Adjustment</b> — ${[
+                lf.aadt ? 'AADT '+lf.aadt.toLocaleString()+'vpd' : '',
+                lf.osmNearby ? lf.osmNearby+' OSM lots' : '',
+                lf.meters ? lf.meters+' meters' : '',
+                lf.driveAlone ? 'Drive '+lf.driveAlone+'%' : '',
+                lf.commercialZone ? '<span class="rc-ok">Comm. zone ✓</span>' : ''
+            ].filter(Boolean).join(' · ')}` }] : []),
+            { icon: '③', text: `<b>Gap Analysis</b> — Supply <span class="rc-hl">${(gd.supply||0).toLocaleString()}</span> vs Demand <span class="rc-hl">${(gd.demand||0).toLocaleString()}</span> → Deficit <span style="color:var(--red);font-weight:700;">-${(gd.gap||0).toLocaleString()}</span> spaces` },
+            { icon: '④', text: `<b>Weighted Score</b> — <span class="rc-hl">${s.score}/100</span> · Budget <span class="rc-ok">✓ ${s.cost}</span> · Flood ${s.floodZone ? '<span class="rc-warn">⚠</span>' : '<span class="rc-ok">✓</span>'}` },
+            { icon: '⑤', text: `<b>Decision</b> — <span class="rc-ok">SELECTED</span> Rank <span class="rc-hl">#${rank}</span> · Adding <span class="rc-ok">+${s.capacity.toLocaleString()}</span> spaces → Coverage ${gd.demand>0?Math.round((gd.supply+s.capacity)/gd.demand*100):'—'}%` },
+        ];
+
+        const pipelineHTML = pipelineSteps.map(st => `
+            <div class="rc-pipeline-step">
+                <div class="rc-step-dot">${st.icon}</div>
+                <div class="rc-step-text">${st.text}</div>
+            </div>`).join('');
+
+        // Pain point
+        const painHTML = gd.pain ? `<div class="rc-rationale"><strong>Pain Point:</strong> ${gd.pain}</div>` : '';
+        const rationaleHTML = `<div class="rc-rationale" style="margin-top:8px;"><strong>AI Rationale:</strong> ${s.reason}</div>`;
+
+        // Meta tags
+        const metaTags = [s.type, s.priority+' priority', s.cost, s.capacity.toLocaleString()+' spaces', 'ROI '+s.roi]
+            .map(t => `<span class="rc-meta-tag">${t}</span>`).join('');
+
+        return `<div class="rc-card${idx===0?' open':''}" onclick="this.classList.toggle('open')">
+            <div class="rc-header">
+                <div class="rc-rank" style="background:${color};">${rank}</div>
+                <div class="rc-header-info">
+                    <h4>${s.name}</h4>
+                    <div class="rc-tagline">${s.type} · ${s.capacity.toLocaleString()} spaces · ${s.cost} · ROI ${s.roi}${gd.gap ? ' · Gap: -'+gd.gap.toLocaleString() : ''}</div>
+                </div>
+                <div class="rc-score-pill" style="background:${scoreBg};color:${color};">${s.score}</div>
+                ${hasLive ? '<span class="rc-live-badge">LIVE</span>' : ''}
+                <span class="rc-toggle">▼</span>
+            </div>
+            <div class="rc-body">
+                <div class="rc-scores-grid">${subScoresHTML}</div>
+                ${gapHTML}
+                <div class="rc-pipeline">${pipelineHTML}</div>
+                ${painHTML}
+                ${rationaleHTML}
+                <div class="rc-meta">${metaTags}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
 
 
 // ========== H. CHAT MODULE (Direct Groq LLM from Browser) ==========
