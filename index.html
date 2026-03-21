@@ -25,14 +25,10 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 5000; padding: 0 32px; height: 52px;
     display: flex; align-items: center; justify-content: space-between;
     background: rgba(10,14,26,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-.nav-page-links { display: flex; gap: 4px; margin-right: 24px; }
-.nav-page-links a { padding: 5px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; color: var(--text3); text-decoration: none; transition: all 0.2s; }
-.nav-page-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-.nav-page-links a.current { color: var(--accent); background: rgba(99,179,237,0.12); }
 .nav-logo { font-weight: 800; font-size: 0.95rem; color: var(--accent); }
 .nav-logo span { color: var(--orange); }
 .nav-links { display: flex; gap: 24px; }
-.nav-links a { color: var(--text3); text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: color 0.2s; }
+.nav-links a { color: var(--text3); text-decoration: none; font-size: 0.88rem; font-weight: 600; transition: color 0.2s; }
 .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
 /* ========== 3. HERO ========== */
@@ -622,19 +618,9 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 <!-- ========== NAVIGATION ========== -->
 <nav class="nav" id="nav">
     <div class="nav-logo">AI Agent <span>Parking Planner</span></div>
-    <div class="nav-page-links">
-        <a href="index.html" class="current">🅿️ AI Demo</a>
-        <a href="research.html">📄 Research</a>
-    </div>
-    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')">&#9776;</button>
     <div class="nav-links">
-        <a href="#hero">Home</a>
-        <a href="#arch-section">Architecture</a>
-        <a href="#dashboard">Dashboard</a>
-        <a href="#results-section">Results</a>
-        <a href="#explain-section">Explainability</a>
-        <a href="#beforeafter-section">Before/After</a>
-        <a href="#analytics">Analytics</a>
+        <a href="index.html" class="active">AI Demo</a>
+        <a href="research.html">Research</a>
     </div>
 </nav>
 

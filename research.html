@@ -25,12 +25,8 @@ a:hover { text-decoration: underline; }
     background: rgba(10,14,26,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
 .nav-logo { font-weight: 800; font-size: 0.95rem; color: var(--accent); text-decoration: none; }
 .nav-logo span { color: var(--orange); }
-.nav-page-links { display: flex; gap: 4px; margin-right: 24px; }
-.nav-page-links a { padding: 5px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; color: var(--text3); text-decoration: none; transition: all 0.2s; }
-.nav-page-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-.nav-page-links a.current { color: var(--accent); background: rgba(99,179,237,0.12); }
 .nav-links { display: flex; gap: 24px; }
-.nav-links a { color: var(--text3); text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: color 0.2s; }
+.nav-links a { color: var(--text3); text-decoration: none; font-size: 0.88rem; font-weight: 600; transition: color 0.2s; }
 .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
 /* Hero */
@@ -117,16 +113,10 @@ a:hover { text-decoration: underline; }
 
 <!-- Navigation -->
 <nav class="nav">
-    <a href="index.html" class="nav-logo">AI Agent <span>Parking Planner</span></a>
-    <div class="nav-page-links">
-        <a href="index.html">🅿️ AI Demo</a>
-        <a href="research.html" class="current">📄 Research</a>
-    </div>
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">AI Agent <span>Parking Planner</span></a>
     <div class="nav-links">
-        <a href="#overview" class="active">Overview</a>
-        <a href="#methodology">Methodology</a>
-        <a href="#data">Data</a>
-        <a href="#team">Team</a>
+        <a href="index.html">AI Demo</a>
+        <a href="research.html" class="active">Research</a>
     </div>
 </nav>
 
