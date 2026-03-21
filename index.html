@@ -986,9 +986,8 @@ Or ask any question about the analysis!</div>
                 <span class="ba-legend-item"><span class="ba-dot" style="background:#48bb78;"></span> AI Recommended</span>
                 <span class="ba-legend-item"><span class="ba-dot" style="background:rgba(72,187,120,0.15);border:1px dashed #48bb78;width:14px;height:14px;border-radius:50%;"></span> New Coverage (1.5km)</span>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="initBeforeAfterMaps()" id="baInitBtn">Generate Split View</button>
         </div>
-        <div class="ba-split" id="baSplit" style="display:none;">
+        <div class="ba-split" id="baSplit">
             <div class="ba-panel">
                 <div class="ba-label ba-label-before">BEFORE — Current Supply</div>
                 <div id="mapBefore" class="ba-map"></div>
@@ -2325,6 +2324,8 @@ function showResultsSections() {
         const el = document.getElementById(id);
         if (el) el.style.display = '';
     });
+    // Auto-generate Before/After split view
+    setTimeout(() => initBeforeAfterMaps(), 300);
 }
 
 function hideResultsSections() {
@@ -4588,9 +4589,7 @@ let mapBefore = null, mapAfter = null;
 
 function initBeforeAfterMaps() {
     const splitEl = document.getElementById('baSplit');
-    splitEl.style.display = 'flex';
-    document.getElementById('baInitBtn').disabled = true;
-    document.getElementById('baInitBtn').textContent = 'Generated ✓';
+    if (!splitEl) return;
 
     // Destroy previous instances if re-initialized
     if (mapBefore) { mapBefore.remove(); mapBefore = null; }
