@@ -440,12 +440,6 @@ details.reasoning summary:hover { color: var(--accent); }
     .layer-ctrl { max-width: 160px; font-size: 0.65rem; }
 }
 
-/* ========== 19a. CITY SELECTOR ========== */
-.city-selector { display: flex; align-items: center; gap: 8px; }
-.city-selector label { font-size: 0.72rem; color: var(--text3); font-weight: 600; white-space: nowrap; }
-.city-selector select { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; outline: none; transition: border-color 0.2s; }
-.city-selector select:hover, .city-selector select:focus { border-color: var(--accent); }
-.city-selector select option { background: var(--bg-card); color: var(--text); }
 
 /* ========== 19b. 3D MAP MARKERS ========== */
 .marker-3d { position: relative; transform-style: preserve-3d; }
@@ -566,14 +560,6 @@ details.reasoning summary:hover { color: var(--accent); }
     <div class="dash-header">
         <h2>Interactive Agent Dashboard</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div class="city-selector">
-                <label>City:</label>
-                <select id="citySelector" onchange="switchCity(this.value)">
-                    <option value="phoenix">Phoenix, AZ</option>
-                    <option value="tucson">Tucson, AZ</option>
-                    <option value="lasvegas">Las Vegas, NV</option>
-                </select>
-            </div>
             <div class="mode-switch">
                 <button class="mode-btn active" id="modeDemo" onclick="setMode('demo')">Demo Mode</button>
                 <button class="mode-btn" id="modeBackend" onclick="setMode('backend')">Live Backend</button>
@@ -918,58 +904,6 @@ const rejectedSites = [
     { name:'Baseline & Rural Rd (Tempe)', reason:'Existing parking surplus — utilization only 38%', score:37 }
 ];
 
-// ========== A2. CITY CONFIGS (Feature 10) ==========
-const phoenixSites = JSON.parse(JSON.stringify(allSites)); // deep copy of original Phoenix sites
-const cityConfigs = {
-    phoenix: {
-        name: 'Phoenix, AZ', center: [33.4484, -112.074], zoom: 11,
-        bbox: '33.25,-112.30,33.70,-111.80',
-        sites: phoenixSites
-    },
-    tucson: {
-        name: 'Tucson, AZ', center: [32.2226, -110.9747], zoom: 12,
-        bbox: '32.10,-111.10,32.40,-110.80',
-        sites: [
-            { id:1, name:'Downtown Tucson', lat:32.2217, lng:-110.9659, capacity:500, type:'Multi-Story Garage',
-              priority:'high', score:88, cost:'$12.5M', costNum:12.5, roi:'19%', roiNum:19, floodZone:false, futureArea:false,
-              subScores:{traffic:85,gap:90,growth:80,poi:88,transit:75}, reason:'Central business district, high foot traffic' },
-            { id:2, name:'University of Arizona', lat:32.2319, lng:-110.9501, capacity:600, type:'Multi-Story Garage',
-              priority:'high', score:85, cost:'$15.0M', costNum:15.0, roi:'18%', roiNum:18, floodZone:false, futureArea:false,
-              subScores:{traffic:80,gap:88,growth:82,poi:85,transit:80}, reason:'Major university campus, game day demand' },
-            { id:3, name:'Tucson Mall Area', lat:32.2822, lng:-110.9631, capacity:400, type:'Surface Lot',
-              priority:'medium', score:78, cost:'$6.0M', costNum:6.0, roi:'16%', roiNum:16, floodZone:false, futureArea:false,
-              subScores:{traffic:75,gap:80,growth:72,poi:78,transit:65}, reason:'Major retail corridor, weekend peak demand' },
-            { id:4, name:'Park Place', lat:32.2131, lng:-110.8838, capacity:350, type:'Surface Lot',
-              priority:'medium', score:72, cost:'$5.3M', costNum:5.3, roi:'15%', roiNum:15, floodZone:false, futureArea:false,
-              subScores:{traffic:68,gap:72,growth:70,poi:72,transit:55}, reason:'East side retail hub, growing residential area' },
-            { id:5, name:'Oro Valley', lat:32.3909, lng:-110.9665, capacity:300, type:'Surface Lot',
-              priority:'low', score:65, cost:'$4.5M', costNum:4.5, roi:'13%', roiNum:13, floodZone:false, futureArea:true,
-              subScores:{traffic:55,gap:60,growth:78,poi:58,transit:40}, reason:'Fast-growing suburb, future demand area' }
-        ]
-    },
-    lasvegas: {
-        name: 'Las Vegas, NV', center: [36.1699, -115.1398], zoom: 12,
-        bbox: '36.00,-115.35,36.30,-114.90',
-        sites: [
-            { id:1, name:'The Strip South', lat:36.1082, lng:-115.1728, capacity:1200, type:'Multi-Story Garage',
-              priority:'high', score:95, cost:'$30.0M', costNum:30.0, roi:'24%', roiNum:24, floodZone:false, futureArea:false,
-              subScores:{traffic:98,gap:95,growth:85,poi:98,transit:70}, reason:'Highest tourist foot traffic in the world, massive event demand' },
-            { id:2, name:'Downtown Fremont', lat:36.1699, lng:-115.1398, capacity:800, type:'Multi-Story Garage',
-              priority:'high', score:91, cost:'$20.0M', costNum:20.0, roi:'22%', roiNum:22, floodZone:false, futureArea:false,
-              subScores:{traffic:90,gap:92,growth:88,poi:92,transit:75}, reason:'Fremont Street Experience, downtown revitalization' },
-            { id:3, name:'Convention Center', lat:36.1281, lng:-115.1537, capacity:900, type:'Multi-Story Garage',
-              priority:'high', score:88, cost:'$22.5M', costNum:22.5, roi:'20%', roiNum:20, floodZone:false, futureArea:false,
-              subScores:{traffic:85,gap:90,growth:82,poi:88,transit:80}, reason:'Las Vegas Convention Center, Monorail access' },
-            { id:4, name:'Summerlin', lat:36.1472, lng:-115.3280, capacity:500, type:'Surface Lot',
-              priority:'medium', score:75, cost:'$7.5M', costNum:7.5, roi:'16%', roiNum:16, floodZone:false, futureArea:true,
-              subScores:{traffic:68,gap:72,growth:88,poi:65,transit:45}, reason:'Fastest-growing master-planned community' },
-            { id:5, name:'Henderson', lat:36.0395, lng:-114.9817, capacity:450, type:'Surface Lot',
-              priority:'medium', score:70, cost:'$6.8M', costNum:6.8, roi:'14%', roiNum:14, floodZone:false, futureArea:true,
-              subScores:{traffic:60,gap:65,growth:85,poi:58,transit:40}, reason:'Suburban growth corridor, residential expansion' }
-        ]
-    }
-};
-let currentCity = 'phoenix';
 
 // ========== A3. COMPETITOR DATA (Feature 12) ==========
 const competitorData = [
@@ -1141,48 +1075,10 @@ function showCompetitorBadge() {
 }
 function hideCompetitorBadge() { document.getElementById('competitorBadge').classList.remove('show'); }
 
-// ========== B1c. CITY SWITCHING (Feature 10) ==========
-function switchCity(cityId) {
-    const config = cityConfigs[cityId];
-    if (!config) return;
-    currentCity = cityId;
-
-    // Update allSites from city config
-    allSites.length = 0;
-    config.sites.forEach(s => allSites.push(JSON.parse(JSON.stringify(s))));
-
-    // Update map center
-    map.setView(config.center, config.zoom);
-
-    // Reset active sites and recalculate
-    selectedIds.clear();
-    saveBaseline();
-    recalculate();
-    renderPipeline();
-
-    // Rebuild static map layers for non-Phoenix (simplified)
-    if (cityId !== 'phoenix') {
-        layers.traffic.clearLayers();
-        layers.poi.clearLayers();
-        layers.parking.clearLayers();
-        layers.transit.clearLayers();
-    } else {
-        buildTrafficLayer();
-        buildPOILayer();
-        buildParkingLayer();
-        buildTransitLayer();
-    }
-
-    // Update 3D if active
-    if (is3DViewActive) build3DMarkers();
-
-    // Update page title hint
-    document.getElementById('statusText').textContent = 'City: ' + config.name;
-}
 
 // ========== B2. LIVE DATA MODULE (OSM + Census) ==========
 async function fetchOSMParking() {
-    const bbox = cityConfigs[currentCity]?.bbox || '33.25,-112.30,33.70,-111.80';
+    const bbox = '33.25,-112.30,33.70,-111.80';
     const query = `[out:json][timeout:30];
 (
   nwr["amenity"="parking"](${bbox});
