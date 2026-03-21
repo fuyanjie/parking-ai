@@ -3333,11 +3333,54 @@ function tryParseParameterCommand(text) {
         }
     }
 
+    // Intent-based relative weight adjustments (EN + CN): "I care more about traffic", "交通更重要"
+    if (actions.length === 0) {
+        const boostPatterns = [
+            { regex: /(?:more|higher|increase|boost|emphasize|重视|更看重|提高|加大).*(?:traffic|交通|车流)/i, slider: 'w-traffic', name: 'Traffic', delta: 10 },
+            { regex: /(?:more|higher|increase|boost|emphasize|重视|更看重|提高|加大).*(?:gap|缺口|供需)/i, slider: 'w-gap', name: 'Gap', delta: 10 },
+            { regex: /(?:more|higher|increase|boost|emphasize|重视|更看重|提高|加大).*(?:growth|增长|发展)/i, slider: 'w-growth', name: 'Growth', delta: 10 },
+            { regex: /(?:more|higher|increase|boost|emphasize|重视|更看重|提高|加大).*(?:poi|商业|business|retail)/i, slider: 'w-poi', name: 'POI', delta: 10 },
+            { regex: /(?:more|higher|increase|boost|emphasize|重视|更看重|提高|加大).*(?:transit|公交|交通便利)/i, slider: 'w-transit', name: 'Transit', delta: 10 },
+            { regex: /(?:traffic|交通|车流).*(?:more|重要|higher|关键|priority)/i, slider: 'w-traffic', name: 'Traffic', delta: 10 },
+            { regex: /(?:gap|缺口|供需).*(?:more|重要|higher|关键|priority)/i, slider: 'w-gap', name: 'Gap', delta: 10 },
+            { regex: /(?:growth|增长|发展).*(?:more|重要|higher|关键|priority)/i, slider: 'w-growth', name: 'Growth', delta: 10 },
+            { regex: /(?:poi|商业).*(?:more|重要|higher|关键|priority)/i, slider: 'w-poi', name: 'POI', delta: 10 },
+            { regex: /(?:transit|公交).*(?:more|重要|higher|关键|priority)/i, slider: 'w-transit', name: 'Transit', delta: 10 },
+        ];
+        const reducePatterns = [
+            { regex: /(?:less|lower|decrease|reduce|降低|减少|不.*重要|不太看重).*(?:traffic|交通|车流)/i, slider: 'w-traffic', name: 'Traffic', delta: -10 },
+            { regex: /(?:less|lower|decrease|reduce|降低|减少|不.*重要|不太看重).*(?:gap|缺口|供需)/i, slider: 'w-gap', name: 'Gap', delta: -10 },
+            { regex: /(?:less|lower|decrease|reduce|降低|减少|不.*重要|不太看重).*(?:growth|增长|发展)/i, slider: 'w-growth', name: 'Growth', delta: -10 },
+            { regex: /(?:less|lower|decrease|reduce|降低|减少|不.*重要|不太看重).*(?:poi|商业|business)/i, slider: 'w-poi', name: 'POI', delta: -10 },
+            { regex: /(?:less|lower|decrease|reduce|降低|减少|不.*重要|不太看重).*(?:transit|公交)/i, slider: 'w-transit', name: 'Transit', delta: -10 },
+        ];
+        for (const bp of [...boostPatterns, ...reducePatterns]) {
+            if (bp.regex.test(text)) {
+                const cur = parseInt(document.getElementById(bp.slider).value) || 20;
+                const val = Math.min(50, Math.max(5, cur + bp.delta));
+                actions.push({ type: 'weight', slider: bp.slider, value: val, name: bp.name });
+            }
+        }
+    }
+
     // Budget: "set budget to 80M", "budget $60M", "max budget 100"
     const budgetMatch = text.match(/(?:set|change)?\s*(?:max\s*)?budget\s*(?:to|=|:)?\s*\$?\s*(\d+)\s*M?/i);
     if (budgetMatch) {
         const val = Math.min(150, Math.max(20, parseInt(budgetMatch[1])));
         actions.push({ type: 'constraint', slider: 'budget-slider', value: val, name: 'Budget', display: `$${val}M` });
+    }
+
+    // Budget — intent-based relative (EN + CN)
+    if (!budgetMatch) {
+        if (/(?:increase|raise|more|higher|bigger)\s*budget|(?:加大|增加|提高).*预算/i.test(text)) {
+            const cur = parseInt(document.getElementById('budget-slider').value) || 100;
+            const val = Math.min(150, cur + 20);
+            actions.push({ type: 'constraint', slider: 'budget-slider', value: val, name: 'Budget', display: `$${val}M` });
+        } else if (/(?:decrease|reduce|lower|smaller|less|cut)\s*budget|(?:减少|降低|缩减).*预算/i.test(text)) {
+            const cur = parseInt(document.getElementById('budget-slider').value) || 100;
+            const val = Math.max(20, cur - 20);
+            actions.push({ type: 'constraint', slider: 'budget-slider', value: val, name: 'Budget', display: `$${val}M` });
+        }
     }
 
     // Min capacity: "set minimum capacity to 200", "min capacity 300"
@@ -3347,53 +3390,83 @@ function tryParseParameterCommand(text) {
         actions.push({ type: 'constraint', slider: 'cap-slider', value: val, name: 'Min Capacity', display: val.toString() });
     }
 
-    // What-if toggles (enable)
-    if (/exclude\s*flood|no\s*flood|remove\s*flood|filter\s*flood/i.test(lower)) {
+    // What-if toggles (enable) — explicit + intent EN + CN
+    if (/exclude\s*flood|no\s*flood|remove\s*flood|filter\s*flood|avoid\s*flood|(?:don'?t|not)\s*(?:want|include).*flood|safe\s*(?:from|zone)|洪水|洪泛|防洪|不要.*洪|排除.*洪|避开.*洪/i.test(lower) || /洪水|洪泛|防洪|不要.*洪|排除.*洪|避开.*洪/.test(text)) {
         const el = document.getElementById('wif-flood');
         if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: true, name: 'Exclude Flood Zones' });
     }
-    if (/(?:enable|activate|turn\s*on)\s*transit\s*priority|prioritize\s*transit|transit[- ]first/i.test(lower)) {
+    if (/(?:enable|activate|turn\s*on)\s*transit\s*priority|prioritize\s*transit|transit[- ]first|more\s*transit|closer\s*to\s*transit|near\s*(?:rail|bus|station|stop)/i.test(lower) || /交通优先|靠近.*(?:地铁|公交|车站|轻轨)|优先.*交通/.test(text)) {
         const el = document.getElementById('wif-transit');
         if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-transit', enable: true, name: 'Transit Priority Mode' });
     }
-    if (/include\s*future|future\s*(?:dev|areas|development)|add\s*future/i.test(lower)) {
+    if (/include\s*future|future\s*(?:dev|areas|development)|add\s*future|consider\s*(?:upcoming|planned|new)\s*(?:development|construction|project)|emerging\s*area/i.test(lower) || /未来.*开发|新.*开发|规划.*区|包含.*未来|考虑.*发展/.test(text)) {
         const el = document.getElementById('wif-future');
         if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-future', enable: true, name: 'Include Future Dev Areas' });
     }
     // What-if toggles (disable)
-    if (/include\s*flood|allow\s*flood|keep\s*flood|remove.*flood.*filter/i.test(lower)) {
+    if (/include\s*flood|allow\s*flood|keep\s*flood|remove.*flood.*filter|(?:ok|fine)\s*with\s*flood/i.test(lower) || /允许.*洪|包含.*洪|可以.*洪/.test(text)) {
         const el = document.getElementById('wif-flood');
         if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: false, name: 'Include Flood Zones' });
     }
-    if (/(?:disable|deactivate|turn\s*off)\s*transit\s*priority/i.test(lower)) {
+    if (/(?:disable|deactivate|turn\s*off)\s*transit\s*priority|(?:don'?t|no)\s*(?:need\s*)?transit\s*priority/i.test(lower) || /取消.*交通优先|关闭.*交通/.test(text)) {
         const el = document.getElementById('wif-transit');
         if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-transit', enable: false, name: 'Disable Transit Priority' });
     }
+    if (/(?:exclude|remove|don'?t\s*include)\s*future|no\s*future\s*(?:dev|area)/i.test(lower) || /排除.*未来|不要.*未来|去掉.*未来/.test(text)) {
+        const el = document.getElementById('wif-future');
+        if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-future', enable: false, name: 'Exclude Future Dev Areas' });
+    }
 
-    // Presets: "use transit preset", "switch to growth preset", "balanced mode"
+    // Presets — explicit: "use transit preset", "switch to growth preset", "balanced mode"
     const presetMatch = lower.match(/(?:use|apply|switch\s*to|try)?\s*(balanced|transit|growth|demand|budget)\s*(?:preset|mode|profile|config)/i);
     if (presetMatch) {
         actions.push({ type: 'preset', preset: presetMatch[1].toLowerCase(), name: presetMatch[1] + ' Preset' });
     }
+    // Presets — intent-based (EN): "focus on public transit", "prioritize growth areas", "cost-effective", "maximize demand"
+    if (!presetMatch) {
+        if (/(?:focus|prioriti[zs]e|emphasize|care\s*about|optimize\s*for)\s*(?:public\s*)?transit|public\s*transport(?:ation)?|park.and.ride|commut/i.test(lower))
+            actions.push({ type: 'preset', preset: 'transit', name: 'Transit Preset' });
+        else if (/(?:focus|prioriti[zs]e|emphasize|care\s*about|optimize\s*for)\s*(?:population\s*)?growth|(?:fast|rapid)\s*grow|emerging\s*area|future\s*development|new\s*construction/i.test(lower))
+            actions.push({ type: 'preset', preset: 'growth', name: 'Growth Preset' });
+        else if (/(?:save|minimize|reduce|lower|cut)\s*(?:the\s*)?(?:cost|budget|spend|money|investment)|cost.effective|cheap|affordable|budget.friendly|economical|frugal/i.test(lower))
+            actions.push({ type: 'preset', preset: 'budget', name: 'Budget Preset' });
+        else if (/(?:maximi[zs]e|highest|most|focus\s*on)\s*(?:parking\s*)?demand|where.*most\s*need|highest\s*need|critical\s*shortage|worst\s*gap/i.test(lower))
+            actions.push({ type: 'preset', preset: 'demand', name: 'Demand Preset' });
+        else if (/(?:balanced?|default|standard|normal|even|equal)\s*(?:approach|mode|weight|analysis)?$|reset\s*(?:to\s*)?default|start\s*fresh/i.test(lower))
+            actions.push({ type: 'preset', preset: 'balanced', name: 'Balanced Preset' });
+    }
+    // Presets — intent-based (Chinese)
+    if (actions.length === 0) {
+        if (/公共交通|公交|地铁|轻轨|交通优先|交通导向|通勤/.test(text))
+            actions.push({ type: 'preset', preset: 'transit', name: 'Transit Preset' });
+        else if (/人口增长|增长.*快|新.*开发|未来发展|新兴|潜力/.test(text))
+            actions.push({ type: 'preset', preset: 'growth', name: 'Growth Preset' });
+        else if (/省钱|降.*成本|预算|便宜|经济|节约|花.*少|低成本/.test(text))
+            actions.push({ type: 'preset', preset: 'budget', name: 'Budget Preset' });
+        else if (/最.*需求|需求最|缺口.*大|停车.*难|最缺|刚需|最.*紧/.test(text))
+            actions.push({ type: 'preset', preset: 'demand', name: 'Demand Preset' });
+        else if (/均衡|平衡|默认|标准|重置/.test(text))
+            actions.push({ type: 'preset', preset: 'balanced', name: 'Balanced Preset' });
+    }
 
     // ===== PIPELINE & DATA COMMANDS =====
-    // Run pipeline: "run pipeline", "start analysis", "analyze", "run agents"
-    if (/(?:run|start|execute|launch|begin)\s*(?:the\s*)?(?:agent\s*)?(?:pipeline|analysis|agents?)|^analyze$|^run$/i.test(lower)) {
+    // Run pipeline: "run pipeline", "start analysis", "analyze", "run agents" + CN
+    if (/(?:run|start|execute|launch|begin)\s*(?:the\s*)?(?:agent\s*)?(?:pipeline|analysis|agents?)|^analyze$|^run$/i.test(lower) || /运行|开始分析|启动|跑.*pipeline|分析一下|执行/.test(text)) {
         actions.push({ type: 'run', name: 'Run Agent Pipeline' });
     }
 
-    // Fetch live data: "fetch live data", "load real data", "get osm data", "load census"
-    if (/(?:fetch|load|get|pull|download)\s*(?:the\s*)?(?:live|real|osm|census|actual)\s*data|load\s*(?:live|data)|fetch\s*data/i.test(lower)) {
+    // Fetch live data + CN
+    if (/(?:fetch|load|get|pull|download)\s*(?:the\s*)?(?:live|real|osm|census|actual)\s*data|load\s*(?:live|data)|fetch\s*data/i.test(lower) || /获取.*数据|加载.*数据|拉取.*数据|实时数据/.test(text)) {
         actions.push({ type: 'fetchLive', name: 'Fetch Live Data (OSM + Census)' });
     }
 
-    // Reset: "reset", "clear", "start over", "reset pipeline"
-    if (/^(?:reset|clear|restart)$|reset\s*(?:pipeline|all|everything)|start\s*over|clear\s*(?:all|data)/i.test(lower)) {
+    // Reset + CN
+    if (/^(?:reset|clear|restart)$|reset\s*(?:pipeline|all|everything)|start\s*over|clear\s*(?:all|data)/i.test(lower) || /重置|清空|重新开始/.test(text)) {
         actions.push({ type: 'reset', name: 'Reset Pipeline' });
     }
 
-    // Recalculate: "recalculate", "recompute", "update scores"
-    if (/recalculate|recompute|update\s*scores|refresh\s*scores/i.test(lower)) {
+    // Recalculate + CN
+    if (/recalculate|recompute|update\s*scores|refresh\s*scores/i.test(lower) || /重新计算|更新.*分数|刷新.*得分/.test(text)) {
         actions.push({ type: 'recalc', name: 'Recalculate Scores' });
     }
 
