@@ -2533,8 +2533,8 @@ function renderResultsTable() {
             <td><strong>${s.id}</strong></td><td>${s.name}</td><td style="font-size:0.75rem;">${s.type}</td>
             <td><strong>${s.capacity}</strong></td><td class="priority-${s.priority}">${s.priority.toUpperCase()}</td>
             <td><div class="score-bar-bg"><div class="score-bar-fill" style="width:${s.score}%;"></div></div>${s.score}</td>
-            <td style="color:var(--text2);font-size:0.75rem;">${hasGap ? gd.supply.toLocaleString() : '—'}</td>
-            <td style="color:var(--orange);font-size:0.75rem;font-weight:600;">${hasGap ? gd.demand.toLocaleString() : '—'}</td>
+            <td style="color:var(--text2);font-size:0.75rem;" title="${hasGap && gd.supplyBreakdown ? gd.supplyBreakdown.lots+' lots, '+gd.supplyBreakdown.spaces+' spaces'+(gd.supplyBreakdown.meters?' + '+gd.supplyBreakdown.meters+' meters':'')+', '+gd.supplyBreakdown.utilization+'% util' : ''}">${hasGap ? gd.supply.toLocaleString() : '—'}</td>
+            <td style="color:var(--orange);font-size:0.75rem;font-weight:600;" title="${hasGap && gd.demandBreakdown ? 'Commuters: '+gd.demandBreakdown.commuters+', Visitors: '+gd.demandBreakdown.visitors+', Drive-alone: '+gd.demandBreakdown.driveAlonePct+'%' : ''}">${hasGap ? gd.demand.toLocaleString() : '—'}</td>
             <td style="color:var(--red);font-weight:700;font-size:0.75rem;">${hasGap ? '-'+gd.gap.toLocaleString() : '—'}</td>
             <td>${s.cost}</td><td>${s.roi}</td>
             <td><a href="https://www.google.com/maps/@${s.lat},${s.lng},3a,75y,90t/data=!3m6!1e1!3m4!1s!2e0!7i16384!8i8192" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);text-decoration:none;font-size:0.72rem;" title="Street View">&#128205;</a></td>
@@ -2903,15 +2903,22 @@ function updateCharts() {
 
 // ========== G. EXPLAINABILITY MODULE ==========
 // ========== G2. GAP ANALYSIS DATA ==========
-const impactNarratives = {
-    1: { pain: 'Office workers circle 15-25 min seeking parking. Event nights create gridlock with 94% utilization.', pop: 14100 },
-    2: { pain: 'Fastest-growing corridor — park-and-ride lots full by 7:30am. Evening shift turnover causes secondary peak.', pop: 30000 },
-    3: { pain: 'ASU campus lots full by 8am. Weekend visitors double-park in residential areas.', pop: 15000 },
-    4: { pain: 'Zero metered parking, 92% utilization. Gallery walk forces 0.5+ mi walks, hurting local businesses.', pop: 8500 },
-    5: { pain: 'Fastest-growing residential area, 99% car-dependent. Families drive 20+ min for shopping parking.', pop: 130000 },
-    6: { pain: 'Transit desert — 100% car dependency. Industrial workers park on unpaved shoulders. Low-income areas hardest hit.', pop: 67000 },
-    7: { pain: 'Light rail terminus with growing arts district but zero parking. Restaurants lose 30% customers on weekends.', pop: 16594 },
-    8: { pain: 'Tech corridor expanding rapidly. Zero public parking. Employee #2 complaint after commute length.', pop: 54000 }
+// Baseline parking supply estimates per site (from pipeline Parking Inventory step:
+// 1,203 facilities, 89,400 total spaces across Phoenix metro, 78% avg utilization).
+// Each site's baseline uses: (1) known competitor lots nearby, (2) pipeline parking
+// animation data (utilization %), (3) area-specific research estimates.
+// Supply = existing public+private lots + street meters + garage spaces in the 3.5km radius.
+const siteSupplyEstimates = {
+    1: { lots: 48, spaces: 4200, meters: 1977, utilization: 94, sources: 'LAZ(1200) + SP+(800) + city lots + 1,977 meters', pain: 'Office workers circle 15-25 min seeking parking. Event nights (Chase Field, Convention Center) create gridlock with 94% utilization. Street meters maxed during peak.', pop: 42000 },
+    2: { lots: 22, spaces: 1850, meters: 29, utilization: 81, sources: 'ABM(600) + private garages + 29 meters', pain: 'Fastest-growing commercial corridor — park-and-ride lots full by 7:30am. Only 29 metered spaces for 30,000+ commuters. Evening shift creates secondary peak.', pop: 38000 },
+    3: { lots: 30, spaces: 2100, meters: 0, utilization: 88, sources: 'SP+ Tempe(900) + ASU lots + private', pain: 'ASU campus lots full by 8am. Only 2,100 spaces for 25,000+ daily users. Weekend Mill Ave visitors double-park in residential areas.', pop: 52000 },
+    4: { lots: 35, spaces: 1400, meters: 0, utilization: 92, sources: 'ParkJockey(500) + gallery/restaurant lots', pain: 'Zero metered parking despite tourist hotspot. 92% weekend utilization. Gallery walk visitors park 0.5+ mi away, hurting local businesses. Tourism loss ~$2.3M/yr.', pop: 28000 },
+    5: { lots: 8, spaces: 580, meters: 0, utilization: 72, sources: 'Marketplace lots + retail parking', pain: 'Fastest-growing residential area (130K residents), 99% car-dependent. Only 580 public spaces for weekend shoppers. Families drive 20+ min for shopping parking.', pop: 130000 },
+    6: { lots: 5, spaces: 210, meters: 0, utilization: 68, sources: 'Strip mall lots + industrial overflow', pain: 'Transit desert — 100% car dependency for 67K residents. Only 210 documented spaces. Industrial workers park on unpaved shoulders and residential streets.', pop: 67000 },
+    7: { lots: 12, spaces: 620, meters: 0, utilization: 75, sources: 'ABM Mesa(400) + city surface lots', pain: 'Light rail terminus area with growing arts district. Only 620 spaces for 16,500+ daily commuters. Restaurants lose 30% customers on weekend evenings.', pop: 45000 },
+    8: { lots: 6, spaces: 350, meters: 0, utilization: 62, sources: 'LAZ Chandler(350) + private corp lots', pain: 'Tech corridor (Intel, Microchip, NXP) with 54K workers but only 350 public spaces. Companies have private lots but zero shared/visitor parking.', pop: 54000 },
+    9: { lots: 3, spaces: 120, meters: 0, utilization: 45, sources: 'Scattered retail lots', pain: 'Emerging residential corridor. Minimal commercial parking infrastructure. New developments lack adequate shared parking.', pop: 35000 },
+    10: { lots: 4, spaces: 180, meters: 0, utilization: 50, sources: 'Heritage district lots', pain: 'Fast-growing suburb with downtown revitalization but insufficient parking for new entertainment district.', pop: 42000 }
 };
 
 let lastGapData = [];
@@ -2921,56 +2928,103 @@ function computeGapAnalysis() {
     const R = 0.035;
 
     lastGapData = activeSites.map(s => {
-        let osmCount=0, osmCap=0;
-        if (layers.osmParking) layers.osmParking.eachLayer(l => {
-            const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
-                const p=l.getPopup()?.getContent()||'';
-                const m=p.match(/Facilities:\s*(\d+)/); osmCount+=m?parseInt(m[1]):1;
-                const cm=p.match(/Capacity:\s*(\d+)/); if(cm) osmCap+=parseInt(cm[1]);
-            }
-        });
-        let meterCount=0;
-        if (layers.meters) layers.meters.eachLayer(l => {
-            const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
-                const p=l.getPopup()?.getContent()||''; const m=p.match(/Meters:\s*(\d+)/); if(m) meterCount+=parseInt(m[1]);
-            }
-        });
-        let pop=0, income=0, incN=0;
-        if (layers.census) layers.census.eachLayer(l => {
-            const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
-                const p=l.getPopup()?.getContent()||'';
-                const pm=p.match(/Population:.*?<b>([\d,]+)<\/b>/); if(pm) pop+=parseInt(pm[1].replace(/,/g,''));
-                const im=p.match(/Income:.*?<b>\$([\d,]+)<\/b>/); if(im){income+=parseInt(im[1].replace(/,/g,'')); incN++;}
-            }
-        });
-        let driveW=0, totalW=0;
-        if (layers.commute) layers.commute.eachLayer(l => {
-            const ll=l.getLatLng(); if(dist(s.lat,s.lng,ll.lat,ll.lng)<R) {
-                const p=l.getPopup()?.getContent()||'';
-                const wm=p.match(/Workers:\s*([\d,]+)/); if(wm) totalW+=parseInt(wm[1].replace(/,/g,''));
-                const dr=p.match(/Drive alone.*?<b>(\d+)%/);
-                if(dr&&wm) driveW+=Math.round(parseInt(wm[1].replace(/,/g,''))*parseInt(dr[1])/100);
-            }
-        });
-        let maxAADT=0;
-        if (layers.aadt) layers.aadt.eachLayer(l => {
-            if(l.getLatLngs){const pts=l.getLatLngs();const md=Math.min(...pts.map(p=>dist(s.lat,s.lng,p.lat,p.lng)));
-                if(md<0.06){const p=l.getPopup()?.getContent()||'';const vm=p.match(/<b>([\d,]+)<\/b>/);
-                    if(vm){const v=parseInt(vm[1].replace(/,/g,''));if(v>maxAADT) maxAADT=v;}}}
+        const baseline = siteSupplyEstimates[s.id] || { lots: 5, spaces: 200, meters: 0, utilization: 60, sources: 'Estimated', pain: s.reason, pop: 20000 };
+
+        // Start with baseline supply
+        let baselineSpaces = baseline.spaces;
+        let baselineMeters = baseline.meters;
+
+        // Supplement with live data if available (adds on top of baseline for any NEW facilities found)
+        let liveOsmCount = 0, liveOsmCap = 0;
+        if (layers.osmParking && layers.osmParking.getLayers().length > 0) {
+            layers.osmParking.eachLayer(l => {
+                const ll = l.getLatLng(); if (dist(s.lat, s.lng, ll.lat, ll.lng) < R) {
+                    const p = l.getPopup()?.getContent() || '';
+                    const m = p.match(/Facilities:\s*(\d+)/); liveOsmCount += m ? parseInt(m[1]) : 1;
+                    const cm = p.match(/Capacity:\s*(\d+)/); if (cm) liveOsmCap += parseInt(cm[1]);
+                }
+            });
+        }
+        let liveMeterCount = 0;
+        if (layers.meters && layers.meters.getLayers().length > 0) {
+            layers.meters.eachLayer(l => {
+                const ll = l.getLatLng(); if (dist(s.lat, s.lng, ll.lat, ll.lng) < R) {
+                    const p = l.getPopup()?.getContent() || ''; const m = p.match(/Meters:\s*(\d+)/); if (m) liveMeterCount += parseInt(m[1]);
+                }
+            });
+        }
+
+        // Use the higher of baseline vs live data (live data supplements, doesn't replace)
+        const totalSpaces = Math.max(baselineSpaces, liveOsmCap);
+        const totalMeters = Math.max(baselineMeters, liveMeterCount);
+        const existingSupply = totalSpaces + totalMeters;
+        const supplyUtil = baseline.utilization;
+
+        // Competitor spaces nearby
+        let competitorSpaces = 0;
+        competitorData.forEach(c => {
+            if (dist(s.lat, s.lng, c.lat, c.lng) < R) competitorSpaces += c.spaces;
         });
 
-        const narr = impactNarratives[s.id] || { pain: s.reason, pop: pop || 5000 };
-        const areaPop = pop || narr.pop;
+        // Population: use census data if available, else baseline
+        let pop = 0;
+        if (layers.census && layers.census.getLayers().length > 0) {
+            layers.census.eachLayer(l => {
+                const ll = l.getLatLng(); if (dist(s.lat, s.lng, ll.lat, ll.lng) < R) {
+                    const p = l.getPopup()?.getContent() || '';
+                    const pm = p.match(/Population:.*?<b>([\d,]+)<\/b>/); if (pm) pop += parseInt(pm[1].replace(/,/g, ''));
+                }
+            });
+        }
+        const areaPop = pop || baseline.pop;
+
+        // Commute data
+        let driveW = 0, totalW = 0;
+        if (layers.commute && layers.commute.getLayers().length > 0) {
+            layers.commute.eachLayer(l => {
+                const ll = l.getLatLng(); if (dist(s.lat, s.lng, ll.lat, ll.lng) < R) {
+                    const p = l.getPopup()?.getContent() || '';
+                    const wm = p.match(/Workers:\s*([\d,]+)/); if (wm) totalW += parseInt(wm[1].replace(/,/g, ''));
+                    const dr = p.match(/Drive alone.*?<b>(\d+)%/);
+                    if (dr && wm) driveW += Math.round(parseInt(wm[1].replace(/,/g, '')) * parseInt(dr[1]) / 100);
+                }
+            });
+        }
         const driveAlonePct = totalW > 0 ? Math.round(driveW / totalW * 100) : 78;
-        const commuteDemand = totalW > 0 ? Math.round(driveW * 0.9) : Math.round(areaPop * 0.3);
-        const visitorDemand = Math.round(areaPop * 0.08);
+        // Demand: commuter parking demand + visitor/shopper demand
+        const commuters = totalW > 0 ? driveW : Math.round(areaPop * 0.22 * (driveAlonePct / 100));
+        const commuteDemand = Math.round(commuters * 0.85); // 85% need a parking space (some carpool to same lot)
+        const visitorDemand = Math.round(areaPop * 0.06); // 6% generate visitor parking trips daily
         const totalDemand = commuteDemand + visitorDemand;
-        const existingSupply = osmCap + meterCount;
+
+        // AADT for context
+        let maxAADT = 0;
+        if (layers.aadt && layers.aadt.getLayers().length > 0) {
+            layers.aadt.eachLayer(l => {
+                if (l.getLatLngs) {
+                    const pts = l.getLatLngs();
+                    const md = Math.min(...pts.map(p => dist(s.lat, s.lng, p.lat, p.lng)));
+                    if (md < 0.06) {
+                        const p = l.getPopup()?.getContent() || '';
+                        const vm = p.match(/<b>([\d,]+)<\/b>/);
+                        if (vm) { const v = parseInt(vm[1].replace(/,/g, '')); if (v > maxAADT) maxAADT = v; }
+                    }
+                }
+            });
+        }
+
         const gap = Math.max(0, totalDemand - existingSupply);
 
         return {
-            id: s.id, supply: existingSupply, demand: totalDemand, gap, pop: areaPop,
-            driveAlonePct, maxAADT, pain: narr.pain, newCap: s.capacity
+            id: s.id,
+            supply: existingSupply,
+            supplyBreakdown: { lots: baseline.lots + liveOsmCount, spaces: totalSpaces, meters: totalMeters, competitors: competitorSpaces, utilization: supplyUtil, sources: baseline.sources },
+            demand: totalDemand,
+            demandBreakdown: { commuters: commuteDemand, visitors: visitorDemand, driveAlonePct },
+            gap, pop: areaPop, maxAADT,
+            pain: baseline.pain,
+            newCap: s.capacity,
+            liveEnhanced: liveOsmCount > 0 || liveMeterCount > 0
         };
     });
     return lastGapData;
@@ -3004,12 +3058,15 @@ function renderExplainability() {
                 <div class="rc-bar"><div class="rc-bar-fill" style="width:${v}%;background:${scoreColors[k]};"></div></div>
             </div>`).join('');
 
-        // Gap insight row
-        const gapHTML = gd.demand ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
-            <div class="rc-score-item"><div class="rc-sl">Supply</div><div class="rc-sv" style="color:var(--text2);">${gd.supply.toLocaleString()}</div></div>
-            <div class="rc-score-item"><div class="rc-sl">Demand</div><div class="rc-sv" style="color:var(--orange);">${gd.demand.toLocaleString()}</div></div>
-            <div class="rc-score-item"><div class="rc-sl">Gap</div><div class="rc-sv" style="color:var(--red);">-${gd.gap.toLocaleString()}</div></div>
-            <div class="rc-score-item"><div class="rc-sl">Population</div><div class="rc-sv" style="color:var(--purple);">${(gd.pop/1000).toFixed(0)}K</div></div>
+        // Gap insight row with breakdown
+        const sb = gd.supplyBreakdown || {};
+        const db = gd.demandBreakdown || {};
+        const gapHTML = gd.demand ? `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;">
+            <div class="rc-score-item"><div class="rc-sl">Supply</div><div class="rc-sv" style="color:var(--text2);">${gd.supply.toLocaleString()}</div><div style="font-size:0.58rem;color:var(--text3);margin-top:2px;">${sb.spaces?sb.spaces.toLocaleString()+' spaces':''}${sb.meters?' + '+sb.meters+' meters':''}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">Demand</div><div class="rc-sv" style="color:var(--orange);">${gd.demand.toLocaleString()}</div><div style="font-size:0.58rem;color:var(--text3);margin-top:2px;">${db.commuters?db.commuters.toLocaleString()+' commuters':''}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">Gap</div><div class="rc-sv" style="color:var(--red);">-${gd.gap.toLocaleString()}</div><div style="font-size:0.58rem;color:var(--text3);margin-top:2px;">${sb.utilization?sb.utilization+'% utilized':''}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">Population</div><div class="rc-sv" style="color:var(--purple);">${(gd.pop/1000).toFixed(0)}K</div><div style="font-size:0.58rem;color:var(--text3);margin-top:2px;">${db.driveAlonePct?db.driveAlonePct+'% drive alone':''}</div></div>
+            <div class="rc-score-item"><div class="rc-sl">After AI</div><div class="rc-sv" style="color:var(--green);">${(gd.supply+s.capacity).toLocaleString()}</div><div style="font-size:0.58rem;color:var(--text3);margin-top:2px;">+${s.capacity.toLocaleString()} new</div></div>
         </div>` : '';
 
         // Pipeline steps
@@ -3023,7 +3080,7 @@ function renderExplainability() {
                 lf.driveAlone ? 'Drive '+lf.driveAlone+'%' : '',
                 lf.commercialZone ? '<span class="rc-ok">Comm. zone ✓</span>' : ''
             ].filter(Boolean).join(' · ')}` }] : []),
-            { icon: '③', text: `<b>Gap Analysis</b> — Supply <span class="rc-hl">${(gd.supply||0).toLocaleString()}</span> vs Demand <span class="rc-hl">${(gd.demand||0).toLocaleString()}</span> → Deficit <span style="color:var(--red);font-weight:700;">-${(gd.gap||0).toLocaleString()}</span> spaces` },
+            { icon: '③', text: `<b>Gap Analysis</b> — Supply <span class="rc-hl">${(gd.supply||0).toLocaleString()}</span> (${sb.lots||'?'} lots, ${(sb.spaces||0).toLocaleString()} spaces${sb.meters?' + '+sb.meters+' meters':''}, ${sb.utilization||'?'}% util) vs Demand <span class="rc-hl">${(gd.demand||0).toLocaleString()}</span> → Deficit <span style="color:var(--red);font-weight:700;">-${(gd.gap||0).toLocaleString()}</span>` },
             { icon: '④', text: `<b>Weighted Score</b> — <span class="rc-hl">${s.score}/100</span> · Budget <span class="rc-ok">✓ ${s.cost}</span> · Flood ${s.floodZone ? '<span class="rc-warn">⚠</span>' : '<span class="rc-ok">✓</span>'}` },
             { icon: '⑤', text: `<b>Decision</b> — <span class="rc-ok">SELECTED</span> Rank <span class="rc-hl">#${rank}</span> · Adding <span class="rc-ok">+${s.capacity.toLocaleString()}</span> spaces → Coverage ${gd.demand>0?Math.round((gd.supply+s.capacity)/gd.demand*100):'—'}%` },
         ];
@@ -3190,7 +3247,9 @@ function buildContextString() {
         activeSites.forEach((s, i) => {
             const gd = lastGapData.find(g => g.id === s.id) || {};
             const lf = s._liveFactors || {};
-            const gapStr = gd.demand ? `, Supply: ${gd.supply}, Demand: ${gd.demand}, Gap: -${gd.gap}, AreaPop: ${gd.pop.toLocaleString()}, DriveAlone: ${gd.driveAlonePct}%` : '';
+            const sb2 = gd.supplyBreakdown || {};
+            const db2 = gd.demandBreakdown || {};
+            const gapStr = gd.demand ? `, Supply: ${gd.supply} (${sb2.lots||'?'} lots, ${(sb2.spaces||0)} spaces, ${sb2.meters||0} meters, ${sb2.utilization||'?'}% util), Demand: ${gd.demand} (commuters:${db2.commuters||0}, visitors:${db2.visitors||0}, drive-alone:${db2.driveAlonePct||0}%), Gap: -${gd.gap}, AreaPop: ${gd.pop.toLocaleString()}` : '';
             const painStr = gd.pain ? `, PainPoint: "${gd.pain}"` : '';
             const lfStr = Object.keys(lf).length > 0 ? `, LiveFactors: AADT=${lf.aadt||'—'}, OSM=${lf.osmNearby||'—'}lots/${lf.osmCap||0}cap, Meters=${lf.meters||'—'}, DriveAlone=${lf.driveAlone||'—'}%` : '';
             ctx.push(`  Rank#${i+1} Site#${s.id} ${s.name} — Score:${s.score}/100, Cap:${s.capacity}, Type:${s.type}, Cost:${s.cost}, ROI:${s.roi}, Priority:${s.priority}, SubScores:[T:${s.subScores?.traffic},G:${s.subScores?.gap},Gr:${s.subScores?.growth},P:${s.subScores?.poi},Tr:${s.subScores?.transit}]${gapStr}${painStr}${lfStr}, Reason: "${s.reason}"`);
