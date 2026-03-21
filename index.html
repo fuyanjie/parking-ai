@@ -782,7 +782,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
             <span class="ws-indicator disconnected" id="wsIndicator" style="display:none;">Disconnected</span>
             <button class="btn btn-primary" id="runBtn" onclick="runCurrentMode()">Run Agent Pipeline</button>
             <button class="btn btn-outline" onclick="fetchLiveData()" id="liveBtn" style="border-color:var(--green);color:var(--green);">Fetch Live Data</button>
-            <button class="btn btn-outline" onclick="resetPipeline()">Reset</button>
+            <button class="btn btn-outline" id="resetBtn" onclick="resetPipeline()">Reset</button>
             <span class="status-text" id="statusText" style="margin-left:12px;font-size:0.82rem;color:var(--text2);">Ready</span>
             <span id="liveBadge" style="display:none;margin-left:8px;" class="live-badge">Live Data Active</span>
         </div>
@@ -1700,7 +1700,7 @@ async function fetchLiveData() {
 }
 
 // ========== C. PIPELINE MODULE ==========
-let currentStep = -1, pipeRunning = false;
+let currentStep = -1, pipeRunning = false, pipeStopped = false;
 
 function renderPipeline() {
     document.getElementById('sidebarSteps').innerHTML = '<div class="pipe-title">Agent Pipeline</div>' +
@@ -2207,7 +2207,12 @@ async function animateRecommendStep() {
 async function runPipeline() {
     if (pipeRunning) return;
     pipeRunning = true;
+    pipeStopped = false;
     document.getElementById('runBtn').disabled = true;
+    const resetBtn = document.getElementById('resetBtn');
+    resetBtn.textContent = '⏹ Stop';
+    resetBtn.style.borderColor = 'var(--red)';
+    resetBtn.style.color = 'var(--red)';
     pipelineVis.clearLayers();
     map.addLayer(pipelineVis);
 
@@ -2218,6 +2223,7 @@ async function runPipeline() {
     const stepAnimations = [animateTrafficStep, animatePOIStep, animateParkingStep, animateTransitStep, animateDemographicsStep, animateAnalysisStep, animatePolicyStep, animateRecommendStep];
 
     for (let i=0; i<agentSteps.length; i++) {
+        if (pipeStopped) break;
         currentStep = i;
         document.getElementById('statusText').innerHTML = `<span style="color:var(--green);font-weight:600;">Running:</span> ${agentSteps[i].title}`;
         renderPipeline();
@@ -2278,7 +2284,26 @@ async function runPipeline() {
                 agentSteps[5].stats['Zoning'] = zoningCount + ' zones';
             } catch(e) { console.warn('Census/commute/zoning fetch failed:', e); }
         }
+        if (pipeStopped) break;
         await sleep(400);
+    }
+
+    // Reset button style
+    const resetBtn2 = document.getElementById('resetBtn');
+    resetBtn2.textContent = 'Reset';
+    resetBtn2.style.borderColor = '';
+    resetBtn2.style.color = '';
+
+    if (pipeStopped) {
+        // Pipeline was stopped mid-run
+        hideAnalysisBadge();
+        pipelineVis.clearLayers();
+        map.removeLayer(pipelineVis);
+        map.addLayer(layers.recommendations);
+        document.getElementById('statusText').innerHTML = `<span style="color:var(--orange);font-weight:600;">Stopped</span> at step ${currentStep + 1} / ${agentSteps.length}`;
+        document.getElementById('runBtn').disabled = false;
+        pipeRunning = false;
+        return;
     }
 
     // Pipeline complete — transition from pipeline visualization to final recommendations
@@ -2342,9 +2367,18 @@ function clearPreviousResults() {
     if (cb) { cb.textContent = 'Compare Selected (0)'; cb.disabled = true; }
 }
 function resetPipeline() {
-    currentStep = -1; pipeRunning = false; renderPipeline();
+    if (pipeRunning) {
+        // Stop the running pipeline
+        pipeStopped = true;
+        return;
+    }
+    currentStep = -1; pipeRunning = false; pipeStopped = false; renderPipeline();
     document.getElementById('runBtn').disabled = false;
     document.getElementById('statusText').textContent = 'Ready';
+    const resetBtn = document.getElementById('resetBtn');
+    resetBtn.textContent = 'Reset';
+    resetBtn.style.borderColor = '';
+    resetBtn.style.color = '';
     pipelineVis.clearLayers(); map.removeLayer(pipelineVis);
     hideAnalysisBadge();
     Object.values(layers).forEach(l=>map.removeLayer(l));
