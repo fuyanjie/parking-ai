@@ -152,6 +152,11 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 .chat-result-table th { text-align: left; color: var(--text3); font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 6px; border-bottom: 1px solid rgba(99,179,237,0.1); }
 .chat-result-table td { padding: 3px 6px; color: var(--text2); border-bottom: 1px solid rgba(255,255,255,0.03); }
 .chat-result-table tr:first-child td { color: var(--green); font-weight: 600; }
+/* Chat next-step recommendations */
+.chat-next-steps { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(99,179,237,0.1); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chat-next-label { font-size: 0.62rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
+.chat-next-btn { font-size: 0.68rem; padding: 4px 10px; border-radius: 12px; background: linear-gradient(135deg, rgba(99,179,237,0.1), rgba(99,179,237,0.05)); border: 1px solid rgba(99,179,237,0.2); color: var(--accent); cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+.chat-next-btn:hover { background: rgba(99,179,237,0.2); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(99,179,237,0.15); }
 
 .preset-btn.flash { animation: presetFlash 1.5s ease; }
 @keyframes presetFlash { 0%,100% { box-shadow: 0 0 12px rgba(49,130,206,0.2); } 25%,75% { box-shadow: 0 0 24px rgba(49,130,206,0.6), 0 0 48px rgba(128,90,213,0.3); } 50% { box-shadow: 0 0 32px rgba(49,130,206,0.8), 0 0 64px rgba(128,90,213,0.4); } }
@@ -1410,20 +1415,31 @@ The dashboard supports these natural language commands (parsed automatically bef
 • NAVIGATION: "zoom to site #1", "zoom to downtown", "zoom out", "show results", "show analytics"
 • RESET: "reset pipeline"  •  RECALCULATE: "recalculate scores"
 
-When users ask analytical questions, answer based on the context data. When they want to DO something, suggest the right command. If they ask both, answer the question AND suggest the command.
+When users ask analytical questions, answer based on the context data. When they want to DO something, suggest the right command.
 
-Be concise (under 120 words). Use specific numbers from the context. When suggesting commands, format them as: **Try:** \`command here\``;
+Be concise (under 120 words). Use specific numbers from the context.
+
+IMPORTANT: Always end your response with exactly 2-4 recommended next actions the user might want to take, using this exact format:
+[NEXT]action one|action two|action three[/NEXT]
+
+Choose contextually relevant next steps. Examples:
+- After discussing a site: [NEXT]zoom to site #1|compare top 3 sites|set traffic weight to 40%[/NEXT]
+- After methodology question: [NEXT]use transit preset|show results|Why is site #2 ranked lower?[/NEXT]
+- After budget discussion: [NEXT]set budget to $60M|use budget preset|exclude flood zones[/NEXT]
+- General: [NEXT]run pipeline|fetch live data|use growth preset|show analytics[/NEXT]
+
+Make the suggestions diverse: mix commands, questions, and explorations. Keep each suggestion under 40 characters.`;
 
 const chatFallback = [
-    { patterns: [/downtown|core|jefferson/i], response: "Downtown Core (Site #1) scored highest at 96/100. Key factors: highest traffic density, 94% utilization, proximity to Chase Field. Recommended: 900-space multi-story garage, $22.5M, 21% ROI." },
-    { patterns: [/budget|cost|invest/i], response: "Total investment across all sites is $112.6M. Costs range from $6.8M (surface) to $22.5M (garage). You can adjust the budget — try saying 'set budget to $80M'." },
-    { patterns: [/roi|return|profit/i], response: "Weighted average ROI is 18.5%. Highest: Downtown Core at 21%. Lowest: Chandler at 14%. These factor in construction, maintenance, revenue, and demand growth." },
-    { patterns: [/method|how|approach|model|scoring/i], response: "We use a 5-dimension weighted spatial analysis: Traffic (25%), Gap (25%), Growth (20%), POI (15%), Transit (15%). You can adjust weights by asking, e.g., 'increase traffic weight to 40%'." },
-    { patterns: [/data|source|api/i], response: "Real data from: (1) OpenStreetMap — parking facilities, POIs, transit stops, (2) US Census ACS 2022 — population, income by tract. Click 'Run Pipeline' to fetch live data!" },
-    { patterns: [/transit|bus|rail/i], response: "Phoenix has 58 bus routes and 35 light rail stops. 76% drive alone. We identified 14 'transit desert' zones. Try 'enable transit priority mode' to prioritize park-and-ride." },
-    { patterns: [/flood|risk/i], response: "FEMA flood data is integrated. Tempe Town Lake and Laveen are in flood zones. Say 'exclude flood zones' to filter them out!" },
-    { patterns: [/compare|vs|versus/i], response: "Check sites in the Results table and click 'Compare Selected' for side-by-side analysis. Or ask me to 'compare top 3 sites'!" },
-    { patterns: [/hello|hi|hey|help/i], response: "Hello! I can answer questions about locations, methodology, data, ROI, or growth. I can also adjust parameters — try 'set budget to $80M' or 'increase transit weight to 30%'. What would you like to know?" }
+    { patterns: [/downtown|core|jefferson/i], response: "Downtown Core (Site #1) scored highest at 96/100. Key factors: highest traffic density, 94% utilization, proximity to Chase Field. Recommended: 900-space multi-story garage, $22.5M, 21% ROI.", next: ['Zoom to downtown', 'Compare top 3 sites', 'Set traffic weight to 40%'] },
+    { patterns: [/budget|cost|invest/i], response: "Total investment across all sites is $112.6M. Costs range from $6.8M (surface) to $22.5M (garage). You can adjust the budget — try saying 'set budget to $80M'.", next: ['Set budget to $60M', 'Use budget preset', 'Show analytics'] },
+    { patterns: [/roi|return|profit/i], response: "Weighted average ROI is 18.5%. Highest: Downtown Core at 21%. Lowest: Chandler at 14%. These factor in construction, maintenance, revenue, and demand growth.", next: ['Show analytics', 'Zoom to downtown', 'Compare top 3 sites'] },
+    { patterns: [/method|how|approach|model|scoring/i], response: "We use a 5-dimension weighted spatial analysis: Traffic (25%), Gap (25%), Growth (20%), POI (15%), Transit (15%). You can adjust weights by asking, e.g., 'increase traffic weight to 40%'.", next: ['Set traffic weight to 40%', 'Use growth preset', 'Show results'] },
+    { patterns: [/data|source|api/i], response: "Real data from: (1) OpenStreetMap — parking facilities, POIs, transit stops, (2) US Census ACS 2022 — population, income by tract. Click 'Run Pipeline' to fetch live data!", next: ['Fetch live data', 'Run pipeline', 'Show traffic layer'] },
+    { patterns: [/transit|bus|rail/i], response: "Phoenix has 58 bus routes and 35 light rail stops. 76% drive alone. We identified 14 'transit desert' zones. Try 'enable transit priority mode' to prioritize park-and-ride.", next: ['Use transit preset', 'Enable transit priority', 'Show transit layer'] },
+    { patterns: [/flood|risk/i], response: "FEMA flood data is integrated. Tempe Town Lake and Laveen are in flood zones. Say 'exclude flood zones' to filter them out!", next: ['Exclude flood zones', 'Show results', 'Zoom to site #3'] },
+    { patterns: [/compare|vs|versus/i], response: "Check sites in the Results table and click 'Compare Selected' for side-by-side analysis. Or ask me to 'compare top 3 sites'!", next: ['Show results', 'Zoom to downtown', 'Use balanced preset'] },
+    { patterns: [/hello|hi|hey|help/i], response: "Hello! I can answer questions about locations, methodology, data, ROI, or growth. I can also adjust parameters — try 'set budget to $80M' or 'increase transit weight to 30%'. What would you like to know?", next: ['What data sources are used?', 'Run pipeline', 'Use transit preset'] }
 ];
 
 let chatHistory = [];
@@ -1879,15 +1895,19 @@ async function sendDashChat() {
             resultHtml = '<div style="font-size:0.75rem;color:var(--text3);margin-top:6px;">Loading live data from OSM + Census APIs... check the map for results.</div>';
         }
 
+        // Build contextual next-step buttons
+        const nextSteps = getContextualNextSteps(paramActions);
+        const nextHtml = renderNextStepButtons(nextSteps);
+
         setTimeout(() => {
-            msgs.innerHTML += `<div class="msg bot">${hasDataAction ? 'Executed:' : 'Done! Updated:'}<br>${actionHtml}${resultHtml}</div>`;
+            msgs.innerHTML += `<div class="msg bot">${hasDataAction ? 'Executed:' : 'Done! Updated:'}<br>${actionHtml}${resultHtml}${nextHtml}</div>`;
             msgs.scrollTop = msgs.scrollHeight;
         }, 200);
 
-        // Also get LLM analysis for analytical changes (non-blocking)
+        // Also get LLM analysis + next-step recommendations for analytical changes (non-blocking)
         if (hasAnalytical && getGroqKey()?.startsWith('gsk_')) {
-            callGroqDirect(`I just made these changes: ${descriptions.join('; ')}. In 1-2 sentences, briefly explain how this affects the analysis results. Reference the current top site scores.`).then(reply => {
-                msgs.innerHTML += `<div class="msg bot">${escapeHtml(reply)}<div class="msg-model">via ${GROQ_MODEL}</div></div>`;
+            callGroqDirect(`I just made these changes: ${descriptions.join('; ')}. In 1-2 sentences, briefly explain how this affects the analysis results. Reference the current top site scores. Then suggest 2-3 next actions.`).then(reply => {
+                msgs.innerHTML += `<div class="msg bot">${renderLLMReply(reply, GROQ_MODEL)}</div>`;
                 msgs.scrollTop = msgs.scrollHeight;
             }).catch(() => {});
         }
@@ -1906,7 +1926,7 @@ async function sendDashChat() {
         try {
             const reply = await callGroqDirect(text);
             thinkingDiv.remove();
-            msgs.innerHTML += `<div class="msg bot">${escapeHtml(reply)}<div class="msg-model">via ${GROQ_MODEL}</div></div>`;
+            msgs.innerHTML += `<div class="msg bot">${renderLLMReply(reply, GROQ_MODEL)}</div>`;
         } catch(e) {
             thinkingDiv.remove();
             if (e.message === 'INVALID_KEY') {
@@ -1928,10 +1948,16 @@ async function sendDashChat() {
 
 function appendFallbackReply(text, msgs) {
     let reply = "I can provide info about specific locations, methodology, data sources, budget analysis, or growth trends. You can also adjust parameters — try 'set budget to $80M' or 'increase transit weight'. Paste a <strong>free Groq API key</strong> above for AI-powered answers!";
+    let nextSteps = ['Run pipeline', 'Use transit preset', 'Show analytics'];
     for (const r of chatFallback) {
-        if (r.patterns.some(p => p.test(text))) { reply = r.response; break; }
+        if (r.patterns.some(p => p.test(text))) {
+            reply = r.response;
+            nextSteps = r.next || nextSteps;
+            break;
+        }
     }
-    msgs.innerHTML += `<div class="msg bot">${reply}<div class="msg-model">keyword mode — add API key for AI answers</div></div>`;
+    const nextHtml = renderNextStepButtons(nextSteps);
+    msgs.innerHTML += `<div class="msg bot">${reply}${nextHtml}<div class="msg-model">keyword mode — add API key for AI answers</div></div>`;
     msgs.scrollTop = msgs.scrollHeight;
 }
 
@@ -1939,6 +1965,100 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Parse LLM reply for [NEXT]...[/NEXT] tags and render clickable next-step buttons
+function renderLLMReply(rawReply, model) {
+    let body = rawReply;
+    let nextSteps = [];
+
+    const nextMatch = rawReply.match(/\[NEXT\](.*?)\[\/NEXT\]/s);
+    if (nextMatch) {
+        body = rawReply.replace(/\[NEXT\].*?\[\/NEXT\]/s, '').trim();
+        nextSteps = nextMatch[1].split('|').map(s => s.trim()).filter(s => s.length > 0);
+    }
+
+    let html = escapeHtml(body);
+    // Render markdown-style bold
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Render markdown-style backtick code
+    html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(99,179,237,0.12);padding:1px 5px;border-radius:3px;font-size:0.78rem;color:var(--accent);">$1</code>');
+
+    if (nextSteps.length > 0) {
+        html += '<div class="chat-next-steps">';
+        html += '<span class="chat-next-label">Suggested next:</span>';
+        nextSteps.forEach(step => {
+            html += `<button class="chat-next-btn" onclick="runNextStep(this)">${escapeHtml(step)}</button>`;
+        });
+        html += '</div>';
+    }
+
+    if (model) {
+        html += `<div class="msg-model">via ${model}</div>`;
+    }
+
+    return html;
+}
+
+function runNextStep(btn) {
+    const text = btn.textContent;
+    document.getElementById('dashChatInput').value = text;
+    sendDashChat();
+}
+
+// Generate smart next-step recommendations based on context (for non-LLM modes)
+function getContextualNextSteps(actions) {
+    const steps = [];
+    const types = actions.map(a => a.type);
+
+    if (types.includes('weight') || types.includes('preset')) {
+        const topSite = activeSites[0];
+        if (topSite) steps.push(`Zoom to ${topSite.name.split('—')[0].trim()}`);
+        steps.push('Compare top 3 sites');
+        if (!document.getElementById('wif-flood').classList.contains('active')) steps.push('Exclude flood zones');
+        steps.push('Show results');
+    }
+    if (types.includes('constraint')) {
+        steps.push('Use budget preset');
+        steps.push('Show analytics');
+        const topSite = activeSites[0];
+        if (topSite) steps.push(`Why is ${topSite.name.split('—')[0].trim()} #1?`);
+    }
+    if (types.includes('toggle')) {
+        steps.push('Recalculate scores');
+        steps.push('Compare top 3 sites');
+        steps.push('Show results');
+    }
+    if (types.includes('run') || types.includes('fetchLive')) {
+        steps.push('Show results');
+        steps.push('Show analytics');
+        steps.push('Zoom to downtown');
+    }
+    if (types.includes('showLayer') || types.includes('hideLayer')) {
+        steps.push('Fetch live data');
+        steps.push('Zoom to downtown');
+        steps.push('Run pipeline');
+    }
+    if (types.includes('zoomSite') || types.includes('zoomOverview')) {
+        steps.push('Compare top 3 sites');
+        steps.push('Show traffic layer');
+        const topSite = activeSites[0];
+        if (topSite) steps.push(`Why is ${topSite.name.split('—')[0].trim()} #1?`);
+    }
+
+    // Deduplicate and limit to 3
+    return [...new Set(steps)].slice(0, 3);
+}
+
+function renderNextStepButtons(steps) {
+    if (!steps || steps.length === 0) return '';
+    let html = '<div class="chat-next-steps">';
+    html += '<span class="chat-next-label">Suggested next:</span>';
+    steps.forEach(step => {
+        html += `<button class="chat-next-btn" onclick="runNextStep(this)">${escapeHtml(step)}</button>`;
+    });
+    html += '</div>';
+    return html;
 }
 
 // Also support the old floating chat (sends to dashboard chat)
