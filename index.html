@@ -486,7 +486,7 @@ details.reasoning summary:hover { color: var(--accent); }
             <span class="chat-suggestion" onclick="useSuggestion(this)">What data sources are used?</span>
         </div>
         <div class="dash-chat-messages" id="dashChatMessages">
-            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent. Paste a <strong>free Groq API key</strong> above for AI-powered answers, or just chat — I can adjust parameters via natural language, e.g., <em>"set traffic weight to 40%"</em> or <em>"exclude flood zones"</em>.</div>
+            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent, powered by <strong>Llama 3.3 70B</strong>. Ask me anything about the analysis, or adjust parameters via natural language — e.g., <em>"set traffic weight to 40%"</em> or <em>"exclude flood zones"</em>.</div>
         </div>
         <div class="dash-chat-input">
             <input type="text" id="dashChatInput" placeholder="Ask about analysis or adjust parameters..." onkeydown="if(event.key==='Enter')sendDashChat()">
@@ -1362,9 +1362,12 @@ const chatFallback = [
 
 let chatHistory = [];
 
-// API Key management (stored in localStorage)
+// Default demo key (free tier — visitors can use directly or paste their own)
+const GROQ_DEFAULT_KEY = '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';
+
+// API Key management (stored in localStorage, falls back to default)
 function getGroqKey() {
-    return localStorage.getItem('groq_api_key') || '';
+    return localStorage.getItem('groq_api_key') || GROQ_DEFAULT_KEY;
 }
 function saveGroqKey(key) {
     if (key) localStorage.setItem('groq_api_key', key);
@@ -1378,11 +1381,17 @@ function onApiKeyChange() {
 }
 function updateKeyStatus() {
     const key = getGroqKey();
+    const userKey = localStorage.getItem('groq_api_key');
     const el = document.getElementById('keyStatus');
     const statusEl = document.getElementById('dashChatStatus');
     if (key && key.startsWith('gsk_')) {
-        el.textContent = '✓ Key saved';
-        el.className = 'key-status ok';
+        if (userKey) {
+            el.textContent = '✓ Your key';
+            el.className = 'key-status ok';
+        } else {
+            el.textContent = '✓ Demo key';
+            el.className = 'key-status ok';
+        }
         if (statusEl) statusEl.innerHTML = '<span style="color:var(--green);font-weight:600;">LLM: llama-3.3-70b</span>';
     } else if (key) {
         el.textContent = '⚠ Invalid format';
@@ -1396,9 +1405,12 @@ function updateKeyStatus() {
 }
 // Restore saved key on load
 function initChatApiKey() {
-    const saved = getGroqKey();
-    if (saved) {
-        document.getElementById('groqKeyInput').value = saved;
+    const userKey = localStorage.getItem('groq_api_key');
+    const input = document.getElementById('groqKeyInput');
+    if (userKey) {
+        input.value = userKey;
+    } else {
+        input.placeholder = 'Using demo key — or paste your own';
     }
     updateKeyStatus();
 }
