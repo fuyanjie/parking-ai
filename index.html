@@ -230,7 +230,7 @@ details.reasoning summary:hover { color: var(--accent); }
 .reason-chain .step { color: var(--green); } .reason-chain .val { color: var(--accent); } .reason-chain .warn { color: var(--orange); }
 
 /* ========== 10. CHAT ========== */
-.chat-fab { position: fixed; bottom: 24px; right: 24px; z-index: 4000; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3182ce, #2b6cb0); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(49,130,206,0.4); transition: transform 0.2s; }
+.chat-fab { position: fixed; bottom: 24px; right: 24px; z-index: 4000; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3182ce, #2b6cb0); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(49,130,206,0.4); transition: transform 0.2s; display: none; }
 .chat-fab:hover { transform: scale(1.1); }
 .chat-panel { position: fixed; bottom: 90px; right: 24px; z-index: 4000; width: 400px; height: 500px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
 .chat-panel.open { display: flex; }
@@ -241,10 +241,44 @@ details.reasoning summary:hover { color: var(--accent); }
 .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.82rem; line-height: 1.5; }
 .msg.bot { background: var(--bg-card); color: var(--text2); align-self: flex-start; border-bottom-left-radius: 4px; }
 .msg.user { background: #3182ce; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg .msg-model { font-size: 0.62rem; color: var(--text3); margin-top: 4px; font-style: italic; }
+.msg .msg-action { font-size: 0.68rem; color: var(--green); margin-top: 6px; padding: 4px 8px; background: rgba(72,187,120,0.1); border-radius: 4px; border-left: 2px solid var(--green); }
+.msg.thinking { opacity: 0.7; }
+.msg.thinking::after { content: ''; display: inline-block; width: 12px; height: 12px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
 .chat-input input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 0.82rem; outline: none; }
 .chat-input input:focus { border-color: var(--accent); }
 .chat-input button { background: #3182ce; color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+.chat-status { font-size: 0.62rem; color: var(--text3); padding: 2px 12px; text-align: center; }
+.chat-status .llm-badge { color: var(--green); font-weight: 600; }
+.chat-status .fallback-badge { color: var(--orange); font-weight: 600; }
+
+/* Dashboard embedded chat */
+.dash-chat { border-top: 1px solid var(--border); display: flex; flex-direction: column; height: 260px; background: var(--bg-primary); }
+.dash-chat .dash-chat-head { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--bg-card); flex-shrink: 0; }
+.dash-chat .dash-chat-head h3 { font-size: 0.85rem; color: var(--accent); margin: 0; }
+.dash-chat .dash-chat-head .chat-hints { font-size: 0.65rem; color: var(--text3); }
+.api-key-bar { display: flex; align-items: center; gap: 8px; padding: 6px 20px; background: rgba(99,179,237,0.04); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.api-key-bar label { font-size: 0.68rem; color: var(--text3); white-space: nowrap; font-weight: 600; }
+.api-key-bar input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; color: var(--text); font-size: 0.72rem; font-family: 'Fira Code', monospace; outline: none; max-width: 320px; }
+.api-key-bar input:focus { border-color: var(--accent); }
+.api-key-bar .key-status { font-size: 0.65rem; font-weight: 600; }
+.api-key-bar .key-status.ok { color: var(--green); }
+.api-key-bar .key-status.missing { color: var(--orange); }
+.api-key-bar a { font-size: 0.65rem; color: var(--accent); text-decoration: none; }
+.api-key-bar a:hover { text-decoration: underline; }
+.dash-chat-body { display: flex; flex: 1; overflow: hidden; }
+.dash-chat-messages { flex: 1; overflow-y: auto; padding: 12px 20px; display: flex; flex-direction: column; gap: 10px; }
+.dash-chat-input { display: flex; gap: 8px; padding: 10px 20px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--bg-secondary); align-items: center; }
+.dash-chat-input input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 0.82rem; outline: none; font-family: 'Inter', sans-serif; }
+.dash-chat-input input:focus { border-color: var(--accent); }
+.dash-chat-input button { background: linear-gradient(135deg, #3182ce, #2b6cb0); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; font-size: 0.82rem; transition: transform 0.1s; }
+.dash-chat-input button:hover { transform: scale(1.02); }
+.dash-chat-input .chat-status-inline { font-size: 0.62rem; color: var(--text3); white-space: nowrap; }
+.dash-chat-suggestions { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 20px 4px; flex-shrink: 0; }
+.chat-suggestion { font-size: 0.68rem; padding: 4px 10px; border-radius: 12px; background: rgba(99,179,237,0.08); border: 1px solid rgba(99,179,237,0.15); color: var(--accent); cursor: pointer; transition: all 0.2s; }
+.chat-suggestion:hover { background: rgba(99,179,237,0.15); border-color: var(--accent); }
 
 /* ========== 11. LIVE DATA ========== */
 .live-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; background: rgba(72,187,120,0.15); color: var(--green); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -429,6 +463,35 @@ details.reasoning summary:hover { color: var(--accent); }
                 <div class="panel-label">Scenario History</div>
                 <div class="scenario-log" id="scenarioLog"></div>
             </div>
+        </div>
+    </div>
+    <!-- Embedded Chat in Dashboard -->
+    <div class="dash-chat" id="dashChat">
+        <div class="dash-chat-head">
+            <h3>Ask the Agent</h3>
+            <span class="chat-hints">AI-powered analysis chat &middot; Adjust parameters via natural language</span>
+        </div>
+        <div class="api-key-bar" id="apiKeyBar">
+            <label>Groq API Key:</label>
+            <input type="password" id="groqKeyInput" placeholder="gsk_..." oninput="onApiKeyChange()" />
+            <span class="key-status missing" id="keyStatus">No key</span>
+            <a href="https://console.groq.com" target="_blank">Get free key &rarr;</a>
+        </div>
+        <div class="dash-chat-suggestions" id="chatSuggestions">
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Why did Downtown score highest?</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Set traffic weight to 40%</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Compare top 3 sites</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Exclude flood zones</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Set budget to $80M</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">What data sources are used?</span>
+        </div>
+        <div class="dash-chat-messages" id="dashChatMessages">
+            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent. Paste a <strong>free Groq API key</strong> above for AI-powered answers, or just chat — I can adjust parameters via natural language, e.g., <em>"set traffic weight to 40%"</em> or <em>"exclude flood zones"</em>.</div>
+        </div>
+        <div class="dash-chat-input">
+            <input type="text" id="dashChatInput" placeholder="Ask about analysis or adjust parameters..." onkeydown="if(event.key==='Enter')sendDashChat()">
+            <button onclick="sendDashChat()">Send</button>
+            <span class="chat-status-inline" id="dashChatStatus"></span>
         </div>
     </div>
 </section>
@@ -1269,44 +1332,334 @@ function renderExplainability() {
         </div></details>`).join('');
 }
 
-// ========== H. CHAT MODULE ==========
-const chatResponses = [
-    { patterns: [/downtown|core|jefferson/i], response: "Downtown Core (Site #1) scored highest at 96/100. Key factors: it has the highest traffic density in Phoenix, 94% existing parking utilization, and proximity to Chase Field and the Convention Center. The recommended capacity is 900 spaces in a multi-story garage, with estimated cost of $22.5M and 21% projected ROI." },
-    { patterns: [/budget|cost|invest|expensive/i], response: "The total recommended investment across all 8 sites is $112.6M. Individual costs range from $6.8M (West Phoenix surface lot) to $22.5M (Downtown garage). Cost per space varies from $15K (surface) to $25K (multi-story). You can adjust the budget cap in the parameter panel to see how it affects site selection." },
-    { patterns: [/roi|return|profit/i], response: "The weighted average ROI is 18.5% over a 10-year projection. Highest ROI: Downtown Core at 21% (high demand guarantees utilization). Lowest: Chandler at 14% (depends on future Intel expansion). These projections factor in construction costs, maintenance, revenue from parking fees, and demand growth." },
-    { patterns: [/method|how|approach|model|scoring/i], response: "We use a 12-criteria weighted spatial analysis model. The 5 main dimensions are: Traffic Demand (25%), Parking Gap (25%), Growth Potential (20%), POI Density (15%), and Transit Access (15%). Each candidate zone receives sub-scores, which are combined into a composite score. You can adjust these weights in the parameter panel!" },
-    { patterns: [/data|source|where.*from|live|real|api/i], response: "We integrate REAL data from multiple sources! Click 'Fetch Live Data' or 'Run Pipeline' to see: (1) OpenStreetMap Overpass API — fetches ALL parking facilities in the Phoenix metro area in real-time, (2) US Census ACS 2022 — tract-level population and median income for Maricopa County. Additional simulated sources include MAG Traffic Counts, Google Places, Valley Metro GTFS, and FEMA flood maps. The OSM and Census data layers are shown as teal and pink dots on the map!" },
-    { patterns: [/transit|bus|rail|light rail/i], response: "Transit analysis shows Phoenix has 58 bus routes and 35 light rail stops. 76% of workers drive alone — among the highest in the US. We identified 14 'transit desert' zones with no service within 0.5 miles. Park-and-ride facilities are a key strategy, especially along the light rail corridor." },
-    { patterns: [/flood|risk|environment/i], response: "FEMA flood zone data is integrated into our analysis. Two candidate sites (Tempe Town Lake, Laveen) fall in flood risk areas. You can toggle 'Exclude Flood Zones' in the What-If panel to see how removing these sites affects the recommendations. Environmental constraints also include heat island effect and noise ordinances." },
-    { patterns: [/tempe|asu|university/i], response: "Tempe Town Lake (Site #3) scored 89/100. It benefits from ASU proximity (70K+ students), a growing entertainment district, and severe weekend parking deficit. However, note that it's in a FEMA flood zone — you can toggle this constraint in the What-If panel." },
-    { patterns: [/scottsdale|old town/i], response: "Scottsdale Old Town (Site #4) scored 87/100 with the highest POI density score (95) due to its concentration of restaurants, galleries, and nightlife venues. Weekend utilization hits 92%. We recommend a 550-space mixed-use development combining parking with retail." },
-    { patterns: [/growth|future|2030|project/i], response: "Phoenix is growing at +1.8% annually. By 2030, we project a parking deficit of 12,400 spaces if no new facilities are built. The fastest-growing corridors are north Phoenix (Desert Ridge), south (Chandler/Gilbert), and west (Laveen). 3,240 new commercial/residential permits were issued in 2024-2025 alone." },
-    { patterns: [/compare|vs|versus|difference/i], response: "You can compare sites using the comparison feature! In the Results table, check the boxes next to 2-3 sites and click 'Compare Selected'. This shows a side-by-side breakdown of all metrics including sub-scores, costs, and constraints." },
-    { patterns: [/reject|why not|eliminated|excluded/i], response: "We evaluated over 340 candidate zones. Sites were rejected for reasons including: flood zone risk (South Mountain), FAA restrictions (Sky Harbor area), low demand (<150 spaces needed by 2030), prohibitive land costs ($45/sqft vs $12 avg), or insufficient ROI (<8%). See the Explainability section for full details." },
-    { patterns: [/weight|adjust|change|parameter/i], response: "You can adjust scoring weights in the right panel of the Dashboard! Try increasing 'Transit Access' weight to prioritize park-and-ride locations, or boost 'Growth Potential' to favor emerging areas. Click 'Apply & Recalculate' to see updated rankings in real-time." },
-    { patterns: [/hello|hi|hey|help/i], response: "Hello! I can help you understand our parking analysis. Try asking about: specific locations (e.g., 'tell me about downtown'), methodology, data sources, ROI projections, growth trends, or how to use the interactive features. What would you like to know?" }
+// ========== H. CHAT MODULE (Direct Groq LLM from Browser) ==========
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You help users understand the parking analysis results and recommendations.
+
+You have access to the current analysis context provided below. Answer questions based on this data. Be concise but insightful. When discussing specific sites, reference their ID numbers, scores, and key metrics. If asked about methodology, explain the multi-criteria spatial analysis approach.
+
+You can also:
+- Suggest which parameter adjustments would change rankings
+- Explain why certain sites scored higher/lower
+- Compare sites when asked
+- Discuss trade-offs between cost, capacity, and location
+- Explain data sources (OpenStreetMap, US Census ACS)
+
+Keep responses under 150 words unless the user asks for detail. Use specific numbers from the context data.`;
+
+const chatFallback = [
+    { patterns: [/downtown|core|jefferson/i], response: "Downtown Core (Site #1) scored highest at 96/100. Key factors: highest traffic density, 94% utilization, proximity to Chase Field. Recommended: 900-space multi-story garage, $22.5M, 21% ROI." },
+    { patterns: [/budget|cost|invest/i], response: "Total investment across all sites is $112.6M. Costs range from $6.8M (surface) to $22.5M (garage). You can adjust the budget — try saying 'set budget to $80M'." },
+    { patterns: [/roi|return|profit/i], response: "Weighted average ROI is 18.5%. Highest: Downtown Core at 21%. Lowest: Chandler at 14%. These factor in construction, maintenance, revenue, and demand growth." },
+    { patterns: [/method|how|approach|model|scoring/i], response: "We use a 5-dimension weighted spatial analysis: Traffic (25%), Gap (25%), Growth (20%), POI (15%), Transit (15%). You can adjust weights by asking, e.g., 'increase traffic weight to 40%'." },
+    { patterns: [/data|source|api/i], response: "Real data from: (1) OpenStreetMap — parking facilities, POIs, transit stops, (2) US Census ACS 2022 — population, income by tract. Click 'Run Pipeline' to fetch live data!" },
+    { patterns: [/transit|bus|rail/i], response: "Phoenix has 58 bus routes and 35 light rail stops. 76% drive alone. We identified 14 'transit desert' zones. Try 'enable transit priority mode' to prioritize park-and-ride." },
+    { patterns: [/flood|risk/i], response: "FEMA flood data is integrated. Tempe Town Lake and Laveen are in flood zones. Say 'exclude flood zones' to filter them out!" },
+    { patterns: [/compare|vs|versus/i], response: "Check sites in the Results table and click 'Compare Selected' for side-by-side analysis. Or ask me to 'compare top 3 sites'!" },
+    { patterns: [/hello|hi|hey|help/i], response: "Hello! I can answer questions about locations, methodology, data, ROI, or growth. I can also adjust parameters — try 'set budget to $80M' or 'increase transit weight to 30%'. What would you like to know?" }
 ];
+
+let chatHistory = [];
+
+// API Key management (stored in localStorage)
+function getGroqKey() {
+    return localStorage.getItem('groq_api_key') || '';
+}
+function saveGroqKey(key) {
+    if (key) localStorage.setItem('groq_api_key', key);
+    else localStorage.removeItem('groq_api_key');
+}
+function onApiKeyChange() {
+    const input = document.getElementById('groqKeyInput');
+    const key = input.value.trim();
+    saveGroqKey(key);
+    updateKeyStatus();
+}
+function updateKeyStatus() {
+    const key = getGroqKey();
+    const el = document.getElementById('keyStatus');
+    const statusEl = document.getElementById('dashChatStatus');
+    if (key && key.startsWith('gsk_')) {
+        el.textContent = '✓ Key saved';
+        el.className = 'key-status ok';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green);font-weight:600;">LLM: llama-3.3-70b</span>';
+    } else if (key) {
+        el.textContent = '⚠ Invalid format';
+        el.className = 'key-status missing';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange);font-weight:600;">Invalid key</span>';
+    } else {
+        el.textContent = 'No key';
+        el.className = 'key-status missing';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--text3);">Keyword mode</span>';
+    }
+}
+// Restore saved key on load
+function initChatApiKey() {
+    const saved = getGroqKey();
+    if (saved) {
+        document.getElementById('groqKeyInput').value = saved;
+    }
+    updateKeyStatus();
+}
+
+function buildContextString() {
+    const ctx = [];
+    if (activeSites.length > 0) {
+        ctx.push('CURRENT RECOMMENDED SITES:');
+        activeSites.forEach(s => {
+            ctx.push(`  #${s.id} ${s.name} — Score: ${s.score}, Capacity: ${s.capacity}, Type: ${s.type}, Cost: ${s.cost}, ROI: ${s.roi}, Priority: ${s.priority}, Sub-scores: traffic=${s.subScores?.traffic}, gap=${s.subScores?.gap}, growth=${s.subScores?.growth}, poi=${s.subScores?.poi}, transit=${s.subScores?.transit}`);
+        });
+    }
+    const w = {
+        traffic: document.getElementById('w-traffic').value,
+        gap: document.getElementById('w-gap').value,
+        growth: document.getElementById('w-growth').value,
+        poi: document.getElementById('w-poi').value,
+        transit: document.getElementById('w-transit').value
+    };
+    ctx.push(`\nCURRENT SCORING WEIGHTS: traffic=${w.traffic}%, gap=${w.gap}%, growth=${w.growth}%, poi=${w.poi}%, transit=${w.transit}%`);
+    ctx.push(`CONSTRAINTS: Budget=$${document.getElementById('budget-slider').value}M, Min capacity=${document.getElementById('cap-slider').value}`);
+    ctx.push(`WHAT-IF: Exclude flood=${document.getElementById('wif-flood').classList.contains('active')}, Transit priority=${document.getElementById('wif-transit').classList.contains('active')}, Future areas=${document.getElementById('wif-future').classList.contains('active')}`);
+    if (osmParkingCount || censusTractCount) {
+        ctx.push(`\nLIVE DATA: OSM parking facilities=${osmParkingCount}, Census tracts=${censusTractCount}, Population=${censusPopTotal.toLocaleString()}`);
+    }
+    return ctx.join('\n') || 'No analysis has been run yet. The user should click "Run Agent Pipeline" first.';
+}
+
+async function callGroqDirect(userMessage) {
+    const key = getGroqKey();
+    if (!key || !key.startsWith('gsk_')) throw new Error('NO_KEY');
+
+    const contextStr = buildContextString();
+    const messages = [
+        { role: 'system', content: `${CHAT_SYSTEM_PROMPT}\n\n--- CURRENT ANALYSIS CONTEXT ---\n${contextStr}` },
+        ...chatHistory.slice(-20),
+        { role: 'user', content: userMessage }
+    ];
+
+    const res = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`
+        },
+        body: JSON.stringify({
+            model: GROQ_MODEL,
+            messages,
+            temperature: 0.7,
+            max_tokens: 500
+        })
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error('INVALID_KEY');
+        throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const reply = data.choices[0].message.content;
+
+    // Save to history
+    chatHistory.push({ role: 'user', content: userMessage });
+    chatHistory.push({ role: 'assistant', content: reply });
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+
+    return reply;
+}
+
+// Natural language parameter parsing
+function tryParseParameterCommand(text) {
+    const lower = text.toLowerCase();
+    const actions = [];
+
+    // Weight adjustments: "set traffic weight to 40%", "increase poi to 30", "traffic 35%"
+    const weightPatterns = [
+        { regex: /(?:set|change|adjust|make|increase|decrease)?\s*traffic\s*(?:weight|demand)?\s*(?:to|=|:)?\s*(\d+)\s*%?/i, slider: 'w-traffic', name: 'Traffic' },
+        { regex: /(?:set|change|adjust|make|increase|decrease)?\s*(?:parking\s*)?gap\s*(?:weight)?\s*(?:to|=|:)?\s*(\d+)\s*%?/i, slider: 'w-gap', name: 'Gap' },
+        { regex: /(?:set|change|adjust|make|increase|decrease)?\s*growth\s*(?:weight|potential)?\s*(?:to|=|:)?\s*(\d+)\s*%?/i, slider: 'w-growth', name: 'Growth' },
+        { regex: /(?:set|change|adjust|make|increase|decrease)?\s*poi\s*(?:weight|density)?\s*(?:to|=|:)?\s*(\d+)\s*%?/i, slider: 'w-poi', name: 'POI' },
+        { regex: /(?:set|change|adjust|make|increase|decrease)?\s*transit\s*(?:weight|access)?\s*(?:to|=|:)?\s*(\d+)\s*%?/i, slider: 'w-transit', name: 'Transit' },
+    ];
+
+    for (const wp of weightPatterns) {
+        const m = text.match(wp.regex);
+        if (m) {
+            const val = Math.min(50, Math.max(0, parseInt(m[1])));
+            actions.push({ type: 'weight', slider: wp.slider, value: val, name: wp.name });
+        }
+    }
+
+    // Budget: "set budget to 80M", "budget $60M", "max budget 100"
+    const budgetMatch = text.match(/(?:set|change)?\s*(?:max\s*)?budget\s*(?:to|=|:)?\s*\$?\s*(\d+)\s*M?/i);
+    if (budgetMatch) {
+        const val = Math.min(150, Math.max(20, parseInt(budgetMatch[1])));
+        actions.push({ type: 'constraint', slider: 'budget-slider', value: val, name: 'Budget', display: `$${val}M` });
+    }
+
+    // Min capacity: "set minimum capacity to 200", "min capacity 300"
+    const capMatch = text.match(/(?:set|change)?\s*(?:min(?:imum)?\s*)?capacity\s*(?:to|=|:)?\s*(\d+)/i);
+    if (capMatch) {
+        const val = Math.min(800, Math.max(100, Math.round(parseInt(capMatch[1]) / 50) * 50));
+        actions.push({ type: 'constraint', slider: 'cap-slider', value: val, name: 'Min Capacity', display: val.toString() });
+    }
+
+    // What-if toggles
+    if (/exclude\s*flood|no\s*flood|remove\s*flood|filter\s*flood/i.test(lower)) {
+        const el = document.getElementById('wif-flood');
+        if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: true, name: 'Exclude Flood Zones' });
+    }
+    if (/include\s*flood|allow\s*flood|keep\s*flood/i.test(lower)) {
+        const el = document.getElementById('wif-flood');
+        if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: false, name: 'Include Flood Zones' });
+    }
+    if (/(?:enable|activate|turn\s*on)\s*transit\s*priority/i.test(lower)) {
+        const el = document.getElementById('wif-transit');
+        if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-transit', enable: true, name: 'Transit Priority Mode' });
+    }
+    if (/(?:disable|deactivate|turn\s*off)\s*transit\s*priority/i.test(lower)) {
+        const el = document.getElementById('wif-transit');
+        if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-transit', enable: false, name: 'Disable Transit Priority' });
+    }
+    if (/include\s*future|future\s*(?:dev|areas|development)/i.test(lower)) {
+        const el = document.getElementById('wif-future');
+        if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-future', enable: true, name: 'Include Future Dev Areas' });
+    }
+
+    // Presets: "use transit preset", "switch to growth preset"
+    const presetMatch = lower.match(/(?:use|apply|switch\s*to)\s*(balanced|transit|growth|demand|budget)\s*(?:preset|mode)?/i);
+    if (presetMatch) {
+        actions.push({ type: 'preset', preset: presetMatch[1].toLowerCase(), name: presetMatch[1] + ' Preset' });
+    }
+
+    // Run pipeline
+    if (/(?:run|start|execute)\s*(?:the\s*)?(?:agent\s*)?pipeline/i.test(lower)) {
+        actions.push({ type: 'run', name: 'Run Pipeline' });
+    }
+
+    return actions.length > 0 ? actions : null;
+}
+
+function applyParameterActions(actions) {
+    const descriptions = [];
+    for (const action of actions) {
+        if (action.type === 'weight') {
+            const slider = document.getElementById(action.slider);
+            slider.value = action.value;
+            descriptions.push(`${action.name} weight → ${action.value}%`);
+        } else if (action.type === 'constraint') {
+            const slider = document.getElementById(action.slider);
+            slider.value = action.value;
+            descriptions.push(`${action.name} → ${action.display}`);
+        } else if (action.type === 'toggle') {
+            const el = document.getElementById(action.id);
+            if (action.enable && !el.classList.contains('active')) toggleWhatIf(el);
+            if (!action.enable && el.classList.contains('active')) toggleWhatIf(el);
+            descriptions.push(`${action.name}: ${action.enable ? 'ON' : 'OFF'}`);
+        } else if (action.type === 'preset') {
+            applyPreset(action.preset);
+            descriptions.push(`Applied ${action.name}`);
+        } else if (action.type === 'run') {
+            runCurrentMode();
+            descriptions.push('Pipeline started');
+        }
+    }
+    // Update sliders display and recalculate
+    onSliderChange();
+    if (!actions.some(a => a.type === 'preset' || a.type === 'run')) {
+        recalculate();
+        addScenarioEntry('Chat: ' + descriptions.join(', '));
+    }
+    return descriptions;
+}
+
+function useSuggestion(el) {
+    const input = document.getElementById('dashChatInput');
+    input.value = el.textContent;
+    sendDashChat();
+}
 
 function toggleChat() {
     document.getElementById('chatPanel').classList.toggle('open');
 }
+
+async function sendDashChat() {
+    const input = document.getElementById('dashChatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const msgs = document.getElementById('dashChatMessages');
+    msgs.innerHTML += `<div class="msg user">${escapeHtml(text)}</div>`;
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // 1. Try parsing as a parameter command
+    const paramActions = tryParseParameterCommand(text);
+    if (paramActions) {
+        const descriptions = applyParameterActions(paramActions);
+        const actionHtml = descriptions.map(d => `<div class="msg-action">✓ ${d}</div>`).join('');
+        setTimeout(() => {
+            msgs.innerHTML += `<div class="msg bot">Done! I've updated the parameters:<br>${actionHtml}<br><span style="font-size:0.72rem;color:var(--text3);">The analysis has been recalculated with the new settings.</span></div>`;
+            msgs.scrollTop = msgs.scrollHeight;
+        }, 300);
+        return;
+    }
+
+    // 2. Try calling Groq LLM directly from browser
+    const groqKey = getGroqKey();
+    if (groqKey && groqKey.startsWith('gsk_')) {
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.className = 'msg bot thinking';
+        thinkingDiv.textContent = 'Thinking...';
+        msgs.appendChild(thinkingDiv);
+        msgs.scrollTop = msgs.scrollHeight;
+
+        try {
+            const reply = await callGroqDirect(text);
+            thinkingDiv.remove();
+            msgs.innerHTML += `<div class="msg bot">${escapeHtml(reply)}<div class="msg-model">via ${GROQ_MODEL}</div></div>`;
+        } catch(e) {
+            thinkingDiv.remove();
+            if (e.message === 'INVALID_KEY') {
+                msgs.innerHTML += `<div class="msg bot" style="border-left:2px solid var(--red);">API key is invalid. Please check your Groq API key and try again. <a href="https://console.groq.com" target="_blank" style="color:var(--accent);">Get a free key →</a></div>`;
+                document.getElementById('keyStatus').textContent = '✗ Invalid';
+                document.getElementById('keyStatus').className = 'key-status missing';
+            } else if (e.message === 'NO_KEY') {
+                appendFallbackReply(text, msgs);
+            } else {
+                msgs.innerHTML += `<div class="msg bot" style="border-left:2px solid var(--orange);">LLM error: ${escapeHtml(e.message)}<div class="msg-model">falling back to keyword mode</div></div>`;
+            }
+        }
+    } else {
+        // 3. No API key: keyword matching fallback
+        setTimeout(() => { appendFallbackReply(text, msgs); }, 400);
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendFallbackReply(text, msgs) {
+    let reply = "I can provide info about specific locations, methodology, data sources, budget analysis, or growth trends. You can also adjust parameters — try 'set budget to $80M' or 'increase transit weight'. Paste a <strong>free Groq API key</strong> above for AI-powered answers!";
+    for (const r of chatFallback) {
+        if (r.patterns.some(p => p.test(text))) { reply = r.response; break; }
+    }
+    msgs.innerHTML += `<div class="msg bot">${reply}<div class="msg-model">keyword mode — add API key for AI answers</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Also support the old floating chat (sends to dashboard chat)
 function sendChat() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if (!text) return;
-    const msgs = document.getElementById('chatMessages');
-    msgs.innerHTML += `<div class="msg user">${text}</div>`;
+    document.getElementById('dashChatInput').value = text;
     input.value = '';
-
-    let reply = "That's a great question! I can provide detailed information about specific locations, our methodology, data sources, budget analysis, growth projections, and more. Try asking about 'downtown', 'ROI', 'methodology', or 'data sources'.";
-    for (const r of chatResponses) {
-        if (r.patterns.some(p => p.test(text))) { reply = r.response; break; }
-    }
-    setTimeout(() => {
-        msgs.innerHTML += `<div class="msg bot">${reply}</div>`;
-        msgs.scrollTop = msgs.scrollHeight;
-    }, 500);
-    msgs.scrollTop = msgs.scrollHeight;
+    sendDashChat();
 }
 
 // ========== I. BACKEND / WEBSOCKET MODULE ==========
@@ -1582,6 +1935,7 @@ function init() {
     renderPipeline();
     initCharts();
     renderExplainability();
+    initChatApiKey();
 }
 init();
 </script>
