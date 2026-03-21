@@ -205,13 +205,14 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .score-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
 
 /* Comparison Panel */
-.compare-panel { display: none; margin-top: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.compare-panel { display: none; margin-top: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; overflow-x: auto; }
 .compare-panel.show { display: block; }
-.compare-grid { display: grid; gap: 0; }
-.compare-row { display: grid; border-bottom: 1px solid rgba(255,255,255,0.04); }
-.compare-row.header { background: rgba(99,179,237,0.05); border-radius: 8px 8px 0 0; }
-.compare-cell { padding: 10px 16px; font-size: 0.8rem; }
-.compare-cell.label { color: var(--text3); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; }
+.compare-grid { display: flex; flex-direction: column; gap: 0; min-width: fit-content; }
+.compare-row { display: grid; border-bottom: 1px solid rgba(255,255,255,0.06); align-items: center; }
+.compare-row:nth-child(even) { background: rgba(99,179,237,0.03); }
+.compare-row:hover { background: rgba(99,179,237,0.06); }
+.compare-cell { padding: 10px 16px; font-size: 0.8rem; word-break: break-word; min-width: 0; }
+.compare-cell.label { color: var(--text3); font-size: 0.72rem; text-transform: uppercase; font-weight: 600; background: rgba(255,255,255,0.02); white-space: nowrap; }
 .compare-cell.best { color: var(--green); font-weight: 700; }
 
 /* ========== 9. EXPLAINABILITY ========== */
@@ -1156,6 +1157,8 @@ function showComparison() {
     const sites = activeSites.filter(s => selectedIds.has(s.id));
     if (sites.length < 2) return;
     const cols = sites.length + 1;
+    const colWidth = Math.max(140, Math.floor(500 / sites.length));
+    const gridCols = `160px repeat(${sites.length}, ${colWidth}px)`;
     const fields = [
         ['Location', s=>s.name], ['Type', s=>s.type], ['Capacity', s=>s.capacity+' spaces'],
         ['Score', s=>s.score+'/100'], ['Priority', s=>`<span class="priority-${s.priority}">${s.priority.toUpperCase()}</span>`],
@@ -1164,18 +1167,28 @@ function showComparison() {
         ['Growth Score', s=>s.subScores.growth], ['POI Score', s=>s.subScores.poi], ['Transit Score', s=>s.subScores.transit],
         ['Flood Zone', s=>s.floodZone?'<span style="color:var(--red)">Yes</span>':'No']
     ];
-    panel.innerHTML = '<h3 style="margin-bottom:16px;font-size:1rem;">Side-by-Side Comparison</h3>' +
-        '<div class="compare-grid" style="grid-template-columns:160px repeat('+(cols-1)+',1fr);">' +
-        fields.map(([label, fn]) => {
-            const vals = sites.map(fn);
-            const numVals = vals.map(v => typeof v==='string'? parseFloat(v)||0 : v);
-            const maxVal = Math.max(...numVals);
-            return `<div class="compare-row" style="grid-template-columns:160px repeat(${cols-1},1fr);">
-                <div class="compare-cell label">${label}</div>
-                ${sites.map((s,i) => `<div class="compare-cell ${numVals[i]===maxVal && maxVal>0 && typeof vals[i]!=='string'?'best':''}">${vals[i]}</div>`).join('')}
-            </div>`;
-        }).join('') + '</div>';
+    // Header row with site names
+    const headerRow = `<div class="compare-row" style="grid-template-columns:${gridCols};background:rgba(99,179,237,0.08);border-radius:8px 8px 0 0;">
+        <div class="compare-cell label" style="color:var(--accent);">Metric</div>
+        ${sites.map(s => `<div class="compare-cell" style="font-weight:700;color:var(--accent);font-size:0.82rem;">#${s.id} ${s.name.split('—')[0].split('-')[0].trim()}</div>`).join('')}
+    </div>`;
+    // Data rows
+    const dataRows = fields.map(([label, fn]) => {
+        const vals = sites.map(fn);
+        const numVals = vals.map(v => typeof v==='string'? parseFloat(v)||0 : v);
+        const maxVal = Math.max(...numVals);
+        return `<div class="compare-row" style="grid-template-columns:${gridCols};">
+            <div class="compare-cell label">${label}</div>
+            ${sites.map((s,i) => `<div class="compare-cell ${numVals[i]===maxVal && maxVal>0 && typeof vals[i]!=='string'?'best':''}">${vals[i]}</div>`).join('')}
+        </div>`;
+    }).join('');
+    panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:1rem;margin:0;">Side-by-Side Comparison</h3>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('comparePanel').classList.remove('show');" style="font-size:0.7rem;">Close</button>
+    </div>
+    <div class="compare-grid">${headerRow}${dataRows}</div>`;
     panel.classList.add('show');
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 // ========== F. CHARTS MODULE ==========
