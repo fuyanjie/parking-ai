@@ -208,6 +208,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .chart-card h3 { font-size: 0.85rem; color: var(--text); margin-bottom: 16px; }
 .chart-card canvas { max-height: 260px; }
+.chart-card .chart-center-label { text-align: center; font-size: 0.72rem; color: var(--text3); margin-top: -8px; }
 
 /* ========== 8. RESULTS TABLE ========== */
 .results-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
@@ -348,6 +349,72 @@ details.reasoning summary:hover { color: var(--accent); }
 
 /* ========== 13. FOOTER ========== */
 .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text3); }
+
+/* ========== 14. COT ANIMATION ========== */
+.cot-block { font-family: 'Fira Code', monospace; font-size: 0.72rem; color: var(--green); background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px 12px; margin-top: 8px; white-space: pre-wrap; line-height: 1.6; border-left: 2px solid var(--green); }
+.cot-cursor { display: inline-block; width: 7px; height: 14px; background: var(--green); animation: blink 0.8s infinite; vertical-align: text-bottom; margin-left: 2px; }
+@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+
+/* ========== 15. EXPORT BUTTONS ========== */
+.export-btns { display: flex; gap: 8px; }
+.btn-export { padding: 6px 14px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border); background: rgba(99,179,237,0.06); color: var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.btn-export:hover { background: rgba(99,179,237,0.15); border-color: var(--accent); }
+
+/* ========== 16. COVERAGE LAYER ========== */
+.coverage-stats { position: absolute; top: 12px; left: 12px; z-index: 1000; background: rgba(15,22,41,0.92); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 0.72rem; color: var(--green); font-weight: 600; display: none; }
+
+/* ========== 17. HAMBURGER MENU ========== */
+.hamburger { display: none; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; padding: 4px; }
+
+/* ========== 18. MOBILE RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .hero h1 { font-size: 1.6rem; }
+    .hero .subtitle { font-size: 0.9rem; }
+    .stats-row { gap: 20px; }
+    .stat-num { font-size: 1.8rem; }
+    .nav-links { display: none; position: absolute; top: 52px; left: 0; right: 0; flex-direction: column; background: rgba(10,14,26,0.97); padding: 16px; gap: 12px; border-bottom: 1px solid var(--border); }
+    .nav-links.mobile-open { display: flex; }
+    .hamburger { display: block; }
+    .dashboard-grid, .dash-body { display: grid; grid-template-columns: 1fr !important; grid-template-rows: auto; }
+    .dash-body { height: auto !important; min-height: auto !important; }
+    .sidebar, .pipeline-sidebar { width: 100% !important; max-height: 300px; overflow-y: auto; border-right: none !important; border-bottom: 1px solid var(--border); }
+    .right-panel { width: 100% !important; border-left: none !important; border-top: 1px solid var(--border); }
+    .map-area { min-height: 350px; }
+    #map { min-height: 350px; }
+    .charts-grid { grid-template-columns: 1fr !important; }
+    .dash-chat { height: auto; min-height: 300px; margin: 0 8px 12px; }
+    .section { padding: 40px 16px; }
+    .explain-grid { grid-template-columns: 1fr; }
+    .arch-row { flex-direction: column; }
+    .res-table { display: block; overflow-x: auto; white-space: nowrap; }
+    .compare-panel { overflow-x: auto; }
+    .chat-panel { width: 90vw; right: 5vw; bottom: 80px; }
+    .results-bar { flex-direction: column; align-items: flex-start; }
+    .layer-ctrl { max-width: 160px; font-size: 0.65rem; }
+}
+
+/* ========== 19. PRINT STYLESHEET ========== */
+@media print {
+    body { background: white !important; color: #1a202c !important; }
+    .nav, .chat-fab, .chat-panel, .dash-chat, .hero, .scroll-cta, .hero-cta,
+    .layer-ctrl, .map-legend, .right-panel, .sidebar, .dash-header,
+    .hamburger, .coverage-stats, .impact-flash, .export-btns,
+    .map-area, #liveStatsBar { display: none !important; }
+    .section { padding: 20px 0; page-break-inside: avoid; }
+    .section-title, .chart-card h3 { color: #1a202c !important; }
+    .charts-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-card { border: 1px solid #ddd; background: white !important; }
+    .res-table th, .res-table td { color: #1a202c !important; border-bottom: 1px solid #ddd !important; }
+    .res-table th { border-bottom: 2px solid #333 !important; }
+    .compare-panel { border: 1px solid #ddd !important; background: white !important; }
+    .explain-card { border: 1px solid #ddd !important; background: white !important; }
+    .dashboard { display: none !important; }
+    .footer { color: #666 !important; border-top: 1px solid #ddd !important; }
+    .priority-high { color: #c53030 !important; }
+    .priority-medium { color: #c05621 !important; }
+    .priority-low { color: #276749 !important; }
+    * { box-shadow: none !important; }
+}
     </style>
 </head>
 <body>
@@ -355,6 +422,7 @@ details.reasoning summary:hover { color: var(--accent); }
 <!-- ========== NAVIGATION ========== -->
 <nav class="nav" id="nav">
     <div class="nav-logo">AI Agent <span>Parking Planner</span></div>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')">&#9776;</button>
     <div class="nav-links">
         <a href="#hero">Home</a>
         <a href="#arch-section">Architecture</a>
@@ -477,7 +545,9 @@ Or ask any question about the analysis!</div>
                 <label class="layer-toggle" style="color:var(--orange);"><input type="checkbox" data-layer="recommendations" checked> <span class="layer-dot" style="color:var(--orange);"></span> Recommendations</label>
                 <label class="layer-toggle" style="color:#38b2ac;"><input type="checkbox" data-layer="osmParking"> <span class="layer-dot" style="color:#38b2ac;"></span> OSM Parking (Live)</label>
                 <label class="layer-toggle" style="color:#ed64a6;"><input type="checkbox" data-layer="census"> <span class="layer-dot" style="color:#ed64a6;"></span> Census Pop (Live)</label>
+                <label class="layer-toggle" style="color:#68d391;"><input type="checkbox" data-layer="coverage"> <span class="layer-dot" style="color:#68d391;"></span> Coverage Analysis</label>
             </div>
+            <div class="coverage-stats" id="coverageStats"></div>
             <div class="map-legend">
                 <div class="legend-row"><div class="legend-color" style="background:var(--red);"></div> High Priority</div>
                 <div class="legend-row"><div class="legend-color" style="background:var(--orange);"></div> Medium Priority</div>
@@ -485,6 +555,8 @@ Or ask any question about the analysis!</div>
                 <div class="legend-row"><div class="legend-color" style="background:#4299e1;"></div> Existing Facilities</div>
                 <div class="legend-row"><div class="legend-color" style="background:#38b2ac;"></div> OSM Parking (Live)</div>
                 <div class="legend-row"><div class="legend-color" style="background:#ed64a6;"></div> Census Density (Live)</div>
+                <div class="legend-row"><div class="legend-color" style="background:rgba(104,211,145,0.4);border:1px solid #68d391;"></div> Coverage (New)</div>
+                <div class="legend-row"><div class="legend-color" style="background:rgba(66,153,225,0.3);border:1px solid #4299e1;"></div> Coverage (Existing)</div>
             </div>
         </div>
 
@@ -548,10 +620,12 @@ Or ask any question about the analysis!</div>
     <h2 class="section-title fade-in">Data Analytics & Insights</h2>
     <p class="section-sub fade-in">Comprehensive visual analysis of parking demand, utilization patterns, growth trends, and investment efficiency across the Phoenix metro area.</p>
     <div class="charts-grid fade-in">
-        <div class="chart-card"><h3>Parking Utilization by Area</h3><canvas id="chartBar"></canvas></div>
+        <div class="chart-card"><h3>Site Score Breakdown</h3><canvas id="chartBar"></canvas></div>
         <div class="chart-card"><h3>Top Site — Score Breakdown (Radar)</h3><canvas id="chartRadar"></canvas></div>
         <div class="chart-card"><h3>Parking Supply vs Demand Trend (2020-2030)</h3><canvas id="chartLine"></canvas></div>
         <div class="chart-card"><h3>Cost vs ROI — Site Comparison</h3><canvas id="chartScatter"></canvas></div>
+        <div class="chart-card"><h3>24-Hour Parking Demand Profile</h3><canvas id="chartHourly"></canvas></div>
+        <div class="chart-card"><h3>Investment Breakdown by Category</h3><canvas id="chartCost"></canvas><div class="chart-center-label" id="costCenterLabel"></div></div>
     </div>
 </section>
 
@@ -567,6 +641,10 @@ Or ask any question about the analysis!</div>
                 <div class="item"><div class="num" id="totalCost">$112.6M</div><div class="lab">Investment</div></div>
                 <div class="item"><div class="num" id="avgRoi" style="color:var(--green);">18.5%</div><div class="lab">Avg ROI</div></div>
             </div>
+            <div class="export-btns">
+                <button class="btn-export" onclick="downloadCSV()">&#128196; Export CSV</button>
+                <button class="btn-export" onclick="window.print()">&#128438; Export PDF</button>
+            </div>
             <button class="btn btn-outline btn-sm" id="compareBtn" onclick="showComparison()" disabled>Compare Selected (0)</button>
         </div>
         <table class="res-table" id="resultsTable"><thead><tr>
@@ -579,6 +657,7 @@ Or ask any question about the analysis!</div>
             <th onclick="sortTable('score')">Score</th>
             <th onclick="sortTable('costNum')">Est. Cost</th>
             <th onclick="sortTable('roiNum')">ROI</th>
+            <th style="width:30px;">&#128205;</th>
         </tr></thead><tbody id="resultsBody"></tbody></table>
         <div class="compare-panel" id="comparePanel"></div>
     </div>
@@ -708,7 +787,7 @@ let sortField = 'score'; let sortDir = -1;
 const map = L.map('map', { zoomControl: true }).setView(PHOENIX, 11);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'OpenStreetMap & CARTO', maxZoom:19 }).addTo(map);
 
-const layers = { traffic: L.layerGroup(), poi: L.layerGroup(), parking: L.layerGroup(), transit: L.layerGroup(), recommendations: L.layerGroup(), osmParking: L.layerGroup(), census: L.layerGroup() };
+const layers = { traffic: L.layerGroup(), poi: L.layerGroup(), parking: L.layerGroup(), transit: L.layerGroup(), recommendations: L.layerGroup(), osmParking: L.layerGroup(), census: L.layerGroup(), coverage: L.layerGroup() };
 layers.recommendations.addTo(map); // default on
 let liveDataLoaded = false, osmParkingCount = 0, censusTractCount = 0, censusPopTotal = 0;
 
@@ -753,10 +832,14 @@ function buildRecommendations() {
         const mk = L.marker([site.lat,site.lng], { icon: L.divIcon({ className:'',
             html:`<div style="background:${rawColor};color:#1a202c;font-weight:800;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;box-shadow:0 0 10px ${rawColor}80;">${site.id}</div>`,
             iconSize:[24,24], iconAnchor:[12,12] }) }).addTo(layers.recommendations);
-        mk.bindPopup(`<div style="max-width:260px;"><h3 style="color:#1a202c;font-size:0.95rem;margin-bottom:4px;">${site.name}</h3>
+        mk.bindPopup(`<div style="max-width:280px;"><h3 style="color:#1a202c;font-size:0.95rem;margin-bottom:4px;">${site.name}</h3>
             <div style="font-size:0.78rem;color:#4a5568;line-height:1.6;">
             <b>Type:</b> ${site.type}<br><b>Score:</b> ${site.score}/100<br><b>Cost:</b> ${site.cost} | <b>ROI:</b> ${site.roi}<br><br>${site.reason}</div>
-            <span style="display:inline-block;background:#3182ce;color:#fff;padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;margin-top:4px;">${site.capacity} spaces</span></div>`, { maxWidth:300 });
+            <span style="display:inline-block;background:#3182ce;color:#fff;padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;margin-top:4px;">${site.capacity} spaces</span>
+            <div style="margin-top:6px;display:flex;gap:8px;">
+              <a href="https://www.google.com/maps/@${site.lat},${site.lng},3a,75y,90t/data=!3m6!1e1!3m4!1s!2e0!7i16384!8i8192" target="_blank" style="font-size:0.72rem;color:#3182ce;text-decoration:none;font-weight:600;">&#128205; Street View</a>
+              <a href="https://www.google.com/maps?q=${site.lat},${site.lng}" target="_blank" style="font-size:0.72rem;color:#3182ce;text-decoration:none;font-weight:600;">&#128506; Google Maps</a>
+            </div></div>`, { maxWidth:320 });
     });
 }
 
@@ -902,11 +985,32 @@ function renderPipeline() {
             <div class="step-header"><div class="step-icon">${s.icon}</div><div class="step-title">${s.title}</div></div>
             <div class="step-desc">${s.desc}</div>
             <div class="step-sources-row">${s.sources.map(x=>`<span class="source-tag">${x}</span>`).join('')}</div>
-            ${i<=currentStep?`<div class="step-stats">${Object.entries(s.stats).map(([k,v])=>`<div class="mini-stat"><div class="l">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
-            <div class="step-cot" style="display:block;"><pre style="margin:0;white-space:pre-wrap;">${s.cot}</pre></div>`:''}
+            ${i<currentStep?`<div class="step-stats">${Object.entries(s.stats).map(([k,v])=>`<div class="mini-stat"><div class="l">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+            <div class="cot-block">${s.cot}</div>`:''}
+            ${i===currentStep?`<div class="cot-block" id="cot-typing-${i}"><span class="cot-cursor"></span></div>
+            <div class="step-stats" id="step-stats-${i}" style="opacity:0;transition:opacity 0.5s;"></div>`:''}
         </div>`).join('');
 }
 function focusStep(i) { if(i>currentStep) return; document.querySelectorAll('.agent-step').forEach(el=>el.classList.remove('active')); document.getElementById('step-'+i).classList.add('active'); }
+
+function typeCoT(elementId, text, speed) {
+    return new Promise(resolve => {
+        const el = document.getElementById(elementId);
+        if (!el) { resolve(); return; }
+        let idx = 0;
+        const chars = text.length;
+        const interval = setInterval(() => {
+            if (idx < chars) {
+                el.innerHTML = text.substring(0, idx + 1) + '<span class="cot-cursor"></span>';
+                idx++;
+            } else {
+                el.innerHTML = text;
+                clearInterval(interval);
+                resolve();
+            }
+        }, speed || 12);
+    });
+}
 
 async function runPipeline() {
     if (pipeRunning) return;
@@ -927,6 +1031,14 @@ async function runPipeline() {
         else { map.addLayer(layers.recommendations); }
         // update layer checkboxes
         document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = map.hasLayer(layers[cb.dataset.layer]); });
+        // Typing animation for CoT
+        await typeCoT('cot-typing-'+i, agentSteps[i].cot, 12);
+        // Fade in stats
+        const statsEl = document.getElementById('step-stats-'+i);
+        if (statsEl) {
+            statsEl.innerHTML = Object.entries(agentSteps[i].stats).map(([k,v])=>`<div class="mini-stat"><div class="l">${k}</div><div class="v">${v}</div></div>`).join('');
+            statsEl.style.opacity = '1';
+        }
         // Auto-fetch live data during parking (step 2) and demographics (step 4) steps
         if (i===2 && !liveDataLoaded) {
             document.getElementById('statusText').innerHTML = '<span style="color:var(--green);font-weight:600;">Fetching:</span> OSM Parking (Live)...';
@@ -950,7 +1062,7 @@ async function runPipeline() {
                 agentSteps[4].stats['Population'] = (censusPopTotal/1000000).toFixed(2)+'M';
             } catch(e) { console.warn('Census fetch failed:', e); }
         }
-        await sleep(1800);
+        await sleep(600);
     }
     currentStep = agentSteps.length;
     renderPipeline();
@@ -1268,6 +1380,7 @@ function renderResultsTable() {
             <td><strong>${s.capacity}</strong></td><td class="priority-${s.priority}">${s.priority.toUpperCase()}</td>
             <td><div class="score-bar-bg"><div class="score-bar-fill" style="width:${s.score}%;"></div></div>${s.score}</td>
             <td>${s.cost}</td><td>${s.roi}</td>
+            <td><a href="https://www.google.com/maps/@${s.lat},${s.lng},3a,75y,90t/data=!3m6!1e1!3m4!1s!2e0!7i16384!8i8192" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);text-decoration:none;font-size:0.72rem;" title="Street View">&#128205;</a></td>
         </tr>`).join('');
 }
 function sortTable(field) { if(sortField===field) sortDir*=-1; else { sortField=field; sortDir=-1; } renderResultsTable(); }
@@ -1296,7 +1409,8 @@ function showComparison() {
         ['Est. Cost', s=>s.cost], ['ROI', s=>s.roi],
         ['Traffic Score', s=>s.subScores.traffic], ['Gap Score', s=>s.subScores.gap],
         ['Growth Score', s=>s.subScores.growth], ['POI Score', s=>s.subScores.poi], ['Transit Score', s=>s.subScores.transit],
-        ['Flood Zone', s=>s.floodZone?'<span style="color:var(--red)">Yes</span>':'No']
+        ['Flood Zone', s=>s.floodZone?'<span style="color:var(--red)">Yes</span>':'No'],
+        ['Map', s=>`<iframe src="https://www.google.com/maps?q=${s.lat},${s.lng}&z=15&output=embed&t=k" width="140" height="90" style="border:1px solid #2d3748;border-radius:6px;" loading="lazy" referrerpolicy="no-referrer"></iframe>`]
     ];
     // Header row with site names
     const headerRow = `<div class="compare-row" style="grid-template-columns:${gridCols};background:rgba(99,179,237,0.08);border-radius:8px 8px 0 0;">
@@ -1324,16 +1438,23 @@ function showComparison() {
 
 // ========== F. CHARTS MODULE ==========
 Chart.defaults.color = '#a0aec0'; Chart.defaults.borderColor = 'rgba(99,179,237,0.08)';
-let chartBar, chartRadar, chartLine, chartScatter;
+let chartBar, chartRadar, chartLine, chartScatter, chartHourly, chartCost;
 
 function initCharts() {
-    // Bar chart
+    // Bar chart — dynamic from activeSites: stacked sub-scores
+    const barLabels = activeSites.map(s => s.name.split('—')[0].split('-')[0].trim());
+    const subKeys = ['traffic','gap','growth','poi','transit'];
+    const subColors = ['rgba(252,129,129,0.7)','rgba(99,179,237,0.7)','rgba(246,173,85,0.7)','rgba(159,122,234,0.7)','rgba(72,187,120,0.7)'];
+    const subLabels = ['Traffic','Gap','Growth','POI','Transit'];
     chartBar = new Chart(document.getElementById('chartBar'), { type:'bar', data: {
-        labels:['Downtown','Midtown','Tempe','Scottsdale','Desert Ridge','West Phx','Mesa','Chandler'],
-        datasets:[
-            { label:'Current Utilization %', data:[94,81,85,92,68,55,62,48], backgroundColor:'rgba(99,179,237,0.6)', borderRadius:4 },
-            { label:'Projected 2030 %', data:[99,91,93,97,82,72,78,71], backgroundColor:'rgba(246,173,85,0.5)', borderRadius:4 }
-        ]}, options:{ responsive:true, plugins:{legend:{labels:{font:{size:11}}}}, scales:{y:{beginAtZero:true,max:100}} } });
+        labels: barLabels,
+        datasets: subKeys.map((k,i) => ({
+            label: subLabels[i],
+            data: activeSites.map(s => s.subScores[k]),
+            backgroundColor: subColors[i],
+            borderRadius: 2
+        }))
+    }, options:{ responsive:true, plugins:{legend:{labels:{font:{size:10}}}}, scales:{x:{ticks:{font:{size:9}}},y:{beginAtZero:true,max:100,stacked:false}} } });
 
     // Radar chart
     chartRadar = new Chart(document.getElementById('chartRadar'), { type:'radar', data: {
@@ -1344,13 +1465,43 @@ function initCharts() {
             { label:'#3 Tempe', data:[82,90,88,85,80], borderColor:'#48bb78', backgroundColor:'rgba(72,187,120,0.15)', pointRadius:3 }
         ]}, options:{ responsive:true, scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20,color:'#4a5568'},grid:{color:'rgba(99,179,237,0.1)'},pointLabels:{font:{size:11}}}}, plugins:{legend:{labels:{font:{size:11}}}} } });
 
-    // Line chart
+    // Line chart — supply vs demand with current year annotation and deficit fill
+    const supplyData = [82000,83500,85000,86200,87500,89400,90500,91500,92000,93000,94000];
+    const demandData = [80000,83000,86000,89500,93000,96500,99000,101500,103500,105000,106400];
+    const deficitFill = demandData.map((d,i) => d > supplyData[i] ? d : supplyData[i]);
     chartLine = new Chart(document.getElementById('chartLine'), { type:'line', data: {
         labels:['2020','2021','2022','2023','2024','2025','2026','2027','2028','2029','2030'],
         datasets:[
-            { label:'Parking Supply (spaces)', data:[82000,83500,85000,86200,87500,89400,90500,91500,92000,93000,94000], borderColor:'#48bb78', tension:0.3, fill:false },
-            { label:'Parking Demand (spaces)', data:[80000,83000,86000,89500,93000,96500,99000,101500,103500,105000,106400], borderColor:'#fc8181', tension:0.3, fill:false },
-        ]}, options:{ responsive:true, plugins:{legend:{labels:{font:{size:11}}}}, scales:{y:{beginAtZero:false}} } });
+            { label:'Parking Supply', data: supplyData, borderColor:'#48bb78', backgroundColor:'rgba(72,187,120,0.08)', tension:0.3, fill:false, borderWidth:2 },
+            { label:'Parking Demand', data: demandData, borderColor:'#fc8181', backgroundColor:'rgba(252,129,129,0.08)', tension:0.3, fill:'-1', borderWidth:2 },
+        ]}, options:{ responsive:true, plugins:{legend:{labels:{font:{size:11}}},
+            annotation: undefined // handled via plugin below
+        }, scales:{y:{beginAtZero:false}} },
+        plugins: [{
+            id: 'currentYearLine',
+            afterDraw(chart) {
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
+                const yearIdx = 6; // 2026 is index 6
+                const x = xAxis.getPixelForValue(yearIdx);
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.strokeStyle = 'rgba(246,173,85,0.8)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x, yAxis.top);
+                ctx.lineTo(x, yAxis.bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#f6ad55';
+                ctx.font = '600 10px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('2026 (Now)', x, yAxis.top - 6);
+                ctx.restore();
+            }
+        }]
+    });
 
     // Scatter (bubble) chart
     chartScatter = new Chart(document.getElementById('chartScatter'), { type:'bubble', data: {
@@ -1360,10 +1511,75 @@ function initCharts() {
             borderColor: s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391'
         }))
     }, options:{ responsive:true, scales:{x:{title:{display:true,text:'Est. Cost ($M)'}},y:{title:{display:true,text:'ROI %'},beginAtZero:true}}, plugins:{legend:{display:false}} } });
+
+    // Hourly demand profile chart (static/simulated)
+    const hours = Array.from({length:24}, (_,i) => i+':00');
+    const downtown = [5,3,4,3,5,15,45,78,92,88,80,75,72,70,68,72,80,90,85,65,45,30,18,10];
+    const suburban = [3,2,2,2,3,8,20,40,55,58,60,62,63,62,60,58,55,52,45,35,25,15,8,5];
+    const entertainment = [8,5,3,2,2,3,5,10,15,18,20,22,25,28,30,35,42,55,75,88,92,85,65,30];
+    chartHourly = new Chart(document.getElementById('chartHourly'), { type:'line', data: {
+        labels: hours,
+        datasets: [
+            { label:'Downtown', data:downtown, borderColor:'#fc8181', backgroundColor:'rgba(252,129,129,0.1)', fill:true, tension:0.4, borderWidth:2, pointRadius:1 },
+            { label:'Suburban', data:suburban, borderColor:'#63b3ed', backgroundColor:'rgba(99,179,237,0.08)', fill:true, tension:0.4, borderWidth:2, pointRadius:1 },
+            { label:'Entertainment', data:entertainment, borderColor:'#9f7aea', backgroundColor:'rgba(159,122,234,0.1)', fill:true, tension:0.4, borderWidth:2, pointRadius:1 }
+        ]
+    }, options:{ responsive:true, plugins:{legend:{labels:{font:{size:10}}}},
+        scales:{x:{ticks:{font:{size:8},maxTicksLimit:12}},y:{beginAtZero:true,max:100,title:{display:true,text:'Occupancy %',font:{size:10}}}} } });
+
+    // Cost breakdown doughnut chart
+    const totalInvestment = activeSites.reduce((a,s) => a+s.costNum, 0);
+    const costBreakdown = [
+        { label:'Land Acquisition', pct:0.30, color:'rgba(99,179,237,0.8)' },
+        { label:'Construction', pct:0.45, color:'rgba(246,173,85,0.8)' },
+        { label:'Permits & Design', pct:0.10, color:'rgba(159,122,234,0.8)' },
+        { label:'Technology & Smart Systems', pct:0.08, color:'rgba(72,187,120,0.8)' },
+        { label:'Contingency', pct:0.07, color:'rgba(252,129,129,0.8)' }
+    ];
+    chartCost = new Chart(document.getElementById('chartCost'), { type:'doughnut', data: {
+        labels: costBreakdown.map(c => c.label),
+        datasets: [{ data: costBreakdown.map(c => +(totalInvestment * c.pct).toFixed(1)),
+            backgroundColor: costBreakdown.map(c => c.color),
+            borderColor: 'rgba(17,24,39,0.8)', borderWidth: 2 }]
+    }, options:{ responsive:true, cutout:'60%', plugins:{legend:{position:'right',labels:{font:{size:10},padding:8}}} },
+    plugins: [{
+        id: 'centerText',
+        afterDraw(chart) {
+            const {ctx, chartArea:{width,height,top,left}} = chart;
+            ctx.save();
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '700 16px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+            ctx.fillText('$'+total.toFixed(1)+'M', left+width/2, top+height/2 - 8);
+            ctx.font = '400 10px Inter';
+            ctx.fillStyle = '#718096';
+            ctx.fillText('Total Investment', left+width/2, top+height/2 + 10);
+            ctx.restore();
+        }
+    }] });
+    document.getElementById('costCenterLabel').textContent = '';
 }
 
 function updateCharts() {
     if (!chartRadar || !chartScatter) return;
+
+    // Update bar chart — dynamic sub-scores from activeSites
+    if (chartBar) {
+        const subKeys = ['traffic','gap','growth','poi','transit'];
+        const subColors = ['rgba(252,129,129,0.7)','rgba(99,179,237,0.7)','rgba(246,173,85,0.7)','rgba(159,122,234,0.7)','rgba(72,187,120,0.7)'];
+        const subLabels = ['Traffic','Gap','Growth','POI','Transit'];
+        chartBar.data.labels = activeSites.map(s => s.name.split('—')[0].split('-')[0].trim());
+        chartBar.data.datasets = subKeys.map((k,i) => ({
+            label: subLabels[i],
+            data: activeSites.map(s => s.subScores[k]),
+            backgroundColor: subColors[i],
+            borderRadius: 2
+        }));
+        chartBar.update();
+    }
+
     // Update radar with top 3
     const top3 = activeSites.slice(0,3);
     const colors = ['#fc8181','#63b3ed','#48bb78'];
@@ -1381,6 +1597,14 @@ function updateCharts() {
         borderColor: s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391'
     }));
     chartScatter.update();
+
+    // Update cost doughnut — recalculate from activeSites
+    if (chartCost) {
+        const totalInv = activeSites.reduce((a,s) => a+s.costNum, 0);
+        const pcts = [0.30, 0.45, 0.10, 0.08, 0.07];
+        chartCost.data.datasets[0].data = pcts.map(p => +(totalInv * p).toFixed(1));
+        chartCost.update();
+    }
 }
 
 // ========== G. EXPLAINABILITY MODULE ==========
@@ -2288,6 +2512,66 @@ function runBackendPipeline() {
     ws.send(JSON.stringify({ action: 'run', config }));
     document.getElementById('statusText').innerHTML = '<span style="color:var(--accent);">Sending to backend...</span>';
 }
+
+// ========== EXPORT CSV ==========
+function downloadCSV() {
+    if (!activeSites.length) { alert('No sites to export. Run the pipeline first.'); return; }
+    const headers = ['ID','Name','Type','Lat','Lng','Capacity','Priority','Score','Cost($M)','ROI(%)','Traffic','Gap','Growth','POI','Transit','Flood Zone','Reason'];
+    const rows = activeSites.map(s => [
+        s.id, '"'+s.name+'"', '"'+s.type+'"', s.lat, s.lng, s.capacity, s.priority, s.score,
+        s.costNum, s.roiNum, s.subScores.traffic, s.subScores.gap, s.subScores.growth, s.subScores.poi, s.subScores.transit,
+        s.floodZone?'Yes':'No', '"'+s.reason+'"'
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'phoenix_parking_sites.csv'; a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ========== COVERAGE LAYER ==========
+function buildCoverageLayer() {
+    layers.coverage.clearLayers();
+    const coverageRadius = 1500; // 1.5km
+    // New site coverage (green)
+    activeSites.forEach(site => {
+        L.circle([site.lat, site.lng], {
+            radius: coverageRadius, fillColor:'#68d391', fillOpacity:0.12,
+            color:'#68d391', weight:1, opacity:0.4, dashArray:'4 4'
+        }).addTo(layers.coverage);
+    });
+    // Existing parking coverage (blue)
+    const existingParking = [[33.4455,-112.068],[33.451,-112.077],[33.449,-112.065],[33.505,-112.072],[33.512,-112.076],
+        [33.435,-111.940],[33.428,-111.945],[33.490,-111.930],[33.496,-111.922],[33.675,-112.000],[33.413,-111.835],[33.310,-111.845]];
+    existingParking.forEach(([la,ln]) => {
+        L.circle([la, ln], {
+            radius: coverageRadius, fillColor:'#4299e1', fillOpacity:0.08,
+            color:'#4299e1', weight:1, opacity:0.3, dashArray:'4 4'
+        }).addTo(layers.coverage);
+    });
+    // Calculate rough coverage %
+    // Phoenix metro bounding box ~45km x 50km = 2250 sq km
+    const metroArea = 2250;
+    const uniqueCircles = activeSites.length + existingParking.length;
+    const circleArea = Math.PI * (coverageRadius/1000) * (coverageRadius/1000); // sq km per circle
+    const totalCoverage = Math.min(uniqueCircles * circleArea * 0.7, metroArea); // 0.7 overlap factor
+    const pct = Math.round(totalCoverage / metroArea * 100);
+    const statsEl = document.getElementById('coverageStats');
+    statsEl.style.display = 'block';
+    statsEl.innerHTML = `Coverage: ${pct}% of metro area served (${uniqueCircles} zones)`;
+}
+
+// Wire coverage layer toggle
+document.querySelector('input[data-layer="coverage"]')?.addEventListener('change', function(e) {
+    if (e.target.checked) {
+        buildCoverageLayer();
+        map.addLayer(layers.coverage);
+    } else {
+        map.removeLayer(layers.coverage);
+        document.getElementById('coverageStats').style.display = 'none';
+    }
+});
 
 // ========== J. SCROLL & ANIMATION MODULE ==========
 const observer = new IntersectionObserver(entries => {
