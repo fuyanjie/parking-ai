@@ -239,6 +239,19 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 
 /* ========== 9. EXPLAINABILITY ========== */
 .explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.explain-full { grid-column: 1 / -1; }
+.gap-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-top: 8px; }
+.gap-table th { text-align: left; padding: 8px 6px; color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--border); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.gap-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text2); vertical-align: middle; }
+.gap-table tr:hover td { background: rgba(99,179,237,0.04); }
+.gap-table .gt-site { font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.gap-table .gt-id { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+.gap-table .gt-deficit { color: var(--red); font-weight: 700; }
+.gap-table .gt-positive { color: var(--green); font-weight: 700; }
+.gap-table .gt-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); min-width: 60px; }
+.gap-table .gt-bar-fill { height: 100%; border-radius: 3px; }
+.gap-table .gt-impact { font-size: 0.65rem; color: var(--text3); max-width: 220px; line-height: 1.4; }
+.gap-table tfoot td { border-top: 2px solid var(--border); font-weight: 700; color: var(--text); padding-top: 10px; }
 .explain-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .explain-card h3 { font-size: 0.95rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 .rejected-item { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
@@ -849,6 +862,11 @@ Or ask any question about the analysis!</div>
         <div class="explain-card">
             <h3><span style="color:var(--green);">&#10003;</span> Reasoning Chain — Selected Sites</h3>
             <div id="reasoningList"></div>
+        </div>
+        <div class="explain-card explain-full">
+            <h3><span style="color:var(--orange);">&#9888;</span> Supply-Demand Gap Evidence Table</h3>
+            <p style="font-size:0.72rem;color:var(--text3);margin-bottom:12px;">Data-driven justification for each recommended site — why current parking supply fails to meet demand, and the real-world impact on residents. Sources: OSM Overpass, PHX Meters ArcGIS, Census ACS B08301, ADOT AADT.</p>
+            <div style="overflow-x:auto;" id="gapTableWrap"></div>
         </div>
     </div>
 </section>
@@ -2876,6 +2894,65 @@ function renderExplainability() {
 <span class="step">6. Rationale:</span> ${s.reason}
         </div></details>`;
     }).join('');
+
+    // Render gap evidence table
+    renderGapTable();
+}
+
+function renderGapTable() {
+    const wrap = document.getElementById('gapTableWrap');
+    if (!wrap) return;
+    const gaps = computeGapAnalysis();
+    if (!gaps || gaps.length === 0) {
+        wrap.innerHTML = '<p style="color:var(--text3);font-size:0.75rem;">Click "Fetch Live Data" to populate the supply-demand evidence table with real data from 6 sources.</p>';
+        return;
+    }
+
+    const totalSupply = gaps.reduce((a,g) => a+g.supply.total, 0);
+    const totalDemand = gaps.reduce((a,g) => a+g.demand.totalDemand, 0);
+    const totalGap = gaps.reduce((a,g) => a+Math.max(0,g.gap), 0);
+    const totalNew = gaps.reduce((a,g) => a+g.newCap, 0);
+    const totalPop = gaps.reduce((a,g) => a+g.demand.pop, 0);
+    const maxDemand = Math.max(...gaps.map(g => g.demand.totalDemand));
+
+    wrap.innerHTML = `<table class="gap-table">
+        <thead><tr>
+            <th>Site</th><th>Supply</th><th>Demand</th><th>Gap</th><th>Demand Breakdown</th>
+            <th>AI +Cap</th><th>After</th><th>Resident Impact</th>
+        </tr></thead>
+        <tbody>${gaps.map(g => {
+            const color = g.priority==='high'?'#fc8181':g.priority==='medium'?'#f6ad55':'#68d391';
+            const supplyPct = maxDemand > 0 ? Math.round(g.supply.total / maxDemand * 100) : 0;
+            const demandPct = maxDemand > 0 ? Math.round(g.demand.totalDemand / maxDemand * 100) : 0;
+            const afterTotal = g.supply.total + g.newCap;
+            const coverPct = g.demand.totalDemand > 0 ? Math.round(afterTotal / g.demand.totalDemand * 100) : 0;
+            const shortImpact = g.narrative.pain.length > 120 ? g.narrative.pain.substring(0, 117) + '...' : g.narrative.pain;
+            return `<tr>
+                <td><div class="gt-site"><span class="gt-id" style="background:${color};">${g.id}</span>${g.shortName}</div></td>
+                <td>${g.supply.total > 0 ? g.supply.total.toLocaleString() : '<span style="color:var(--red);font-weight:700;">0</span>'}
+                    <div style="font-size:0.6rem;color:var(--text3);">${g.supply.osmCapacity?'OSM:'+g.supply.osmCapacity:''}${g.supply.meters?' M:'+g.supply.meters:''}</div></td>
+                <td><b>${g.demand.totalDemand.toLocaleString()}</b>
+                    <div class="gt-bar"><div class="gt-bar-fill" style="width:${demandPct}%;background:var(--orange);"></div></div></td>
+                <td class="gt-deficit">-${Math.max(0,g.gap).toLocaleString()}</td>
+                <td style="font-size:0.65rem;">
+                    <div>Pop: ${g.demand.pop.toLocaleString()} · Workers: ${g.demand.totalWorkers.toLocaleString()}</div>
+                    <div>Drive: <b>${g.demand.driveAlonePct}%</b>${g.demand.maxAADT?' · AADT: '+(g.demand.maxAADT/1000).toFixed(0)+'K':''}</div></td>
+                <td class="gt-positive">+${g.newCap.toLocaleString()}</td>
+                <td>${afterTotal.toLocaleString()} <span style="font-size:0.6rem;color:${coverPct>50?'var(--green)':'var(--red)'};">(${coverPct}%)</span></td>
+                <td><div class="gt-impact">${shortImpact}</div></td>
+            </tr>`;
+        }).join('')}</tbody>
+        <tfoot><tr>
+            <td><b>TOTAL</b></td>
+            <td>${totalSupply.toLocaleString()}</td>
+            <td><b>${totalDemand.toLocaleString()}</b></td>
+            <td class="gt-deficit">-${totalGap.toLocaleString()}</td>
+            <td style="font-size:0.65rem;">Avg drive-alone: <b>${commuteData.total>0?Math.round(commuteData.driveAlone/commuteData.total*100):0}%</b></td>
+            <td class="gt-positive">+${totalNew.toLocaleString()}</td>
+            <td>${(totalSupply+totalNew).toLocaleString()} <span style="font-size:0.6rem;color:var(--red);">(${totalDemand>0?Math.round((totalSupply+totalNew)/totalDemand*100):0}%)</span></td>
+            <td><div class="gt-impact"><b>${totalPop.toLocaleString()}</b> residents affected</div></td>
+        </tr></tfoot>
+    </table>`;
 }
 
 // ========== G2. GAP ANALYSIS MODULE ==========
