@@ -131,6 +131,57 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 .btn-primary:disabled { background: #2d3748; color: #4a5568; cursor: not-allowed; }
 .btn-outline { background: transparent; color: var(--text2); border: 1px solid #4a5568; } .btn-outline:hover { border-color: var(--text2); }
 
+/* Preset buttons */
+.preset-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.preset-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid rgba(99,179,237,0.15); background: rgba(99,179,237,0.04); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.72rem; color: var(--text2); text-align: left; }
+.preset-btn:hover { background: rgba(99,179,237,0.1); border-color: var(--accent); }
+.preset-btn.active { background: rgba(99,179,237,0.15); border-color: var(--accent); color: var(--accent); }
+.preset-btn .pi { font-size: 1rem; flex-shrink: 0; }
+.preset-btn .pname { font-weight: 600; font-size: 0.73rem; }
+.preset-btn .pdesc { font-size: 0.65rem; color: var(--text3); }
+
+/* Weight distribution bar */
+.weight-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.weight-bar div { transition: width 0.3s; }
+
+/* Live preview mini-scores */
+.live-preview { margin-top: 12px; padding: 10px; background: rgba(99,179,237,0.04); border: 1px solid var(--border); border-radius: 8px; }
+.live-preview-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 8px; }
+.live-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 0.72rem; }
+.live-row .lname { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+.live-row .lscore { font-weight: 700; min-width: 24px; text-align: right; }
+.live-row .ldelta { font-size: 0.65rem; min-width: 36px; text-align: right; font-weight: 600; }
+.ldelta.up { color: var(--green); } .ldelta.down { color: var(--red); } .ldelta.same { color: var(--text3); }
+
+/* Sensitivity tornado chart */
+.tornado-chart { margin-top: 8px; }
+.tornado-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.7rem; }
+.tornado-label { width: 60px; text-align: right; color: var(--text3); font-size: 0.68rem; }
+.tornado-bar-wrap { flex: 1; height: 14px; position: relative; display: flex; align-items: center; }
+.tornado-bar { height: 10px; border-radius: 2px; transition: width 0.4s; position: absolute; }
+.tornado-bar.neg { right: 50%; border-radius: 2px 0 0 2px; }
+.tornado-bar.pos { left: 50%; border-radius: 0 2px 2px 0; }
+.tornado-mid { position: absolute; left: 50%; width: 1px; height: 100%; background: var(--text3); opacity: 0.3; }
+.tornado-val { width: 34px; font-size: 0.62rem; color: var(--text3); }
+
+/* Scenario history */
+.scenario-log { max-height: 140px; overflow-y: auto; }
+.scenario-entry { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.68rem; cursor: pointer; transition: background 0.2s; }
+.scenario-entry:hover { background: rgba(99,179,237,0.06); }
+.scenario-entry .stime { color: var(--text3); font-family: 'Fira Code', monospace; font-size: 0.62rem; min-width: 50px; }
+.scenario-entry .sdesc { color: var(--text2); flex: 1; }
+.scenario-entry .sresult { color: var(--accent); font-weight: 600; font-size: 0.7rem; }
+
+/* Impact flash */
+.impact-flash { position: fixed; top: 60px; right: 24px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; z-index: 5001; display: none; animation: slideInRight 0.3s; max-width: 320px; }
+.impact-flash.show { display: block; }
+.impact-flash h4 { font-size: 0.8rem; color: var(--accent); margin-bottom: 8px; }
+.impact-flash .irow { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 2px 0; }
+.impact-flash .ilab { color: var(--text3); }
+.impact-flash .ival { font-weight: 700; }
+.impact-flash .ival.positive { color: var(--green); } .impact-flash .ival.negative { color: var(--red); }
+@keyframes slideInRight { from { transform: translateX(30px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
 /* ========== 7. CHARTS ========== */
 .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
@@ -245,7 +296,7 @@ details.reasoning summary:hover { color: var(--accent); }
         <div class="arch-sources">
             <span class="source-tag">City of Phoenix Open Data</span><span class="source-tag">Census / ACS</span><span class="source-tag">Google Places API</span><span class="source-tag">OpenStreetMap</span><span class="source-tag">Yelp API</span><span class="source-tag">Valley Metro GTFS</span><span class="source-tag">MAG Traffic Counts</span><span class="source-tag">FEMA Flood Maps</span><span class="source-tag">Parking Violations DB</span>
         </div>
-        <div class="arch-arrow down" style="font-size:1.2rem;">&#8595; Data Ingestion</div>
+        <div class="arch-arrow down" style="font-size:0.75rem; color:var(--text3); letter-spacing:1px;">&#8595;</div>
         <div class="arch-row">
             <div class="arch-node"><div class="icon">🚗</div><div class="name">Traffic Agent</div><div class="desc">Volume, congestion, peak hours</div></div>
             <div class="arch-node"><div class="icon">📍</div><div class="name">POI Agent</div><div class="desc">Business density, event venues</div></div>
@@ -253,7 +304,7 @@ details.reasoning summary:hover { color: var(--accent); }
             <div class="arch-node"><div class="icon">🚌</div><div class="name">Transit Agent</div><div class="desc">Coverage, ridership, gaps</div></div>
             <div class="arch-node"><div class="icon">👥</div><div class="name">Demographics Agent</div><div class="desc">Population, growth, permits</div></div>
         </div>
-        <div class="arch-arrow down" style="font-size:1.2rem;">&#8595; Merge & Score</div>
+        <div class="arch-arrow down" style="font-size:0.75rem; color:var(--text3); letter-spacing:1px;">&#8595;</div>
         <div class="arch-row">
             <div class="arch-node" style="width:200px; border-color: var(--accent);"><div class="icon">🎯</div><div class="name">Orchestrator Agent</div><div class="desc">Coordinates pipeline, manages state</div></div>
             <div class="arch-arrow">&#8594;</div>
@@ -307,25 +358,54 @@ details.reasoning summary:hover { color: var(--accent); }
         <!-- RIGHT: Parameters -->
         <div class="right-panel">
             <div class="panel-section">
+                <div class="panel-label">Quick Presets</div>
+                <div class="preset-grid">
+                    <button class="preset-btn active" data-preset="balanced" onclick="applyPreset('balanced')"><span class="pi">⚖️</span><div><div class="pname">Balanced</div><div class="pdesc">Default equal weighting</div></div></button>
+                    <button class="preset-btn" data-preset="transit" onclick="applyPreset('transit')"><span class="pi">🚌</span><div><div class="pname">Transit-Oriented</div><div class="pdesc">Prioritize park-and-ride</div></div></button>
+                    <button class="preset-btn" data-preset="growth" onclick="applyPreset('growth')"><span class="pi">📈</span><div><div class="pname">Growth-Focused</div><div class="pdesc">Favor emerging corridors</div></div></button>
+                    <button class="preset-btn" data-preset="demand" onclick="applyPreset('demand')"><span class="pi">🚗</span><div><div class="pname">Demand-Driven</div><div class="pdesc">Current traffic & gap priority</div></div></button>
+                    <button class="preset-btn" data-preset="budget" onclick="applyPreset('budget')"><span class="pi">💰</span><div><div class="pname">Budget-Constrained</div><div class="pdesc">$60M cap, surface lots</div></div></button>
+                </div>
+            </div>
+            <div class="panel-section">
                 <div class="panel-label">Scoring Weights</div>
-                <div class="slider-group"><div class="slider-header"><span>Traffic Demand</span><span class="slider-val" id="w-traffic-val">25%</span></div><input type="range" min="0" max="50" value="25" id="w-traffic" oninput="updateWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span>Parking Gap</span><span class="slider-val" id="w-gap-val">25%</span></div><input type="range" min="0" max="50" value="25" id="w-gap" oninput="updateWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span>Growth Potential</span><span class="slider-val" id="w-growth-val">20%</span></div><input type="range" min="0" max="50" value="20" id="w-growth" oninput="updateWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span>POI Density</span><span class="slider-val" id="w-poi-val">15%</span></div><input type="range" min="0" max="50" value="15" id="w-poi" oninput="updateWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span>Transit Access</span><span class="slider-val" id="w-transit-val">15%</span></div><input type="range" min="0" max="50" value="15" id="w-transit" oninput="updateWeights()"></div>
+                <div class="weight-bar" id="weightBar">
+                    <div style="width:25%;background:var(--red);" title="Traffic"></div>
+                    <div style="width:25%;background:var(--accent);" title="Gap"></div>
+                    <div style="width:20%;background:var(--orange);" title="Growth"></div>
+                    <div style="width:15%;background:var(--purple);" title="POI"></div>
+                    <div style="width:15%;background:var(--green);" title="Transit"></div>
+                </div>
+                <div class="slider-group"><div class="slider-header"><span style="color:var(--red);">Traffic Demand</span><span class="slider-val" id="w-traffic-val">25%</span></div><input type="range" min="0" max="50" value="25" id="w-traffic" oninput="onSliderChange()"></div>
+                <div class="slider-group"><div class="slider-header"><span style="color:var(--accent);">Parking Gap</span><span class="slider-val" id="w-gap-val">25%</span></div><input type="range" min="0" max="50" value="25" id="w-gap" oninput="onSliderChange()"></div>
+                <div class="slider-group"><div class="slider-header"><span style="color:var(--orange);">Growth Potential</span><span class="slider-val" id="w-growth-val">20%</span></div><input type="range" min="0" max="50" value="20" id="w-growth" oninput="onSliderChange()"></div>
+                <div class="slider-group"><div class="slider-header"><span style="color:var(--purple);">POI Density</span><span class="slider-val" id="w-poi-val">15%</span></div><input type="range" min="0" max="50" value="15" id="w-poi" oninput="onSliderChange()"></div>
+                <div class="slider-group"><div class="slider-header"><span style="color:var(--green);">Transit Access</span><span class="slider-val" id="w-transit-val">15%</span></div><input type="range" min="0" max="50" value="15" id="w-transit" oninput="onSliderChange()"></div>
             </div>
             <div class="panel-section">
                 <div class="panel-label">Constraints</div>
-                <div class="slider-group"><div class="slider-header"><span>Max Budget</span><span class="slider-val" id="budget-val">$150M</span></div><input type="range" min="20" max="150" value="150" id="budget-slider" oninput="updateConstraints()"></div>
-                <div class="slider-group"><div class="slider-header"><span>Min Capacity</span><span class="slider-val" id="cap-val">100</span></div><input type="range" min="100" max="800" value="100" step="50" id="cap-slider" oninput="updateConstraints()"></div>
+                <div class="slider-group"><div class="slider-header"><span>Max Budget</span><span class="slider-val" id="budget-val">$150M</span></div><input type="range" min="20" max="150" value="150" id="budget-slider" oninput="onSliderChange()"></div>
+                <div class="slider-group"><div class="slider-header"><span>Min Capacity</span><span class="slider-val" id="cap-val">100</span></div><input type="range" min="100" max="800" value="100" step="50" id="cap-slider" oninput="onSliderChange()"></div>
             </div>
             <div class="panel-section">
-                <div class="panel-label">What-If Scenarios</div>
-                <div class="whatif-toggle"><span>Exclude Flood Zones</span><div class="toggle-switch" id="wif-flood" onclick="toggleWhatIf(this)"></div></div>
-                <div class="whatif-toggle"><span>Transit Priority Mode</span><div class="toggle-switch" id="wif-transit" onclick="toggleWhatIf(this)"></div></div>
-                <div class="whatif-toggle"><span>Include Future Dev Areas</span><div class="toggle-switch" id="wif-future" onclick="toggleWhatIf(this)"></div></div>
+                <div class="panel-label">What-If Toggles</div>
+                <div class="whatif-toggle"><span>Exclude Flood Zones</span><div class="toggle-switch" id="wif-flood" onclick="toggleWhatIf(this);onSliderChange()"></div></div>
+                <div class="whatif-toggle"><span>Transit Priority Mode</span><div class="toggle-switch" id="wif-transit" onclick="toggleWhatIf(this);onSliderChange()"></div></div>
+                <div class="whatif-toggle"><span>Include Future Dev Areas</span><div class="toggle-switch" id="wif-future" onclick="toggleWhatIf(this);onSliderChange()"></div></div>
             </div>
-            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="recalculate()">Apply & Recalculate</button>
+            <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="recalculate();addScenarioEntry('Custom config')">Apply & Recalculate</button>
+            <div class="live-preview" id="livePreview">
+                <div class="live-preview-title">Live Score Preview</div>
+                <div id="livePreviewBody"></div>
+            </div>
+            <div class="panel-section" style="margin-top:16px;">
+                <div class="panel-label">Sensitivity Analysis</div>
+                <div class="tornado-chart" id="tornadoChart"></div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Scenario History</div>
+                <div class="scenario-log" id="scenarioLog"></div>
+            </div>
         </div>
     </div>
 </section>
@@ -757,33 +837,157 @@ function resetPipeline() {
 }
 
 // ========== D. PARAMETER & RECALCULATION MODULE ==========
+let baselineScores = {}; // snapshot for delta comparison
+let scenarioHistory = [];
+let livePreviewTimer = null;
+
+// Save baseline scores on first load
+function saveBaseline() {
+    allSites.forEach(s => { baselineScores[s.id] = s.score; });
+}
+saveBaseline();
+
+// Preset configurations
+const presets = {
+    balanced: { traffic:25, gap:25, growth:20, poi:15, transit:15, budget:150, cap:100, flood:false, transitP:false, future:false },
+    transit:  { traffic:10, gap:15, growth:15, poi:10, transit:50, budget:150, cap:100, flood:false, transitP:true, future:false },
+    growth:   { traffic:10, gap:15, growth:45, poi:15, transit:15, budget:150, cap:100, flood:false, transitP:false, future:true },
+    demand:   { traffic:40, gap:35, growth:5,  poi:15, transit:5,  budget:150, cap:100, flood:false, transitP:false, future:false },
+    budget:   { traffic:20, gap:30, growth:15, poi:15, transit:20, budget:60,  cap:100, flood:true,  transitP:false, future:false }
+};
+
+function applyPreset(name) {
+    const p = presets[name];
+    if (!p) return;
+    document.getElementById('w-traffic').value = p.traffic;
+    document.getElementById('w-gap').value = p.gap;
+    document.getElementById('w-growth').value = p.growth;
+    document.getElementById('w-poi').value = p.poi;
+    document.getElementById('w-transit').value = p.transit;
+    document.getElementById('budget-slider').value = p.budget;
+    document.getElementById('cap-slider').value = p.cap;
+    const flood = document.getElementById('wif-flood');
+    const trans = document.getElementById('wif-transit');
+    const future = document.getElementById('wif-future');
+    p.flood ? flood.classList.add('on') : flood.classList.remove('on');
+    p.transitP ? trans.classList.add('on') : trans.classList.remove('on');
+    p.future ? future.classList.add('on') : future.classList.remove('on');
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-preset="${name}"]`).classList.add('active');
+    onSliderChange();
+    recalculate();
+    addScenarioEntry('Preset: ' + name.charAt(0).toUpperCase() + name.slice(1));
+}
+
 function getWeights() {
     const t=+document.getElementById('w-traffic').value, g=+document.getElementById('w-gap').value,
           gr=+document.getElementById('w-growth').value, p=+document.getElementById('w-poi').value, tr=+document.getElementById('w-transit').value;
     const sum = t+g+gr+p+tr || 1;
     return { traffic:t/sum, gap:g/sum, growth:gr/sum, poi:p/sum, transit:tr/sum };
 }
-function updateWeights() {
+
+function getRawWeights() {
+    return {
+        traffic:+document.getElementById('w-traffic').value, gap:+document.getElementById('w-gap').value,
+        growth:+document.getElementById('w-growth').value, poi:+document.getElementById('w-poi').value, transit:+document.getElementById('w-transit').value
+    };
+}
+
+function onSliderChange() {
+    // Update display values
     ['traffic','gap','growth','poi','transit'].forEach(k => {
         document.getElementById('w-'+k+'-val').textContent = document.getElementById('w-'+k).value+'%';
     });
-}
-function updateConstraints() {
     document.getElementById('budget-val').textContent = '$'+document.getElementById('budget-slider').value+'M';
     document.getElementById('cap-val').textContent = document.getElementById('cap-slider').value;
-}
-function toggleWhatIf(el) { el.classList.toggle('on'); }
 
-function recalculate() {
-    const w = getWeights();
+    // Update weight distribution bar
+    updateWeightBar();
+
+    // Deactivate preset buttons (custom config)
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+
+    // Debounced live preview
+    clearTimeout(livePreviewTimer);
+    livePreviewTimer = setTimeout(updateLivePreview, 150);
+}
+
+function updateWeightBar() {
+    const rw = getRawWeights();
+    const sum = rw.traffic + rw.gap + rw.growth + rw.poi + rw.transit || 1;
+    const pcts = [rw.traffic/sum*100, rw.gap/sum*100, rw.growth/sum*100, rw.poi/sum*100, rw.transit/sum*100];
+    const colors = ['var(--red)','var(--accent)','var(--orange)','var(--purple)','var(--green)'];
+    const bar = document.getElementById('weightBar');
+    bar.innerHTML = pcts.map((p,i) => `<div style="width:${p}%;background:${colors[i]};" title="${['Traffic','Gap','Growth','POI','Transit'][i]} ${Math.round(p)}%"></div>`).join('');
+}
+
+function updateLivePreview() {
+    const w = getEffectiveWeights();
     const maxBudget = +document.getElementById('budget-slider').value;
     const minCap = +document.getElementById('cap-slider').value;
     const excludeFlood = document.getElementById('wif-flood').classList.contains('on');
-    const transitPriority = document.getElementById('wif-transit').classList.contains('on');
     const includeFuture = document.getElementById('wif-future').classList.contains('on');
 
-    let wLocal = {...w};
-    if (transitPriority) { wLocal.transit = 0.4; const rest = 0.6; const others = w.traffic+w.gap+w.growth+w.poi||1; wLocal.traffic=w.traffic/others*rest; wLocal.gap=w.gap/others*rest; wLocal.growth=w.growth/others*rest; wLocal.poi=w.poi/others*rest; }
+    let sites = allSites.filter(s => {
+        if (s.hidden && !includeFuture && s.futureArea) return false;
+        if (!s.hidden) return true;
+        return includeFuture;
+    });
+    if (excludeFlood) sites = sites.filter(s => !s.floodZone);
+    sites = sites.filter(s => s.capacity >= minCap);
+
+    sites.forEach(s => {
+        s._previewScore = Math.round(s.subScores.traffic*w.traffic + s.subScores.gap*w.gap + s.subScores.growth*w.growth + s.subScores.poi*w.poi + s.subScores.transit*w.transit);
+    });
+    sites.sort((a,b) => b._previewScore - a._previewScore);
+
+    // Budget filter
+    let cumCost = 0;
+    const included = [];
+    for (const s of sites) {
+        if (cumCost + s.costNum <= maxBudget) { included.push(s); cumCost += s.costNum; }
+    }
+
+    const body = document.getElementById('livePreviewBody');
+    body.innerHTML = included.slice(0,8).map(s => {
+        const baseline = baselineScores[s.id] || s.score;
+        const delta = s._previewScore - baseline;
+        const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'same';
+        const deltaText = delta > 0 ? '+'+delta : delta < 0 ? delta.toString() : '—';
+        return `<div class="live-row">
+            <span class="lname">#${s.id} ${s.name.split('—')[0].split('-')[0].trim()}</span>
+            <span class="lscore" style="color:${s._previewScore>=85?'var(--red)':s._previewScore>=70?'var(--orange)':'var(--green)'};">${s._previewScore}</span>
+            <span class="ldelta ${deltaClass}">${deltaText}</span>
+        </div>`;
+    }).join('');
+}
+
+function getEffectiveWeights() {
+    const w = getWeights();
+    const transitPriority = document.getElementById('wif-transit').classList.contains('on');
+    if (transitPriority) {
+        const wLocal = {...w};
+        wLocal.transit = 0.4;
+        const rest = 0.6;
+        const others = w.traffic+w.gap+w.growth+w.poi||1;
+        wLocal.traffic=w.traffic/others*rest; wLocal.gap=w.gap/others*rest; wLocal.growth=w.growth/others*rest; wLocal.poi=w.poi/others*rest;
+        return wLocal;
+    }
+    return w;
+}
+
+function toggleWhatIf(el) { el.classList.toggle('on'); }
+
+function recalculate() {
+    const prevSites = [...activeSites];
+    const prevTotal = prevSites.reduce((a,s)=>a+s.capacity,0);
+    const prevCount = prevSites.length;
+
+    const w = getEffectiveWeights();
+    const maxBudget = +document.getElementById('budget-slider').value;
+    const minCap = +document.getElementById('cap-slider').value;
+    const excludeFlood = document.getElementById('wif-flood').classList.contains('on');
+    const includeFuture = document.getElementById('wif-future').classList.contains('on');
 
     let sites = allSites.filter(s => {
         if (s.hidden && !includeFuture && s.futureArea) return false;
@@ -795,7 +999,7 @@ function recalculate() {
 
     // Recalculate scores
     sites.forEach(s => {
-        s.score = Math.round(s.subScores.traffic*wLocal.traffic + s.subScores.gap*wLocal.gap + s.subScores.growth*wLocal.growth + s.subScores.poi*wLocal.poi + s.subScores.transit*wLocal.transit);
+        s.score = Math.round(s.subScores.traffic*w.traffic + s.subScores.gap*w.gap + s.subScores.growth*w.growth + s.subScores.poi*w.poi + s.subScores.transit*w.transit);
         s.priority = s.score >= 85 ? 'high' : s.score >= 70 ? 'medium' : 'low';
     });
     sites.sort((a,b) => b.score - a.score);
@@ -812,7 +1016,89 @@ function recalculate() {
     updateSummary();
     updateCharts();
     renderExplainability();
+    updateSensitivity();
+
+    // Show impact flash
+    const newTotal = activeSites.reduce((a,s)=>a+s.capacity,0);
+    showImpactFlash(prevCount, activeSites.length, prevTotal, newTotal, cumCost);
 }
+
+function showImpactFlash(prevCount, newCount, prevCap, newCap, cost) {
+    let flash = document.getElementById('impactFlash');
+    if (!flash) {
+        flash = document.createElement('div');
+        flash.id = 'impactFlash';
+        flash.className = 'impact-flash';
+        document.body.appendChild(flash);
+    }
+    const dCount = newCount - prevCount;
+    const dCap = newCap - prevCap;
+    flash.innerHTML = `<h4>Recalculation Impact</h4>
+        <div class="irow"><span class="ilab">Sites Selected</span><span class="ival ${dCount>0?'positive':dCount<0?'negative':''}">${newCount} ${dCount!==0?'('+(dCount>0?'+':'')+dCount+')':''}</span></div>
+        <div class="irow"><span class="ilab">Total Capacity</span><span class="ival ${dCap>0?'positive':dCap<0?'negative':''}">${newCap.toLocaleString()} ${dCap!==0?'('+(dCap>0?'+':'')+dCap.toLocaleString()+')':''}</span></div>
+        <div class="irow"><span class="ilab">Total Investment</span><span class="ival">$${cost.toFixed(1)}M</span></div>
+        <div class="irow"><span class="ilab">Top Site</span><span class="ival">#${activeSites[0]?.id||'-'} (${activeSites[0]?.score||0}pts)</span></div>`;
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 4000);
+}
+
+function updateSensitivity() {
+    // Tornado chart: for each weight, calculate score range when that weight goes 0 vs max
+    const dims = ['traffic','gap','growth','poi','transit'];
+    const labels = ['Traffic','Gap','Growth','POI','Transit'];
+    const colors = ['var(--red)','var(--accent)','var(--orange)','var(--purple)','var(--green)'];
+    const baseScore = activeSites.length ? activeSites[0].score : 0;
+    const results = [];
+
+    dims.forEach((dim,i) => {
+        // Score when this dim = 0 (others keep ratio)
+        const wLow = {}; const wHigh = {};
+        dims.forEach(d => { wLow[d] = d===dim ? 0 : 1; wHigh[d] = d===dim ? 3 : 1; });
+        const sumLow = Object.values(wLow).reduce((a,b)=>a+b,0)||1;
+        const sumHigh = Object.values(wHigh).reduce((a,b)=>a+b,0)||1;
+        dims.forEach(d => { wLow[d] /= sumLow; wHigh[d] /= sumHigh; });
+
+        const top = allSites[0] || activeSites[0];
+        if (!top) return;
+        const sLow = Math.round(top.subScores.traffic*wLow.traffic + top.subScores.gap*wLow.gap + top.subScores.growth*wLow.growth + top.subScores.poi*wLow.poi + top.subScores.transit*wLow.transit);
+        const sHigh = Math.round(top.subScores.traffic*wHigh.traffic + top.subScores.gap*wHigh.gap + top.subScores.growth*wHigh.growth + top.subScores.poi*wHigh.poi + top.subScores.transit*wHigh.transit);
+        results.push({ label: labels[i], color: colors[i], low: sLow - baseScore, high: sHigh - baseScore });
+    });
+
+    const maxRange = Math.max(...results.map(r => Math.max(Math.abs(r.low), Math.abs(r.high))), 1);
+    const chart = document.getElementById('tornadoChart');
+    chart.innerHTML = results.map(r => {
+        const negW = Math.abs(r.low) / maxRange * 48;
+        const posW = Math.abs(r.high) / maxRange * 48;
+        return `<div class="tornado-row">
+            <div class="tornado-label">${r.label}</div>
+            <div class="tornado-bar-wrap">
+                <div class="tornado-mid"></div>
+                <div class="tornado-bar neg" style="width:${negW}%;background:${r.color};opacity:0.5;"></div>
+                <div class="tornado-bar pos" style="width:${posW}%;background:${r.color};"></div>
+            </div>
+            <div class="tornado-val">${r.low>0?'+':''}${r.low} / +${r.high}</div>
+        </div>`;
+    }).join('');
+}
+
+function addScenarioEntry(desc) {
+    const time = new Date().toLocaleTimeString('en-US', { hour12:false, hour:'2-digit', minute:'2-digit' });
+    const result = activeSites.length + ' sites, ' + activeSites.reduce((a,s)=>a+s.capacity,0).toLocaleString() + ' spaces';
+    scenarioHistory.unshift({ time, desc, result });
+    if (scenarioHistory.length > 20) scenarioHistory.pop();
+    renderScenarioLog();
+}
+
+function renderScenarioLog() {
+    const log = document.getElementById('scenarioLog');
+    log.innerHTML = scenarioHistory.map(e =>
+        `<div class="scenario-entry"><span class="stime">${e.time}</span><span class="sdesc">${e.desc}</span><span class="sresult">${e.result}</span></div>`
+    ).join('') || '<div style="font-size:0.72rem;color:var(--text3);padding:8px;">No scenarios run yet. Adjust parameters above.</div>';
+}
+renderScenarioLog();
+updateSensitivity();
+updateLivePreview();
 
 // ========== E. RESULTS TABLE MODULE ==========
 function renderResultsTable() {
