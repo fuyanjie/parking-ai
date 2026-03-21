@@ -2344,13 +2344,11 @@ function clearPreviousResults() {
     if (rl) rl.innerHTML = '';
     const rj = document.getElementById('rejectedList');
     if (rj) rj.innerHTML = '';
-    // Clear before/after maps
-    const baSplit = document.getElementById('baSplit');
-    if (baSplit) baSplit.style.display = 'none';
+    // Clear before/after maps (destroy instances, keep container visible)
+    if (mapBefore) { mapBefore.remove(); mapBefore = null; }
+    if (mapAfter) { mapAfter.remove(); mapAfter = null; }
     const baSummary = document.getElementById('baSummary');
     if (baSummary) { baSummary.style.display = 'none'; baSummary.innerHTML = ''; }
-    const baBtn = document.getElementById('baInitBtn');
-    if (baBtn) { baBtn.textContent = 'Generate Split View'; baBtn.disabled = false; }
     // Clear compare panel
     const cp = document.getElementById('comparePanel');
     if (cp) cp.innerHTML = '';
