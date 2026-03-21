@@ -3070,7 +3070,15 @@ function renderExplainability() {
 // ========== H. CHAT MODULE (Direct Groq LLM from Browser) ==========
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You help users understand results AND control the dashboard.
+const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You have FULL ACCESS to all analysis data including:
+- Recommended sites (scores, capacity, cost, ROI, sub-scores, reasons)
+- Supply-demand gap analysis (existing supply, estimated demand, gap, population, pain points)
+- Rejected sites and rejection reasons
+- Monte Carlo ROI simulation (P10/P50/P90, confidence intervals, probability)
+- Competitor data (operators, rates, utilization)
+- Live data from 6 sources (OSM, Census, PHX Meters, ADOT AADT, Commute B08301, Zoning)
+- Scoring weights and constraints configuration
+- Analytics trends and coverage analysis
 
 The dashboard supports these natural language commands (parsed automatically before your response):
 • WEIGHTS: "set traffic weight to 40%", "increase poi to 30" (traffic, gap, growth, poi, transit)
@@ -3082,9 +3090,9 @@ The dashboard supports these natural language commands (parsed automatically bef
 • NAVIGATION: "zoom to site #1", "zoom to downtown", "zoom out", "show results", "show analytics"
 • RESET: "reset pipeline"  •  RECALCULATE: "recalculate scores"
 
-When users ask analytical questions, answer based on the context data. When they want to DO something, suggest the right command.
+Answer analytical questions with SPECIFIC NUMBERS from the context data. Reference exact scores, gaps, populations, ROIs, costs. Compare sites quantitatively. Explain WHY the AI made specific decisions using sub-scores and gap data.
 
-Be concise (under 120 words). Use specific numbers from the context.
+Be concise (under 150 words). Use data-driven answers with numbers.
 
 IMPORTANT: Always end your response with exactly 2-4 recommended next actions the user might want to take, using this exact format:
 [NEXT]action one|action two|action three[/NEXT]
@@ -3166,15 +3174,38 @@ function initChatApiKey() {
 
 function buildContextString() {
     const ctx = [];
+    const pipelineDone = currentStep >= agentSteps.length;
+
+    // Pipeline status
+    ctx.push(`PIPELINE STATUS: ${pipelineDone ? 'COMPLETE' : currentStep >= 0 ? 'Running step ' + (currentStep+1) + '/7' : 'NOT RUN YET'}`);
+
+    // === RESULTS DATA ===
     if (activeSites.length > 0) {
-        ctx.push('CURRENT RECOMMENDED SITES:');
-        activeSites.forEach(s => {
+        const totalCap = activeSites.reduce((a,s) => a+s.capacity, 0);
+        const totalCost = activeSites.reduce((a,s) => a+s.costNum, 0);
+        const avgROI = (activeSites.reduce((a,s) => a+s.roiNum, 0) / activeSites.length).toFixed(1);
+        ctx.push(`\nRESULTS SUMMARY: ${activeSites.length} sites selected, Total capacity: ${totalCap.toLocaleString()} spaces, Total investment: $${totalCost.toFixed(1)}M, Avg ROI: ${avgROI}%`);
+
+        ctx.push('\nRECOMMENDED SITES (ranked by score):');
+        activeSites.forEach((s, i) => {
+            const gd = lastGapData.find(g => g.id === s.id) || {};
             const lf = s._liveFactors || {};
-            const lfStr = Object.keys(lf).length > 0 ? `, Live-factors: ${JSON.stringify(lf)}` : '';
-            const baseStr = s._baseSubScores ? `, Base: traffic=${s._baseSubScores.traffic},gap=${s._baseSubScores.gap}` : '';
-            ctx.push(`  #${s.id} ${s.name} — Score: ${s.score}, Capacity: ${s.capacity}, Type: ${s.type}, Cost: ${s.cost}, ROI: ${s.roi}, Priority: ${s.priority}, Sub-scores: traffic=${s.subScores?.traffic}, gap=${s.subScores?.gap}, growth=${s.subScores?.growth}, poi=${s.subScores?.poi}, transit=${s.subScores?.transit}${baseStr}${lfStr}`);
+            const gapStr = gd.demand ? `, Supply: ${gd.supply}, Demand: ${gd.demand}, Gap: -${gd.gap}, AreaPop: ${gd.pop.toLocaleString()}, DriveAlone: ${gd.driveAlonePct}%` : '';
+            const painStr = gd.pain ? `, PainPoint: "${gd.pain}"` : '';
+            const lfStr = Object.keys(lf).length > 0 ? `, LiveFactors: AADT=${lf.aadt||'—'}, OSM=${lf.osmNearby||'—'}lots/${lf.osmCap||0}cap, Meters=${lf.meters||'—'}, DriveAlone=${lf.driveAlone||'—'}%` : '';
+            ctx.push(`  Rank#${i+1} Site#${s.id} ${s.name} — Score:${s.score}/100, Cap:${s.capacity}, Type:${s.type}, Cost:${s.cost}, ROI:${s.roi}, Priority:${s.priority}, SubScores:[T:${s.subScores?.traffic},G:${s.subScores?.gap},Gr:${s.subScores?.growth},P:${s.subScores?.poi},Tr:${s.subScores?.transit}]${gapStr}${painStr}${lfStr}, Reason: "${s.reason}"`);
         });
     }
+
+    // === REJECTED SITES ===
+    if (rejectedSites.length > 0) {
+        ctx.push('\nREJECTED SITES:');
+        rejectedSites.forEach(s => {
+            ctx.push(`  #${s.id} ${s.name} — Score:${s.score}, Reason: "${s.reason}"`);
+        });
+    }
+
+    // === SCORING CONFIGURATION ===
     const w = {
         traffic: document.getElementById('w-traffic').value,
         gap: document.getElementById('w-gap').value,
@@ -3182,19 +3213,60 @@ function buildContextString() {
         poi: document.getElementById('w-poi').value,
         transit: document.getElementById('w-transit').value
     };
-    ctx.push(`\nCURRENT SCORING WEIGHTS: traffic=${w.traffic}%, gap=${w.gap}%, growth=${w.growth}%, poi=${w.poi}%, transit=${w.transit}%`);
+    ctx.push(`\nSCORING WEIGHTS: traffic=${w.traffic}%, gap=${w.gap}%, growth=${w.growth}%, poi=${w.poi}%, transit=${w.transit}%`);
     ctx.push(`CONSTRAINTS: Budget=$${document.getElementById('budget-slider').value}M, Min capacity=${document.getElementById('cap-slider').value}`);
     ctx.push(`WHAT-IF: Exclude flood=${document.getElementById('wif-flood').classList.contains('active')}, Transit priority=${document.getElementById('wif-transit').classList.contains('active')}, Future areas=${document.getElementById('wif-future').classList.contains('active')}`);
-    if (osmParkingCount || censusTractCount) {
-        ctx.push(`\nLIVE DATA INTEGRATED (6 Sources):`);
-        ctx.push(`  OSM Parking: ${osmParkingCount} facilities (enhanced: fee/EV/type/access tags)`);
-        ctx.push(`  Census ACS: ${censusTractCount} tracts, Population=${censusPopTotal.toLocaleString()}`);
-        if (phxMeterCount) ctx.push(`  PHX Parking Meters: ${phxMeterCount} (City of Phoenix ArcGIS)`);
-        if (commuteData.total) ctx.push(`  Commute Mode (B08301): Drive-alone=${Math.round(commuteData.driveAlone/commuteData.total*100)}%, Transit=${Math.round(commuteData.transit/commuteData.total*100)}%, Workers=${commuteData.total.toLocaleString()}`);
-        if (aadtSegments) ctx.push(`  ADOT AADT: ${aadtSegments} freeway/highway segments with traffic volumes`);
-        if (zoningCount) ctx.push(`  Phoenix Zoning: ${zoningCount} zones (Commercial/Industrial/Residential)`);
+
+    // === GAP ANALYSIS SUMMARY ===
+    if (lastGapData.length > 0) {
+        const totalSupply = lastGapData.reduce((a,g) => a+g.supply, 0);
+        const totalDemand = lastGapData.reduce((a,g) => a+g.demand, 0);
+        const totalGap = lastGapData.reduce((a,g) => a+g.gap, 0);
+        const totalNewCap = lastGapData.reduce((a,g) => a+g.newCap, 0);
+        const coverageBefore = totalDemand > 0 ? Math.round(totalSupply/totalDemand*100) : 0;
+        const coverageAfter = totalDemand > 0 ? Math.round((totalSupply+totalNewCap)/totalDemand*100) : 0;
+        ctx.push(`\nGAP ANALYSIS: Total existing supply: ${totalSupply.toLocaleString()}, Total demand: ${totalDemand.toLocaleString()}, Total gap: -${totalGap.toLocaleString()}, Coverage before: ${coverageBefore}%, Coverage after AI: ${coverageAfter}%`);
     }
-    return ctx.join('\n') || 'No analysis has been run yet. The user should click "Run Agent Pipeline" first.';
+
+    // === LIVE DATA SOURCES ===
+    if (osmParkingCount || censusTractCount) {
+        ctx.push(`\nLIVE DATA (6 Sources):`);
+        ctx.push(`  OSM Parking: ${osmParkingCount} facilities`);
+        ctx.push(`  Census ACS: ${censusTractCount} tracts, Pop=${censusPopTotal.toLocaleString()}`);
+        if (phxMeterCount) ctx.push(`  PHX Meters: ${phxMeterCount}`);
+        if (commuteData.total) ctx.push(`  Commute B08301: Drive-alone=${Math.round(commuteData.driveAlone/commuteData.total*100)}%, Transit=${Math.round(commuteData.transit/commuteData.total*100)}%, Workers=${commuteData.total.toLocaleString()}`);
+        if (aadtSegments) ctx.push(`  ADOT AADT: ${aadtSegments} segments`);
+        if (zoningCount) ctx.push(`  Zoning: ${zoningCount} zones`);
+    }
+
+    // === MONTE CARLO SIMULATION ===
+    if (activeSites.length > 0) {
+        try {
+            const mc = runMonteCarloSim();
+            ctx.push(`\nMONTE CARLO ROI (5000 iterations): Mean=${mc.mean.toFixed(1)}%, P10=${mc.p10.toFixed(1)}%, P50(median)=${mc.p50.toFixed(1)}%, P90=${mc.p90.toFixed(1)}%, 80% CI=[${mc.ci80[0].toFixed(1)}%-${mc.ci80[1].toFixed(1)}%], Prob(ROI>15%)=${mc.probAbove15}%`);
+        } catch(e) {}
+    }
+
+    // === ANALYTICS TRENDS ===
+    if (activeSites.length > 0) {
+        const topSite = activeSites[0];
+        const highPriority = activeSites.filter(s => s.priority === 'high').length;
+        const medPriority = activeSites.filter(s => s.priority === 'medium').length;
+        const lowPriority = activeSites.filter(s => s.priority === 'low').length;
+        const garages = activeSites.filter(s => s.type.includes('Garage')).length;
+        const surfaceLots = activeSites.filter(s => s.type.includes('Surface')).length;
+        ctx.push(`\nANALYTICS: Top site: #${topSite.id} ${topSite.name.split('—')[0].trim()} (${topSite.score}pts), Priority breakdown: ${highPriority} high / ${medPriority} medium / ${lowPriority} low, Types: ${garages} garages / ${surfaceLots} surface lots, Score range: ${activeSites[activeSites.length-1].score}-${activeSites[0].score}`);
+    }
+
+    // === COMPETITOR DATA ===
+    if (typeof competitorData !== 'undefined' && competitorData.length > 0) {
+        ctx.push(`\nCOMPETITORS: ${competitorData.length} existing operators in Phoenix metro`);
+        competitorData.forEach(c => {
+            ctx.push(`  ${c.name} by ${c.operator}: ${c.spaces} spaces, Rate $${c.rate}/hr, Util ${c.utilization}%`);
+        });
+    }
+
+    return ctx.join('\n') || 'No analysis has been run yet. Click "Run Agent Pipeline" first.';
 }
 
 async function callGroqDirect(userMessage) {
@@ -3218,7 +3290,7 @@ async function callGroqDirect(userMessage) {
             model: GROQ_MODEL,
             messages,
             temperature: 0.7,
-            max_tokens: 500
+            max_tokens: 800
         })
     });
 
