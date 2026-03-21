@@ -3127,29 +3127,64 @@ function renderExplainability() {
 // ========== H. CHAT MODULE (Direct Groq LLM from Browser) ==========
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You have FULL ACCESS to all analysis data including:
-- Recommended sites (scores, capacity, cost, ROI, sub-scores, reasons)
-- Supply-demand gap analysis (existing supply, estimated demand, gap, population, pain points)
-- Rejected sites and rejection reasons
-- Monte Carlo ROI simulation (P10/P50/P90, confidence intervals, probability)
-- Competitor data (operators, rates, utilization)
-- Live data from 6 sources (OSM, Census, PHX Meters, ADOT AADT, Commute B08301, Zoning)
-- Scoring weights and constraints configuration
-- Analytics trends and coverage analysis
+const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You know the FULL METHODOLOGY and have access to all data.
 
-The dashboard supports these natural language commands (parsed automatically before your response):
-• WEIGHTS: "set traffic weight to 40%", "increase poi to 30" (traffic, gap, growth, poi, transit)
+=== ANALYSIS METHODOLOGY ===
+
+**7-Step Agent Pipeline:**
+1. Traffic Data Collection — ADOT AADT volumes + congestion analysis from 2,847 intersections. Identifies 12 high-congestion zones. Peak corridors: I-10 (180K vpd), I-17 (160K vpd).
+2. POI & Business Density — 18,432 POIs classified (retail 6,201, dining 4,891, medical, entertainment). Density scored across 340 zones.
+3. Parking Inventory — Existing supply mapping from OSM Overpass + PHX Meters ArcGIS + city data. Metro total: 1,203 facilities, 89,400 spaces, 78% avg utilization.
+4. Transit & Mobility — Valley Metro GTFS (58 bus routes, 35 rail stops, 8 park-and-ride sites). Census B08301 drive-alone % by tract. 14 transit desert zones identified.
+5. Demographics & Growth — Census ACS tract-level population (1.65M), median income, growth rate +1.8%/yr. PHX Zoning (Commercial/Industrial/Residential). 3,240 new building permits.
+6. Spatial Analysis & Scoring — 6-source multi-criteria weighted model across 340 grid zones. 12 scoring dimensions.
+7. Recommendation — Top sites selected by score, filtered by budget/capacity/zoning constraints.
+
+**Supply Calculation (per site, 3.5km radius):**
+Each site has a baseline parking supply from research data: known competitor lots (LAZ, SP+, ABM, ParkJockey with exact space counts), city parking facilities, street meters, and private/commercial lots within a 3.5km radius. Supply includes: (1) documented lot spaces, (2) street parking meters, (3) garage capacity. When live data is fetched (OSM Overpass + PHX ArcGIS Meters API), it supplements baseline — the higher of baseline vs live count is used. Supply utilization % (how full lots are) is tracked per site.
+
+**Demand Calculation (per site, 3.5km radius):**
+Demand = Commuter Parking Demand + Visitor Demand.
+• Commuter demand = (drive-alone workers in area) × 0.85 (85% need a space; some carpool to same lot). Workers from Census B08301 tract data. If no live data: estimated as population × 0.22 × drive-alone%.
+• Visitor demand = area population × 0.06 (6% generate visitor parking trips daily).
+• Drive-alone % comes from Census B08301 table (default 78% if no data).
+
+**Gap = Demand − Supply.** A positive gap means parking deficit.
+
+**5-Dimension Scoring Model:**
+Each site gets sub-scores (0-100) in 5 dimensions, then combined via weighted sum:
+• Traffic (default 25%) — AADT volume, congestion severity, peak hour patterns
+• Gap (default 25%) — Supply-demand deficit severity, utilization rate
+• Growth (default 20%) — Population growth rate, new building permits, development trajectory
+• POI (default 15%) — Business density, retail/dining/event venues concentration
+• Transit (default 15%) — Public transit access, rail proximity, park-and-ride potential
+Formula: FinalScore = T×w_traffic + G×w_gap + Gr×w_growth + P×w_poi + Tr×w_transit
+
+**Presets:** Balanced (25/25/20/15/15), Transit-focused (10/15/15/10/50), Growth (10/15/45/15/15), Demand (15/40/10/20/15), Budget (constrained to $60M).
+
+**Constraints:** Budget cap ($20M-$150M), Min capacity (100-800 spaces), What-if toggles (exclude flood zones, transit priority mode, include future dev areas).
+
+**Monte Carlo ROI Simulation:** 5000 iterations using Box-Muller normal distribution around weighted-mean ROI (stddev=3%). Reports P10/P50/P90, 80% confidence interval, and probability of ROI>15%.
+
+**Site Rejection Criteria:** Score below selection threshold, FEMA flood zone risk, FAA height restrictions, insufficient demand (<150 spaces), prohibitive land cost, low ROI (<8%), existing surplus.
+
+**Before/After Coverage:** 1.5km radius circles around existing (blue) and recommended (green) sites. Compares area coverage before and after AI recommendations.
+
+**Competitor Analysis:** 8 known operators (LAZ, SP+, ABM, ParkJockey) with locations, spaces, and types.
+
+=== DASHBOARD COMMANDS ===
+• WEIGHTS: "set traffic weight to 40%", "increase poi to 30"
 • BUDGET: "set budget to $80M"  •  CAPACITY: "set min capacity to 300"
 • TOGGLES: "exclude flood zones", "enable transit priority", "include future dev areas"
 • PRESETS: "use balanced/transit/growth/demand/budget preset"
-• PIPELINE: "run pipeline", "start analysis"  •  DATA: "fetch live data", "load osm data"
-• MAP LAYERS: "show/hide traffic/poi/parking/transit/recommendations/osm/census layer"
-• NAVIGATION: "zoom to site #1", "zoom to downtown", "zoom out", "show results", "show analytics"
-• RESET: "reset pipeline"  •  RECALCULATE: "recalculate scores"
+• PIPELINE: "run pipeline"  •  DATA: "fetch live data"
+• MAP LAYERS: "show/hide traffic/poi/parking/transit/recommendations layer"
+• NAVIGATION: "zoom to site #1", "show results", "show analytics"
 
-Answer analytical questions with SPECIFIC NUMBERS from the context data. Reference exact scores, gaps, populations, ROIs, costs. Compare sites quantitatively. Explain WHY the AI made specific decisions using sub-scores and gap data.
+=== RESPONSE RULES ===
+Answer with SPECIFIC NUMBERS from context. Explain methodology steps when asked "how" or "why". Reference exact formulas, radius, data sources. Compare sites quantitatively.
 
-Be concise (under 150 words). Use data-driven answers with numbers.
+Be concise (under 200 words). Use data-driven answers.
 
 IMPORTANT: Always end your response with exactly 2-4 recommended next actions the user might want to take, using this exact format:
 [NEXT]action one|action two|action three[/NEXT]
@@ -3349,7 +3384,7 @@ async function callGroqDirect(userMessage) {
             model: GROQ_MODEL,
             messages,
             temperature: 0.7,
-            max_tokens: 800
+            max_tokens: 1000
         })
     });
 
