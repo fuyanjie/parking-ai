@@ -24,9 +24,11 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary
 /* ========== 2. NAVIGATION ========== */
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 5000; padding: 0 32px; height: 52px;
     display: flex; align-items: center; justify-content: space-between;
-    background: rgba(10,14,26,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
-    transform: translateY(-100%); transition: transform 0.3s; }
-.nav.show { transform: translateY(0); }
+    background: rgba(10,14,26,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-page-links { display: flex; gap: 4px; margin-right: 24px; }
+.nav-page-links a { padding: 5px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; color: var(--text3); text-decoration: none; transition: all 0.2s; }
+.nav-page-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.nav-page-links a.current { color: var(--accent); background: rgba(99,179,237,0.12); }
 .nav-logo { font-weight: 800; font-size: 0.95rem; color: var(--accent); }
 .nav-logo span { color: var(--orange); }
 .nav-links { display: flex; gap: 24px; }
@@ -34,7 +36,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary
 .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
 /* ========== 3. HERO ========== */
-.hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; position: relative;
+.hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 70px 24px 40px; position: relative;
     background: radial-gradient(ellipse at 50% 30%, rgba(99,179,237,0.06) 0%, transparent 60%); }
 .hero-badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--orange); border: 1px solid rgba(246,173,85,0.3); padding: 6px 16px; border-radius: 20px; margin-bottom: 24px; }
 .hero h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 900; line-height: 1.15; max-width: 800px; }
@@ -620,6 +622,10 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 <!-- ========== NAVIGATION ========== -->
 <nav class="nav" id="nav">
     <div class="nav-logo">AI Agent <span>Parking Planner</span></div>
+    <div class="nav-page-links">
+        <a href="index.html" class="current">🅿️ AI Demo</a>
+        <a href="research.html">📄 Research</a>
+    </div>
     <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')">&#9776;</button>
     <div class="nav-links">
         <a href="#hero">Home</a>
@@ -629,7 +635,6 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         <a href="#explain-section">Explainability</a>
         <a href="#beforeafter-section">Before/After</a>
         <a href="#analytics">Analytics</a>
-        <a href="research.html" style="color:var(--orange);">Research</a>
     </div>
 </nav>
 
@@ -645,10 +650,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         <div class="stat-item"><div class="stat-num" data-target="76" data-suffix="%">0</div><div class="stat-label">Drive Alone Rate</div></div>
     </div>
     <br>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
-        <a href="#dashboard" class="hero-cta">Launch Agent Dashboard &darr;</a>
-        <a href="research.html" class="hero-cta" style="background:linear-gradient(135deg, var(--purple), #805ad5);">Research &amp; Team &rarr;</a>
-    </div>
+    <a href="#dashboard" class="hero-cta">Launch Agent Dashboard &darr;</a>
     <a href="#arch-section" class="scroll-cta">Scroll to explore &darr;</a>
 </section>
 
@@ -4559,12 +4561,6 @@ const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.15 });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-// Sticky nav
-const heroEl = document.getElementById('hero');
-const navEl = document.getElementById('nav');
-const navObs = new IntersectionObserver(([e]) => { navEl.classList.toggle('show', !e.isIntersecting); }, { threshold: 0 });
-navObs.observe(heroEl);
 
 // Nav active highlight
 const sections = document.querySelectorAll('section[id]');
