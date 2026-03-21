@@ -253,7 +253,23 @@ details.reasoning summary:hover { color: var(--accent); }
 .census-popup { font-size: 0.78rem; line-height: 1.5; }
 .census-popup b { color: #1a202c; }
 
-/* ========== 12. FOOTER ========== */
+/* ========== 12b. BACKEND MODE ========== */
+.mode-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 0.7rem; }
+.mode-btn { padding: 5px 12px; background: transparent; border: none; color: var(--text3); cursor: pointer; transition: all 0.2s; font-weight: 600; }
+.mode-btn.active { background: var(--accent); color: #1a202c; }
+.backend-url-input { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); padding: 4px 10px; border-radius: 4px; font-size: 0.72rem; font-family: 'Fira Code', monospace; width: 190px; }
+.ws-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.ws-indicator.connected { background: rgba(72,187,120,0.15); color: var(--green); }
+.ws-indicator.disconnected { background: rgba(252,129,129,0.15); color: var(--red); }
+.ws-indicator::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.backend-log { max-height: 200px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 0.68rem; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px; margin-top: 8px; }
+.backend-log .bl-entry { padding: 2px 0; color: var(--text3); }
+.backend-log .bl-entry .bl-time { color: #4a5568; }
+.backend-log .bl-entry .bl-agent { color: var(--orange); }
+.backend-log .bl-entry .bl-action { color: var(--green); }
+.backend-log .bl-entry .bl-msg { color: var(--text2); }
+
+/* ========== 13. FOOTER ========== */
 .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text3); }
     </style>
 </head>
@@ -319,8 +335,14 @@ details.reasoning summary:hover { color: var(--accent); }
 <section class="dashboard" id="dashboard">
     <div class="dash-header">
         <h2>Interactive Agent Dashboard</h2>
-        <div style="display:flex;gap:8px;">
-            <button class="btn btn-primary" id="runBtn" onclick="runPipeline()">Run Agent Pipeline</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="mode-switch">
+                <button class="mode-btn active" id="modeDemo" onclick="setMode('demo')">Demo Mode</button>
+                <button class="mode-btn" id="modeBackend" onclick="setMode('backend')">Live Backend</button>
+            </div>
+            <input type="text" class="backend-url-input" id="backendUrl" value="ws://localhost:8000/ws" style="display:none;" placeholder="ws://host:port/ws" />
+            <span class="ws-indicator disconnected" id="wsIndicator" style="display:none;">Disconnected</span>
+            <button class="btn btn-primary" id="runBtn" onclick="runCurrentMode()">Run Agent Pipeline</button>
             <button class="btn btn-outline" onclick="fetchLiveData()" id="liveBtn" style="border-color:var(--green);color:var(--green);">Fetch Live Data</button>
             <button class="btn btn-outline" onclick="resetPipeline()">Reset</button>
             <span class="status-text" id="statusText" style="margin-left:12px;font-size:0.82rem;color:var(--text2);">Ready</span>
@@ -1274,7 +1296,225 @@ function sendChat() {
     msgs.scrollTop = msgs.scrollHeight;
 }
 
-// ========== I. SCROLL & ANIMATION MODULE ==========
+// ========== I. BACKEND / WEBSOCKET MODULE ==========
+let currentMode = 'demo'; // 'demo' or 'backend'
+let ws = null;
+let backendLogEntries = [];
+
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeDemo').classList.toggle('active', mode === 'demo');
+    document.getElementById('modeBackend').classList.toggle('active', mode === 'backend');
+    document.getElementById('backendUrl').style.display = mode === 'backend' ? 'inline-block' : 'none';
+    document.getElementById('wsIndicator').style.display = mode === 'backend' ? 'inline-flex' : 'none';
+
+    if (mode === 'backend') {
+        connectWebSocket();
+    } else {
+        disconnectWebSocket();
+    }
+}
+
+function runCurrentMode() {
+    if (currentMode === 'demo') {
+        runPipeline();
+    } else {
+        runBackendPipeline();
+    }
+}
+
+function connectWebSocket() {
+    const url = document.getElementById('backendUrl').value;
+    const indicator = document.getElementById('wsIndicator');
+
+    try {
+        ws = new WebSocket(url);
+        ws.onopen = () => {
+            indicator.className = 'ws-indicator connected';
+            indicator.textContent = 'Connected';
+            document.getElementById('statusText').innerHTML = '<span style="color:var(--green);">Backend connected</span>';
+        };
+        ws.onclose = () => {
+            indicator.className = 'ws-indicator disconnected';
+            indicator.textContent = 'Disconnected';
+        };
+        ws.onerror = () => {
+            indicator.className = 'ws-indicator disconnected';
+            indicator.textContent = 'Error';
+            document.getElementById('statusText').innerHTML = '<span style="color:var(--red);">Cannot connect to backend</span>';
+        };
+        ws.onmessage = handleWSMessage;
+    } catch (e) {
+        indicator.className = 'ws-indicator disconnected';
+        indicator.textContent = 'Failed';
+    }
+}
+
+function disconnectWebSocket() {
+    if (ws) { try { ws.close(); } catch(e) {} ws = null; }
+}
+
+let backendStepIndex = 0;
+const agentToStep = {
+    'TrafficAgent': 0, 'POIAgent': 1, 'ParkingAgent': 2,
+    'TransitAgent': 3, 'DemographicsAgent': 4,
+    'SpatialAnalyzer': 5, 'RecommendAgent': 6, 'Orchestrator': -1,
+};
+
+function handleWSMessage(event) {
+    const msg = JSON.parse(event.data);
+
+    if (msg.type === 'log') {
+        const d = msg.data;
+        // Add to backend log
+        addBackendLog(d);
+
+        // Update pipeline step
+        const stepIdx = agentToStep[d.agent];
+        if (stepIdx !== undefined && stepIdx >= 0 && stepIdx > currentStep) {
+            currentStep = stepIdx;
+            renderPipeline();
+            document.getElementById('step-' + stepIdx)?.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+            // Toggle map layers per step
+            Object.values(layers).forEach(l => map.removeLayer(l));
+            if (stepIdx === 0) map.addLayer(layers.traffic);
+            else if (stepIdx === 1) map.addLayer(layers.poi);
+            else if (stepIdx === 2) map.addLayer(layers.parking);
+            else if (stepIdx === 3) { map.addLayer(layers.transit); map.addLayer(layers.parking); }
+            else if (stepIdx === 4) { map.addLayer(layers.traffic); map.addLayer(layers.poi); }
+            else { map.addLayer(layers.recommendations); }
+            document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = map.hasLayer(layers[cb.dataset.layer]); });
+        }
+
+        document.getElementById('statusText').innerHTML = `<span style="color:var(--green);font-weight:600;">[${d.agent}]</span> ${d.action}: ${d.message.substring(0,60)}`;
+
+    } else if (msg.type === 'result') {
+        handleBackendResult(msg.data);
+
+    } else if (msg.type === 'error') {
+        document.getElementById('statusText').innerHTML = `<span style="color:var(--red);">Error:</span> ${msg.data.message}`;
+        document.getElementById('runBtn').disabled = false;
+        pipeRunning = false;
+
+    } else if (msg.type === 'status') {
+        document.getElementById('statusText').innerHTML = `<span style="color:var(--accent);">${msg.data.message}</span>`;
+    }
+}
+
+function addBackendLog(d) {
+    backendLogEntries.push(d);
+    // Add to existing step CoT if applicable
+    const stepIdx = agentToStep[d.agent];
+    if (stepIdx !== undefined && stepIdx >= 0 && stepIdx < agentSteps.length) {
+        const step = agentSteps[stepIdx];
+        if (!step._backendLogs) step._backendLogs = [];
+        step._backendLogs.push(`> [${d.action}] ${d.message}`);
+        step.cot = step._backendLogs.join('\n');
+        // Update stats if data present
+        if (d.data) {
+            if (d.data.total) step.stats['Total'] = d.data.total.toLocaleString();
+            if (d.data.types) {
+                const typeStr = Object.entries(d.data.types).slice(0, 3).map(([k,v]) => `${k}: ${v}`).join(', ');
+                step.stats['Types'] = typeStr;
+            }
+            if (d.data.categories) step.stats['Categories'] = Object.keys(d.data.categories).length.toString();
+            if (d.data.total_population) step.stats['Population'] = (d.data.total_population / 1e6).toFixed(2) + 'M';
+            if (d.data.total_tracts) step.stats['Tracts'] = d.data.total_tracts.toString();
+        }
+    }
+}
+
+function handleBackendResult(data) {
+    const sites = data.recommended_sites || [];
+
+    // Convert backend sites to frontend format
+    activeSites = sites.map((s, i) => ({
+        id: s.id, name: s.name, lat: s.lat, lng: s.lng,
+        capacity: s.capacity, type: s.parking_type,
+        priority: s.priority, score: s.score,
+        subScores: s.sub_scores,
+        cost: s.cost, costNum: s.cost_num,
+        roi: s.roi, roiNum: s.roi_num,
+        reason: s.reason,
+        floodZone: false, hidden: false, futureArea: false,
+    }));
+
+    // Update allSites too
+    allSites = [...activeSites];
+    saveBaseline();
+
+    currentStep = agentSteps.length;
+    renderPipeline();
+    buildRecommendations();
+    renderResultsTable();
+    updateSummary();
+    updateCharts();
+    renderExplainability();
+    updateSensitivity();
+    updateLivePreview();
+
+    Object.values(layers).forEach(l => map.removeLayer(l));
+    map.addLayer(layers.recommendations);
+    document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer === 'recommendations'; });
+
+    const totalCap = sites.reduce((a, s) => a + s.capacity, 0);
+    const totalCost = sites.reduce((a, s) => a + s.cost_num, 0);
+    document.getElementById('statusText').innerHTML =
+        `<span style="color:var(--green);font-weight:700;">Backend Complete!</span> ${sites.length} sites | ` +
+        `${totalCap.toLocaleString()} spaces | $${totalCost.toFixed(1)}M | ` +
+        `${data.pipeline_duration_sec}s | ${data.total_parking_fetched} parking | ` +
+        `${data.total_pois_fetched} POIs | ${data.total_census_tracts} tracts`;
+
+    // Update live stats bar
+    const statsBar = document.getElementById('liveStatsBar');
+    statsBar.style.display = 'flex';
+    statsBar.innerHTML = `
+        <span>Parking: <span class="ls">${data.total_parking_fetched.toLocaleString()}</span></span>
+        <span>POIs: <span class="ls">${data.total_pois_fetched.toLocaleString()}</span></span>
+        <span>Transit: <span class="ls">${data.total_transit_stops.toLocaleString()}</span></span>
+        <span>Census: <span class="ls">${data.total_census_tracts}</span></span>
+        <span>Pop: <span class="ls">${data.total_population.toLocaleString()}</span></span>
+        <span>Grid: <span class="ls">${data.grid_cells_analyzed}</span></span>
+        <span>Time: <span class="ls">${data.pipeline_duration_sec}s</span></span>`;
+
+    document.getElementById('liveBadge').style.display = 'inline-flex';
+    document.getElementById('runBtn').disabled = false;
+    pipeRunning = false;
+}
+
+function runBackendPipeline() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        connectWebSocket();
+        setTimeout(() => runBackendPipeline(), 1000);
+        return;
+    }
+    if (pipeRunning) return;
+    pipeRunning = true;
+    currentStep = -1;
+    backendLogEntries = [];
+    document.getElementById('runBtn').disabled = true;
+
+    // Reset agent step logs
+    agentSteps.forEach(s => { s._backendLogs = []; });
+
+    // Build config from current UI state
+    const w = getEffectiveWeights();
+    const config = {
+        weights: w,
+        max_budget: +document.getElementById('budget-slider').value,
+        min_capacity: +document.getElementById('cap-slider').value,
+        exclude_flood_zones: document.getElementById('wif-flood').classList.contains('on'),
+        transit_priority: document.getElementById('wif-transit').classList.contains('on'),
+        include_future: document.getElementById('wif-future').classList.contains('on'),
+        top_k: 10,
+    };
+
+    ws.send(JSON.stringify({ action: 'run', config }));
+    document.getElementById('statusText').innerHTML = '<span style="color:var(--accent);">Sending to backend...</span>';
+}
+
+// ========== J. SCROLL & ANIMATION MODULE ==========
 const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.15 });
