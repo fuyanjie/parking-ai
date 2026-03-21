@@ -747,7 +747,7 @@ Or ask any question about the analysis!</div>
 </section>
 
 <!-- ========== RESULTS ========== -->
-<section class="section" id="results-section">
+<section class="section" id="results-section" style="display:none;">
     <h2 class="section-title fade-in">Recommended Sites</h2>
     <p class="section-sub fade-in">AI-selected optimal parking lot locations ranked by composite score. Click rows to view on map. Select sites to compare.</p>
     <div class="fade-in">
@@ -784,7 +784,7 @@ Or ask any question about the analysis!</div>
 </section>
 
 <!-- ========== EXPLAINABILITY ========== -->
-<section class="section" id="explain-section">
+<section class="section" id="explain-section" style="display:none;">
     <h2 class="section-title fade-in">AI Explainability</h2>
     <p class="section-sub fade-in">Transparent decision-making: understand why sites were selected or rejected, and trace the full reasoning chain for each recommendation.</p>
     <div class="explain-grid fade-in">
@@ -801,7 +801,7 @@ Or ask any question about the analysis!</div>
 </section>
 
 <!-- ========== BEFORE/AFTER MAP ========== -->
-<section class="section" id="beforeafter-section">
+<section class="section" id="beforeafter-section" style="display:none;">
     <h2 class="section-title fade-in">Before vs After — Coverage Analysis</h2>
     <p class="section-sub fade-in">Split-map comparison: current parking supply coverage (left) vs projected coverage with AI-recommended sites (right).</p>
     <div class="fade-in">
@@ -836,7 +836,7 @@ Or ask any question about the analysis!</div>
 </section>
 
 <!-- ========== ANALYTICS ========== -->
-<section class="section" id="analytics">
+<section class="section" id="analytics" style="display:none;">
     <h2 class="section-title fade-in">Data Analytics & Insights</h2>
     <p class="section-sub fade-in">Comprehensive visual analysis of parking demand, utilization patterns, growth trends, and investment efficiency across the Phoenix metro area.</p>
     <div class="charts-grid fade-in">
@@ -1971,6 +1971,10 @@ async function runPipeline() {
     pipelineVis.clearLayers();
     map.addLayer(pipelineVis);
 
+    // Hide & clear previous results
+    hideResultsSections();
+    clearPreviousResults();
+
     const stepAnimations = [animateTrafficStep, animatePOIStep, animateParkingStep, animateTransitStep, animateDemographicsStep, animateAnalysisStep, animateRecommendStep];
 
     for (let i=0; i<agentSteps.length; i++) {
@@ -2051,9 +2055,51 @@ async function runPipeline() {
     map.addLayer(layers.recommendations);
     document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer==='recommendations'; });
     pipeRunning = false;
-    // Refresh gap analysis & explainability after pipeline
+    // Reveal results sections & refresh
+    showResultsSections();
     renderExplainability();
     renderResultsTable();
+}
+
+function showResultsSections() {
+    ['results-section','explain-section','beforeafter-section','analytics'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+    });
+}
+
+function hideResultsSections() {
+    ['results-section','explain-section','beforeafter-section','analytics'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+}
+
+function clearPreviousResults() {
+    // Clear results table
+    const rb = document.getElementById('resultsBody');
+    if (rb) rb.innerHTML = '';
+    // Clear explainability
+    const rl = document.getElementById('reasoningList');
+    if (rl) rl.innerHTML = '';
+    const rj = document.getElementById('rejectedList');
+    if (rj) rj.innerHTML = '';
+    // Clear before/after maps
+    const baSplit = document.getElementById('baSplit');
+    if (baSplit) baSplit.style.display = 'none';
+    const baSummary = document.getElementById('baSummary');
+    if (baSummary) { baSummary.style.display = 'none'; baSummary.innerHTML = ''; }
+    const baBtn = document.getElementById('baInitBtn');
+    if (baBtn) { baBtn.textContent = 'Generate Split View'; baBtn.disabled = false; }
+    // Clear compare panel
+    const cp = document.getElementById('comparePanel');
+    if (cp) cp.innerHTML = '';
+    // Reset gap data
+    lastGapData = [];
+    // Reset selected comparison
+    selectedIds.clear();
+    const cb = document.getElementById('compareBtn');
+    if (cb) { cb.textContent = 'Compare Selected (0)'; cb.disabled = true; }
 }
 function resetPipeline() {
     currentStep = -1; pipeRunning = false; renderPipeline();
@@ -3886,6 +3932,7 @@ function handleBackendResult(data) {
     document.getElementById('liveBadge').style.display = 'inline-flex';
     document.getElementById('runBtn').disabled = false;
     pipeRunning = false;
+    showResultsSections();
 }
 
 function runBackendPipeline() {
