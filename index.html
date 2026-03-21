@@ -420,32 +420,7 @@ details.reasoning summary:hover { color: var(--accent); }
 .btn-export { padding: 6px 14px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border); background: rgba(99,179,237,0.06); color: var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
 .btn-export:hover { background: rgba(99,179,237,0.15); border-color: var(--accent); }
 
-/* ========== 15b. GAP ANALYSIS SECTION ========== */
-.gap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; }
-.gap-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-.gap-card h4 { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-.gap-card h4 .gap-id { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; color: #fff; flex-shrink: 0; }
-.gap-bar-wrap { margin: 6px 0; }
-.gap-bar-label { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text3); margin-bottom: 3px; }
-.gap-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden; position: relative; }
-.gap-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
-.gap-stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
-.gap-stat { flex: 1; min-width: 80px; text-align: center; padding: 8px 4px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.04); }
-.gap-stat .gs-val { font-size: 1rem; font-weight: 800; color: var(--accent); }
-.gap-stat .gs-val.red { color: var(--red); }
-.gap-stat .gs-val.green { color: var(--green); }
-.gap-stat .gs-val.orange { color: var(--orange); }
-.gap-stat .gs-label { font-size: 0.6rem; color: var(--text3); text-transform: uppercase; margin-top: 2px; }
-.gap-impact { margin-top: 10px; padding: 10px 12px; background: rgba(252,129,129,0.06); border: 1px solid rgba(252,129,129,0.15); border-radius: 8px; font-size: 0.72rem; color: var(--text2); line-height: 1.6; }
-.gap-impact b { color: var(--red); }
-.gap-summary-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
-.gap-summary-card { text-align: center; padding: 16px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; min-width: 140px; }
-.gap-summary-card .gsv { font-size: 1.8rem; font-weight: 900; }
-.gap-summary-card .gsv.red { color: var(--red); }
-.gap-summary-card .gsv.green { color: var(--green); }
-.gap-summary-card .gsl { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-.gap-chart-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 20px; }
-.gap-chart-wrap h4 { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+/* ========== 15b. GAP TABLE (in Explainability) ========== */
 
 /* ========== 16. COVERAGE LAYER ========== */
 .coverage-stats { position: absolute; top: 12px; left: 12px; z-index: 1000; background: rgba(15,22,41,0.92); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 0.72rem; color: var(--green); font-weight: 600; display: none; }
@@ -472,7 +447,6 @@ details.reasoning summary:hover { color: var(--accent); }
     .dash-chat { height: auto; min-height: 300px; margin: 0 8px 12px; }
     .section { padding: 40px 16px; }
     .explain-grid { grid-template-columns: 1fr; }
-    .gap-grid { grid-template-columns: 1fr; }
     .arch-row { flex-direction: column; }
     .res-table { display: block; overflow-x: auto; white-space: nowrap; }
     .compare-panel { overflow-x: auto; }
@@ -551,7 +525,6 @@ details.reasoning summary:hover { color: var(--accent); }
         <a href="#analytics">Analytics</a>
         <a href="#results-section">Results</a>
         <a href="#beforeafter-section">Before/After</a>
-        <a href="#gap-section">Gap Analysis</a>
         <a href="#explain-section">Explainability</a>
     </div>
 </nav>
@@ -836,18 +809,6 @@ Or ask any question about the analysis!</div>
         </div>
         <div class="ba-summary" id="baSummary" style="display:none;"></div>
     </div>
-</section>
-
-<!-- ========== GAP ANALYSIS ========== -->
-<section class="section" id="gap-section">
-    <h2 class="section-title fade-in">Supply-Demand Gap Analysis</h2>
-    <p class="section-sub fade-in">Why these locations need new parking — data-driven evidence from 6 live sources showing the gap between existing supply and actual demand, and the impact on residents' daily lives.</p>
-    <div class="gap-summary-row fade-in" id="gapSummaryRow"></div>
-    <div class="gap-chart-wrap fade-in">
-        <h4>Supply vs Demand by Site (Live Data)</h4>
-        <div style="position:relative;height:260px;"><canvas id="gapChart"></canvas></div>
-    </div>
-    <div class="gap-grid fade-in" id="gapGrid"></div>
 </section>
 
 <!-- ========== EXPLAINABILITY ========== -->
@@ -2405,7 +2366,6 @@ function recalculate() {
     updateSummary();
     updateCharts();
     renderExplainability();
-    renderGapAnalysis();
     updateSensitivity();
 
     // Show impact flash
@@ -2972,7 +2932,6 @@ function renderGapTable() {
 }
 
 // ========== G2. GAP ANALYSIS MODULE ==========
-let gapChart = null;
 const impactNarratives = {
     1: { area: 'Downtown Phoenix', pain: 'Office workers circle blocks 15-25 min seeking parking during rush hours. Event nights (Chase Field, Convention Center) create gridlock with 94% lot utilization. Street meters are maxed — 1,977 meters serving 14,100+ daily commuters. Residents report missing appointments and avoiding downtown businesses due to parking frustration.', pop: 'Office workers, event-goers, tourists, downtown residents' },
     2: { area: 'Midtown / Central Ave', pain: 'The fastest-growing commercial corridor has only 29 metered spaces for 30,000+ commuting workers. Light rail riders who drive to park-and-ride find lots full by 7:30am. Restaurant and retail workers compete with office workers — evening shift turnover causes secondary peak congestion. Residents of surrounding neighborhoods find streets clogged with overflow parking.', pop: 'Light rail commuters, retail/restaurant workers, corridor residents' },
@@ -3048,80 +3007,6 @@ function computeGapAnalysis() {
     });
 }
 
-function renderGapAnalysis() {
-    const gaps = computeGapAnalysis();
-    if (gaps.length === 0) return;
-
-    const totalGap = gaps.reduce((a,g) => a + Math.max(0, g.gap), 0);
-    const totalSupply = gaps.reduce((a,g) => a + g.supply.total, 0);
-    const totalDemand = gaps.reduce((a,g) => a + g.demand.totalDemand, 0);
-    const totalNewCap = gaps.reduce((a,g) => a + g.newCap, 0);
-    const totalAfterGap = gaps.reduce((a,g) => a + g.afterGap, 0);
-    const affectedPop = gaps.reduce((a,g) => a + g.demand.pop, 0);
-
-    // Summary row
-    document.getElementById('gapSummaryRow').innerHTML = `
-        <div class="gap-summary-card"><div class="gsv red">${totalGap.toLocaleString()}</div><div class="gsl">Total Parking Deficit</div></div>
-        <div class="gap-summary-card"><div class="gsv" style="color:var(--accent);">${totalSupply.toLocaleString()}</div><div class="gsl">Existing Supply</div></div>
-        <div class="gap-summary-card"><div class="gsv orange">${totalDemand.toLocaleString()}</div><div class="gsl">Estimated Demand</div></div>
-        <div class="gap-summary-card"><div class="gsv green">+${totalNewCap.toLocaleString()}</div><div class="gsl">AI Recommended</div></div>
-        <div class="gap-summary-card"><div class="gsv" style="color:var(--purple);">${affectedPop.toLocaleString()}</div><div class="gsl">Affected Residents</div></div>
-    `;
-
-    // Per-site gap cards
-    document.getElementById('gapGrid').innerHTML = gaps.map(g => {
-        const color = g.priority==='high'?'#fc8181':g.priority==='medium'?'#f6ad55':'#68d391';
-        const supplyPct = g.demand.totalDemand > 0 ? Math.round(g.supply.total / g.demand.totalDemand * 100) : 0;
-        const afterPct = g.demand.totalDemand > 0 ? Math.min(100, Math.round((g.supply.total + g.newCap) / g.demand.totalDemand * 100)) : 0;
-        return `<div class="gap-card">
-            <h4><span class="gap-id" style="background:${color};">${g.id}</span> ${g.shortName}</h4>
-            <div class="gap-bar-wrap">
-                <div class="gap-bar-label"><span>Existing Supply: ${g.supply.total.toLocaleString()} spaces</span><span style="color:var(--red);">Demand: ${g.demand.totalDemand.toLocaleString()}</span></div>
-                <div class="gap-bar">
-                    <div class="gap-bar-fill" style="width:${supplyPct}%;background:var(--accent);"></div>
-                </div>
-                <div class="gap-bar-label" style="margin-top:4px;"><span>After AI +${g.newCap}: ${(g.supply.total+g.newCap).toLocaleString()}</span><span style="color:var(--green);">${afterPct}% covered</span></div>
-                <div class="gap-bar">
-                    <div class="gap-bar-fill" style="width:${afterPct}%;background:var(--green);"></div>
-                </div>
-            </div>
-            <div class="gap-stat-row">
-                <div class="gap-stat"><div class="gs-val red">${g.gap > 0 ? '-' + g.gap.toLocaleString() : '✓'}</div><div class="gs-label">Deficit</div></div>
-                <div class="gap-stat"><div class="gs-val">${g.demand.driveAlonePct}%</div><div class="gs-label">Drive Alone</div></div>
-                <div class="gap-stat"><div class="gs-val orange">${g.demand.pop.toLocaleString()}</div><div class="gs-label">Population</div></div>
-                <div class="gap-stat"><div class="gs-val">${g.demand.maxAADT > 0 ? (g.demand.maxAADT/1000).toFixed(0)+'K' : '—'}</div><div class="gs-label">AADT</div></div>
-            </div>
-            <div class="gap-impact">
-                <b>Resident Impact:</b> ${g.narrative.pain}<br>
-                <span style="color:var(--text3);font-size:0.65rem;">Affected: ${g.narrative.pop}</span>
-            </div>
-        </div>`;
-    }).join('');
-
-    // Gap chart
-    const ctx = document.getElementById('gapChart')?.getContext('2d');
-    if (!ctx) return;
-    if (gapChart) gapChart.destroy();
-    gapChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: gaps.map(g => '#' + g.id + ' ' + g.shortName),
-            datasets: [
-                { label: 'Existing Supply', data: gaps.map(g => g.supply.total), backgroundColor: 'rgba(99,179,237,0.7)', borderColor: '#63b3ed', borderWidth: 1 },
-                { label: 'AI New Capacity', data: gaps.map(g => g.newCap), backgroundColor: 'rgba(72,187,120,0.7)', borderColor: '#48bb78', borderWidth: 1 },
-                { label: 'Remaining Deficit', data: gaps.map(g => Math.max(0, g.afterGap)), backgroundColor: 'rgba(252,129,129,0.5)', borderColor: '#fc8181', borderWidth: 1, borderDash: [4,4] },
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#a0aec0', font: { size: 11 } } } },
-            scales: {
-                x: { stacked: true, ticks: { color: '#718096', font: { size: 10 } }, grid: { display: false } },
-                y: { stacked: true, ticks: { color: '#718096', callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }, grid: { color: 'rgba(255,255,255,0.04)' }, title: { display: true, text: 'Parking Spaces', color: '#718096' } }
-            }
-        }
-    });
-}
 
 // ========== H. CHAT MODULE (Direct Groq LLM from Browser) ==========
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -3958,7 +3843,6 @@ function handleBackendResult(data) {
     updateSummary();
     updateCharts();
     renderExplainability();
-    renderGapAnalysis();
     updateSensitivity();
     updateLivePreview();
 
