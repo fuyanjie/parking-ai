@@ -204,7 +204,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 @keyframes slideInRight { from { transform: translateX(30px); opacity:0; } to { transform: translateX(0); opacity:1; } }
 
 /* ========== 7. CHARTS ========== */
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 .chart-card h3 { font-size: 0.85rem; color: var(--text); margin-bottom: 16px; }
 .chart-card canvas { max-height: 260px; }
@@ -440,6 +440,45 @@ details.reasoning summary:hover { color: var(--accent); }
     .layer-ctrl { max-width: 160px; font-size: 0.65rem; }
 }
 
+/* ========== 19a. CITY SELECTOR ========== */
+.city-selector { display: flex; align-items: center; gap: 8px; }
+.city-selector label { font-size: 0.72rem; color: var(--text3); font-weight: 600; white-space: nowrap; }
+.city-selector select { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; outline: none; transition: border-color 0.2s; }
+.city-selector select:hover, .city-selector select:focus { border-color: var(--accent); }
+.city-selector select option { background: var(--bg-card); color: var(--text); }
+
+/* ========== 19b. 3D MAP MARKERS ========== */
+.marker-3d { position: relative; transform-style: preserve-3d; }
+.marker-3d-col { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  border-radius: 4px 4px 0 0; min-width: 24px; text-align: center;
+  background: linear-gradient(180deg, rgba(252,129,129,0.9), rgba(252,129,129,0.6));
+  border: 1px solid rgba(255,255,255,0.3); box-shadow: 4px 4px 0 rgba(0,0,0,0.3); }
+.marker-3d-side { position: absolute; bottom: 0; min-width: 8px; border-radius: 0 2px 2px 0;
+  opacity: 0.6; }
+.marker-3d-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 0.6rem; font-weight: 700; color: white; white-space: nowrap;
+  background: rgba(0,0,0,0.7); padding: 1px 5px; border-radius: 3px; }
+.marker-3d-cap { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%);
+  font-size: 0.55rem; color: var(--text3); white-space: nowrap; }
+
+/* ========== 19c. COMPETITOR MARKERS ========== */
+.competitor-marker { width: 14px; height: 14px; transform: rotate(45deg); border: 2px solid rgba(255,255,255,0.5);
+  box-shadow: 0 0 6px rgba(0,0,0,0.4); }
+.competitor-badge { position: absolute; bottom: 60px; left: 12px; z-index: 1000; background: rgba(15,22,41,0.92);
+  backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px;
+  font-size: 0.72rem; color: var(--text2); display: none; }
+.competitor-badge.show { display: block; }
+.competitor-badge h5 { font-size: 0.68rem; color: var(--red); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.competitor-badge .cb-row { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
+.competitor-badge .cb-val { font-weight: 700; color: var(--accent); }
+
+/* ========== 19d. MONTE CARLO CHART ========== */
+.mc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.mc-stat { background: rgba(99,179,237,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
+.mc-stat .mc-label { font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.mc-stat .mc-value { font-size: 0.9rem; font-weight: 700; color: var(--accent); }
+.chart-card.wide { grid-column: span 2; }
+
 /* ========== 19. PRINT STYLESHEET ========== */
 @media print {
     body { background: white !important; color: #1a202c !important; }
@@ -527,6 +566,14 @@ details.reasoning summary:hover { color: var(--accent); }
     <div class="dash-header">
         <h2>Interactive Agent Dashboard</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="city-selector">
+                <label>City:</label>
+                <select id="citySelector" onchange="switchCity(this.value)">
+                    <option value="phoenix">Phoenix, AZ</option>
+                    <option value="tucson">Tucson, AZ</option>
+                    <option value="lasvegas">Las Vegas, NV</option>
+                </select>
+            </div>
             <div class="mode-switch">
                 <button class="mode-btn active" id="modeDemo" onclick="setMode('demo')">Demo Mode</button>
                 <button class="mode-btn" id="modeBackend" onclick="setMode('backend')">Live Backend</button>
@@ -594,8 +641,11 @@ Or ask any question about the analysis!</div>
                 <label class="layer-toggle" style="color:#38b2ac;"><input type="checkbox" data-layer="osmParking"> <span class="layer-dot" style="color:#38b2ac;"></span> OSM Parking (Live)</label>
                 <label class="layer-toggle" style="color:#ed64a6;"><input type="checkbox" data-layer="census"> <span class="layer-dot" style="color:#ed64a6;"></span> Census Pop (Live)</label>
                 <label class="layer-toggle" style="color:#68d391;"><input type="checkbox" data-layer="coverage"> <span class="layer-dot" style="color:#68d391;"></span> Coverage Analysis</label>
+                <label class="layer-toggle" style="color:#e53e3e;"><input type="checkbox" data-layer="competitors"> <span class="layer-dot" style="color:#e53e3e;"></span> Competitors</label>
+                <label class="layer-toggle" style="color:#f6ad55;"><input type="checkbox" data-layer="3d"> <span class="layer-dot" style="color:#f6ad55;"></span> 3D View</label>
             </div>
             <div class="coverage-stats" id="coverageStats"></div>
+            <div class="competitor-badge" id="competitorBadge"></div>
             <div class="map-analysis-badge" id="mapAnalysisBadge">
                 <div class="mab-title"><div class="mab-dot"></div> <span id="mabTitle">Analyzing...</span></div>
                 <div class="mab-stat" id="mabStat"></div>
@@ -609,6 +659,7 @@ Or ask any question about the analysis!</div>
                 <div class="legend-row"><div class="legend-color" style="background:#ed64a6;"></div> Census Density (Live)</div>
                 <div class="legend-row"><div class="legend-color" style="background:rgba(104,211,145,0.4);border:1px solid #68d391;"></div> Coverage (New)</div>
                 <div class="legend-row"><div class="legend-color" style="background:rgba(66,153,225,0.3);border:1px solid #4299e1;"></div> Coverage (Existing)</div>
+                <div class="legend-row"><div class="legend-color" style="background:#e53e3e;transform:rotate(45deg);border-radius:1px;width:10px;height:10px;"></div> Competitor</div>
             </div>
         </div>
 
@@ -678,6 +729,7 @@ Or ask any question about the analysis!</div>
         <div class="chart-card"><h3>Cost vs ROI — Site Comparison</h3><canvas id="chartScatter"></canvas></div>
         <div class="chart-card"><h3>24-Hour Parking Demand Profile</h3><canvas id="chartHourly"></canvas></div>
         <div class="chart-card"><h3>Investment Breakdown by Category</h3><canvas id="chartCost"></canvas><div class="chart-center-label" id="costCenterLabel"></div></div>
+        <div class="chart-card wide"><h3>ROI Distribution &mdash; Monte Carlo Simulation</h3><canvas id="chartMonteCarlo"></canvas><div class="mc-stats" id="mcStats"></div></div>
     </div>
 </section>
 
@@ -813,7 +865,7 @@ const agentSteps = [
       cot:'> Selecting top 8 from 340 zones\n> Capacity optimization: 350-900 spaces\n> Cost estimation: $15K-$25K per space\n> ROI projection: 18.5% avg (10yr)\n> Final report generated ✓' }
 ];
 
-const allSites = [
+let allSites = [
     { id:1, name:'Downtown Core — Jefferson & 3rd St', lat:33.4468, lng:-112.074, capacity:900, type:'Multi-Story Garage',
       priority:'high', score:96, cost:'$22.5M', costNum:22.5, roi:'21%', roiNum:21, floodZone:false, futureArea:false,
       subScores:{traffic:95,gap:98,growth:82,poi:90,transit:78},
@@ -866,6 +918,72 @@ const rejectedSites = [
     { name:'Baseline & Rural Rd (Tempe)', reason:'Existing parking surplus — utilization only 38%', score:37 }
 ];
 
+// ========== A2. CITY CONFIGS (Feature 10) ==========
+const phoenixSites = JSON.parse(JSON.stringify(allSites)); // deep copy of original Phoenix sites
+const cityConfigs = {
+    phoenix: {
+        name: 'Phoenix, AZ', center: [33.4484, -112.074], zoom: 11,
+        bbox: '33.25,-112.30,33.70,-111.80',
+        sites: phoenixSites
+    },
+    tucson: {
+        name: 'Tucson, AZ', center: [32.2226, -110.9747], zoom: 12,
+        bbox: '32.10,-111.10,32.40,-110.80',
+        sites: [
+            { id:1, name:'Downtown Tucson', lat:32.2217, lng:-110.9659, capacity:500, type:'Multi-Story Garage',
+              priority:'high', score:88, cost:'$12.5M', costNum:12.5, roi:'19%', roiNum:19, floodZone:false, futureArea:false,
+              subScores:{traffic:85,gap:90,growth:80,poi:88,transit:75}, reason:'Central business district, high foot traffic' },
+            { id:2, name:'University of Arizona', lat:32.2319, lng:-110.9501, capacity:600, type:'Multi-Story Garage',
+              priority:'high', score:85, cost:'$15.0M', costNum:15.0, roi:'18%', roiNum:18, floodZone:false, futureArea:false,
+              subScores:{traffic:80,gap:88,growth:82,poi:85,transit:80}, reason:'Major university campus, game day demand' },
+            { id:3, name:'Tucson Mall Area', lat:32.2822, lng:-110.9631, capacity:400, type:'Surface Lot',
+              priority:'medium', score:78, cost:'$6.0M', costNum:6.0, roi:'16%', roiNum:16, floodZone:false, futureArea:false,
+              subScores:{traffic:75,gap:80,growth:72,poi:78,transit:65}, reason:'Major retail corridor, weekend peak demand' },
+            { id:4, name:'Park Place', lat:32.2131, lng:-110.8838, capacity:350, type:'Surface Lot',
+              priority:'medium', score:72, cost:'$5.3M', costNum:5.3, roi:'15%', roiNum:15, floodZone:false, futureArea:false,
+              subScores:{traffic:68,gap:72,growth:70,poi:72,transit:55}, reason:'East side retail hub, growing residential area' },
+            { id:5, name:'Oro Valley', lat:32.3909, lng:-110.9665, capacity:300, type:'Surface Lot',
+              priority:'low', score:65, cost:'$4.5M', costNum:4.5, roi:'13%', roiNum:13, floodZone:false, futureArea:true,
+              subScores:{traffic:55,gap:60,growth:78,poi:58,transit:40}, reason:'Fast-growing suburb, future demand area' }
+        ]
+    },
+    lasvegas: {
+        name: 'Las Vegas, NV', center: [36.1699, -115.1398], zoom: 12,
+        bbox: '36.00,-115.35,36.30,-114.90',
+        sites: [
+            { id:1, name:'The Strip South', lat:36.1082, lng:-115.1728, capacity:1200, type:'Multi-Story Garage',
+              priority:'high', score:95, cost:'$30.0M', costNum:30.0, roi:'24%', roiNum:24, floodZone:false, futureArea:false,
+              subScores:{traffic:98,gap:95,growth:85,poi:98,transit:70}, reason:'Highest tourist foot traffic in the world, massive event demand' },
+            { id:2, name:'Downtown Fremont', lat:36.1699, lng:-115.1398, capacity:800, type:'Multi-Story Garage',
+              priority:'high', score:91, cost:'$20.0M', costNum:20.0, roi:'22%', roiNum:22, floodZone:false, futureArea:false,
+              subScores:{traffic:90,gap:92,growth:88,poi:92,transit:75}, reason:'Fremont Street Experience, downtown revitalization' },
+            { id:3, name:'Convention Center', lat:36.1281, lng:-115.1537, capacity:900, type:'Multi-Story Garage',
+              priority:'high', score:88, cost:'$22.5M', costNum:22.5, roi:'20%', roiNum:20, floodZone:false, futureArea:false,
+              subScores:{traffic:85,gap:90,growth:82,poi:88,transit:80}, reason:'Las Vegas Convention Center, Monorail access' },
+            { id:4, name:'Summerlin', lat:36.1472, lng:-115.3280, capacity:500, type:'Surface Lot',
+              priority:'medium', score:75, cost:'$7.5M', costNum:7.5, roi:'16%', roiNum:16, floodZone:false, futureArea:true,
+              subScores:{traffic:68,gap:72,growth:88,poi:65,transit:45}, reason:'Fastest-growing master-planned community' },
+            { id:5, name:'Henderson', lat:36.0395, lng:-114.9817, capacity:450, type:'Surface Lot',
+              priority:'medium', score:70, cost:'$6.8M', costNum:6.8, roi:'14%', roiNum:14, floodZone:false, futureArea:true,
+              subScores:{traffic:60,gap:65,growth:85,poi:58,transit:40}, reason:'Suburban growth corridor, residential expansion' }
+        ]
+    }
+};
+let currentCity = 'phoenix';
+
+// ========== A3. COMPETITOR DATA (Feature 12) ==========
+const competitorData = [
+    { name: 'LAZ Parking', lat: 33.4485, lng: -112.0773, spaces: 1200, type: 'Garage', operator: 'LAZ' },
+    { name: 'SP+ Downtown', lat: 33.4520, lng: -112.0680, spaces: 800, type: 'Garage', operator: 'SP+' },
+    { name: 'ABM Midtown', lat: 33.5050, lng: -112.0720, spaces: 600, type: 'Surface', operator: 'ABM' },
+    { name: 'LAZ Airport', lat: 33.4373, lng: -112.0078, spaces: 2500, type: 'Garage', operator: 'LAZ' },
+    { name: 'SP+ Tempe', lat: 33.4260, lng: -111.9400, spaces: 900, type: 'Garage', operator: 'SP+' },
+    { name: 'ParkJockey Scottsdale', lat: 33.4980, lng: -111.9280, spaces: 500, type: 'Surface', operator: 'ParkJockey' },
+    { name: 'ABM Mesa', lat: 33.4170, lng: -111.8350, spaces: 400, type: 'Surface', operator: 'ABM' },
+    { name: 'LAZ Chandler', lat: 33.3080, lng: -111.8450, spaces: 350, type: 'Surface', operator: 'LAZ' },
+];
+const operatorColors = { LAZ: '#e53e3e', 'SP+': '#dd6b20', ABM: '#d69e2e', ParkJockey: '#38a169' };
+
 let activeSites = [];
 let selectedIds = new Set();
 let sortField = 'score'; let sortDir = -1;
@@ -874,7 +992,9 @@ let sortField = 'score'; let sortDir = -1;
 const map = L.map('map', { zoomControl: true }).setView(PHOENIX, 11);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'OpenStreetMap & CARTO', maxZoom:19 }).addTo(map);
 
-const layers = { traffic: L.layerGroup(), poi: L.layerGroup(), parking: L.layerGroup(), transit: L.layerGroup(), recommendations: L.layerGroup(), osmParking: L.layerGroup(), census: L.layerGroup(), coverage: L.layerGroup() };
+const layers = { traffic: L.layerGroup(), poi: L.layerGroup(), parking: L.layerGroup(), transit: L.layerGroup(), recommendations: L.layerGroup(), osmParking: L.layerGroup(), census: L.layerGroup(), coverage: L.layerGroup(), competitors: L.layerGroup() };
+let is3DViewActive = false;
+const layers3d = L.layerGroup(); // separate group for 3D markers
 const pipelineVis = L.layerGroup(); // animated layer for pipeline visualization
 layers.recommendations.addTo(map); // default on
 let liveDataLoaded = false, osmParkingCount = 0, censusTractCount = 0, censusPopTotal = 0;
@@ -929,21 +1049,143 @@ function buildRecommendations() {
               <a href="https://www.google.com/maps?q=${site.lat},${site.lng}" target="_blank" style="font-size:0.72rem;color:#3182ce;text-decoration:none;font-weight:600;">&#128506; Google Maps</a>
             </div></div>`, { maxWidth:320 });
     });
+    // Update 3D view if active
+    if (is3DViewActive) build3DMarkers();
 }
 
 // Layer toggle wiring
 document.querySelectorAll('.layer-ctrl input').forEach(cb => {
     cb.addEventListener('change', e => {
         const name = e.target.dataset.layer;
+        if (name === '3d') {
+            toggle3DView(e.target.checked);
+            return;
+        }
+        if (name === 'competitors') {
+            if (e.target.checked) { buildCompetitorLayer(); map.addLayer(layers.competitors); showCompetitorBadge(); }
+            else { map.removeLayer(layers.competitors); hideCompetitorBadge(); }
+            return;
+        }
         if (e.target.checked) map.addLayer(layers[name]); else map.removeLayer(layers[name]);
     });
 });
 
+// ========== B1a. 3D VIEW (Feature 11) ==========
+function toggle3DView(enabled) {
+    is3DViewActive = enabled;
+    if (enabled) {
+        map.removeLayer(layers.recommendations);
+        build3DMarkers();
+        map.addLayer(layers3d);
+        // Uncheck normal recommendations
+        const recCb = document.querySelector('input[data-layer="recommendations"]');
+        if (recCb) recCb.checked = false;
+    } else {
+        layers3d.clearLayers();
+        map.removeLayer(layers3d);
+        map.addLayer(layers.recommendations);
+        const recCb = document.querySelector('input[data-layer="recommendations"]');
+        if (recCb) recCb.checked = true;
+    }
+}
+
+function build3DMarkers() {
+    layers3d.clearLayers();
+    const maxCap = Math.max(...activeSites.map(s => s.capacity), 1);
+    activeSites.forEach(site => {
+        const height = Math.max(30, Math.min(120, (site.capacity / 1200) * 120));
+        const color = site.priority === 'high' ? '#fc8181' : site.priority === 'medium' ? '#f6ad55' : '#68d391';
+        const darkColor = site.priority === 'high' ? '#c53030' : site.priority === 'medium' ? '#c05621' : '#276749';
+        const sideWidth = 8;
+        const html = `<div class="marker-3d" style="width:40px;height:${height + 20}px;">
+            <div class="marker-3d-col" style="height:${height}px;width:24px;background:linear-gradient(180deg, ${color}ee, ${color}99);"></div>
+            <div class="marker-3d-side" style="height:${height}px;width:${sideWidth}px;left:calc(50% + 12px);transform:none;background:linear-gradient(180deg, ${darkColor}cc, ${darkColor}88);"></div>
+            <div class="marker-3d-label">#${site.id}</div>
+            <div class="marker-3d-cap">${site.capacity} sp</div>
+        </div>`;
+        const icon = L.divIcon({ className: '', html: html, iconSize: [40, height + 20], iconAnchor: [20, height + 14] });
+        const mk = L.marker([site.lat, site.lng], { icon: icon }).addTo(layers3d);
+        mk.bindPopup(`<div style="max-width:250px;"><h3 style="color:#1a202c;font-size:0.9rem;">${site.name}</h3>
+            <div style="font-size:0.78rem;color:#4a5568;">Score: ${site.score} | Capacity: ${site.capacity} | ${site.type}<br>Cost: ${site.cost} | ROI: ${site.roi}</div></div>`);
+    });
+}
+
+// ========== B1b. COMPETITOR LAYER (Feature 12) ==========
+function buildCompetitorLayer() {
+    layers.competitors.clearLayers();
+    competitorData.forEach(c => {
+        const color = operatorColors[c.operator] || '#e53e3e';
+        const icon = L.divIcon({
+            className: '',
+            html: `<div class="competitor-marker" style="background:${color};"></div>`,
+            iconSize: [14, 14], iconAnchor: [7, 7]
+        });
+        const mk = L.marker([c.lat, c.lng], { icon: icon }).addTo(layers.competitors);
+        mk.bindPopup(`<div style="max-width:220px;"><h3 style="color:#1a202c;font-size:0.9rem;">${c.name}</h3>
+            <div style="font-size:0.78rem;color:#4a5568;">Operator: <b>${c.operator}</b><br>Spaces: <b>${c.spaces.toLocaleString()}</b><br>Type: ${c.type}</div></div>`);
+    });
+}
+
+function showCompetitorBadge() {
+    const badge = document.getElementById('competitorBadge');
+    const totalCompSpaces = competitorData.reduce((a,c) => a + c.spaces, 0);
+    const totalOurSpaces = activeSites.reduce((a,s) => a + s.capacity, 0);
+    const marketShare = ((totalOurSpaces / (totalOurSpaces + totalCompSpaces)) * 100).toFixed(1);
+    const operators = [...new Set(competitorData.map(c => c.operator))];
+    badge.innerHTML = `<h5>Competitive Landscape</h5>
+        <div class="cb-row"><span>Competitors</span><span class="cb-val">${competitorData.length} sites</span></div>
+        <div class="cb-row"><span>Competitor Spaces</span><span class="cb-val">${totalCompSpaces.toLocaleString()}</span></div>
+        <div class="cb-row"><span>Operators</span><span class="cb-val">${operators.join(', ')}</span></div>
+        <div class="cb-row"><span>Our Market Share</span><span class="cb-val">${marketShare}%</span></div>`;
+    badge.classList.add('show');
+}
+function hideCompetitorBadge() { document.getElementById('competitorBadge').classList.remove('show'); }
+
+// ========== B1c. CITY SWITCHING (Feature 10) ==========
+function switchCity(cityId) {
+    const config = cityConfigs[cityId];
+    if (!config) return;
+    currentCity = cityId;
+
+    // Update allSites from city config
+    allSites.length = 0;
+    config.sites.forEach(s => allSites.push(JSON.parse(JSON.stringify(s))));
+
+    // Update map center
+    map.setView(config.center, config.zoom);
+
+    // Reset active sites and recalculate
+    selectedIds.clear();
+    saveBaseline();
+    recalculate();
+    renderPipeline();
+
+    // Rebuild static map layers for non-Phoenix (simplified)
+    if (cityId !== 'phoenix') {
+        layers.traffic.clearLayers();
+        layers.poi.clearLayers();
+        layers.parking.clearLayers();
+        layers.transit.clearLayers();
+    } else {
+        buildTrafficLayer();
+        buildPOILayer();
+        buildParkingLayer();
+        buildTransitLayer();
+    }
+
+    // Update 3D if active
+    if (is3DViewActive) build3DMarkers();
+
+    // Update page title hint
+    document.getElementById('statusText').textContent = 'City: ' + config.name;
+}
+
 // ========== B2. LIVE DATA MODULE (OSM + Census) ==========
 async function fetchOSMParking() {
+    const bbox = cityConfigs[currentCity]?.bbox || '33.25,-112.30,33.70,-111.80';
     const query = `[out:json][timeout:30];
 (
-  nwr["amenity"="parking"](33.25,-112.30,33.70,-111.80);
+  nwr["amenity"="parking"](${bbox});
 );
 out center 800;`;
     const url = 'https://overpass-api.de/api/interpreter';
@@ -1802,7 +2044,7 @@ function showComparison() {
 
 // ========== F. CHARTS MODULE ==========
 Chart.defaults.color = '#a0aec0'; Chart.defaults.borderColor = 'rgba(99,179,237,0.08)';
-let chartBar, chartRadar, chartLine, chartScatter, chartHourly, chartCost;
+let chartBar, chartRadar, chartLine, chartScatter, chartHourly, chartCost, chartMonteCarlo;
 
 function initCharts() {
     // Bar chart — dynamic from activeSites: stacked sub-scores
@@ -1924,6 +2166,137 @@ function initCharts() {
         }
     }] });
     document.getElementById('costCenterLabel').textContent = '';
+
+    // Monte Carlo ROI Distribution chart (Feature 13)
+    initMonteCarloChart();
+}
+
+// ========== F2. MONTE CARLO SIMULATION (Feature 13) ==========
+function normalRandom(mean, stddev) {
+    const u1 = Math.random(), u2 = Math.random();
+    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    return mean + z * stddev;
+}
+
+function runMonteCarloSim() {
+    if (!activeSites.length) return { bins: [], labels: [], p10: 0, p50: 0, p90: 0, mean: 0, ci80: [0, 0], probAbove15: 0 };
+
+    // Weighted average ROI across sites
+    const totalCost = activeSites.reduce((a, s) => a + s.costNum, 0);
+    const weightedMeanROI = totalCost > 0
+        ? activeSites.reduce((a, s) => a + s.roiNum * (s.costNum / totalCost), 0)
+        : activeSites.reduce((a, s) => a + s.roiNum, 0) / activeSites.length;
+    const stddev = 3;
+
+    const iterations = 5000;
+    const results = [];
+    for (let i = 0; i < iterations; i++) {
+        results.push(normalRandom(weightedMeanROI, stddev));
+    }
+    results.sort((a, b) => a - b);
+
+    // Build histogram bins from 5% to 35%
+    const binMin = 5, binMax = 35, binWidth = 1;
+    const numBins = (binMax - binMin) / binWidth;
+    const bins = new Array(numBins).fill(0);
+    const labels = [];
+    for (let i = 0; i < numBins; i++) {
+        labels.push((binMin + i) + '%');
+        const lo = binMin + i * binWidth;
+        const hi = lo + binWidth;
+        bins[i] = results.filter(r => r >= lo && r < hi).length;
+    }
+
+    // Percentiles
+    const p10 = results[Math.floor(iterations * 0.10)];
+    const p50 = results[Math.floor(iterations * 0.50)];
+    const p90 = results[Math.floor(iterations * 0.90)];
+    const mean = results.reduce((a, b) => a + b, 0) / iterations;
+    const ci80 = [results[Math.floor(iterations * 0.10)], results[Math.floor(iterations * 0.90)]];
+    const probAbove15 = (results.filter(r => r > 15).length / iterations * 100).toFixed(1);
+
+    return { bins, labels, p10, p50, p90, mean, ci80, probAbove15 };
+}
+
+function initMonteCarloChart() {
+    const sim = runMonteCarloSim();
+
+    // Color bins by ROI zone
+    const colors = sim.labels.map((l, i) => {
+        const val = 5 + i;
+        if (val < 12) return 'rgba(252,129,129,0.7)';
+        if (val < 18) return 'rgba(246,173,85,0.7)';
+        return 'rgba(72,187,120,0.7)';
+    });
+
+    if (chartMonteCarlo) chartMonteCarlo.destroy();
+
+    chartMonteCarlo = new Chart(document.getElementById('chartMonteCarlo'), {
+        type: 'bar',
+        data: {
+            labels: sim.labels,
+            datasets: [{
+                label: 'Frequency',
+                data: sim.bins,
+                backgroundColor: colors,
+                borderRadius: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: `80% CI: ${sim.ci80[0].toFixed(1)}% – ${sim.ci80[1].toFixed(1)}%`,
+                    font: { size: 11, weight: '600' },
+                    color: '#a0aec0'
+                }
+            },
+            scales: {
+                x: { ticks: { font: { size: 8 }, maxTicksLimit: 15 }, title: { display: true, text: 'ROI %', font: { size: 10 } } },
+                y: { beginAtZero: true, title: { display: true, text: 'Simulations', font: { size: 10 } } }
+            }
+        },
+        plugins: [{
+            id: 'percentileLines',
+            afterDraw(chart) {
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
+                const ctx = chart.ctx;
+                const pctls = [
+                    { val: sim.p10, label: 'P10', color: '#fc8181' },
+                    { val: sim.p50, label: 'P50', color: '#63b3ed' },
+                    { val: sim.p90, label: 'P90', color: '#48bb78' }
+                ];
+                pctls.forEach(p => {
+                    const idx = Math.max(0, Math.min(sim.labels.length - 1, Math.round(p.val - 5)));
+                    const x = xAxis.getPixelForValue(idx);
+                    ctx.save();
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(x, yAxis.top);
+                    ctx.lineTo(x, yAxis.bottom);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = p.color;
+                    ctx.font = '600 9px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.label + ': ' + p.val.toFixed(1) + '%', x, yAxis.top - 4);
+                    ctx.restore();
+                });
+            }
+        }]
+    });
+
+    // Stats box
+    document.getElementById('mcStats').innerHTML = `
+        <div class="mc-stat"><div class="mc-label">Mean ROI</div><div class="mc-value">${sim.mean.toFixed(1)}%</div></div>
+        <div class="mc-stat"><div class="mc-label">Median (P50)</div><div class="mc-value">${sim.p50.toFixed(1)}%</div></div>
+        <div class="mc-stat"><div class="mc-label">80% Confidence</div><div class="mc-value">${sim.ci80[0].toFixed(1)}% – ${sim.ci80[1].toFixed(1)}%</div></div>
+        <div class="mc-stat"><div class="mc-label">P(ROI > 15%)</div><div class="mc-value">${sim.probAbove15}%</div></div>`;
 }
 
 function updateCharts() {
@@ -1968,6 +2341,11 @@ function updateCharts() {
         const pcts = [0.30, 0.45, 0.10, 0.08, 0.07];
         chartCost.data.datasets[0].data = pcts.map(p => +(totalInv * p).toFixed(1));
         chartCost.update();
+    }
+
+    // Update Monte Carlo chart
+    if (chartMonteCarlo) {
+        initMonteCarloChart();
     }
 }
 
