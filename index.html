@@ -542,8 +542,8 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         <a href="#arch-section">Architecture</a>
         <a href="#dashboard">Dashboard</a>
         <a href="#results-section">Results</a>
-        <a href="#beforeafter-section">Before/After</a>
         <a href="#explain-section">Explainability</a>
+        <a href="#beforeafter-section">Before/After</a>
         <a href="#analytics">Analytics</a>
     </div>
 </nav>
@@ -783,6 +783,23 @@ Or ask any question about the analysis!</div>
     </div>
 </section>
 
+<!-- ========== EXPLAINABILITY ========== -->
+<section class="section" id="explain-section">
+    <h2 class="section-title fade-in">AI Explainability</h2>
+    <p class="section-sub fade-in">Transparent decision-making: understand why sites were selected or rejected, and trace the full reasoning chain for each recommendation.</p>
+    <div class="explain-grid fade-in">
+        <div class="explain-card" style="grid-column: 1 / -1;">
+            <h3><span style="color:var(--green);">&#10003;</span> Reasoning Chain — Selected Sites</h3>
+            <p style="font-size:0.72rem;color:var(--text3);margin-bottom:16px;">Full decision pipeline for each AI-recommended site. Click any card to inspect the multi-criteria scoring, data sources, and final rationale.</p>
+            <div id="reasoningList"></div>
+        </div>
+        <div class="explain-card" style="grid-column: 1 / -1;">
+            <h3><span style="color:var(--red);">&#10005;</span> Rejected Candidate Sites</h3>
+            <div id="rejectedList"></div>
+        </div>
+    </div>
+</section>
+
 <!-- ========== BEFORE/AFTER MAP ========== -->
 <section class="section" id="beforeafter-section">
     <h2 class="section-title fade-in">Before vs After — Coverage Analysis</h2>
@@ -815,23 +832,6 @@ Or ask any question about the analysis!</div>
             </div>
         </div>
         <div class="ba-summary" id="baSummary" style="display:none;"></div>
-    </div>
-</section>
-
-<!-- ========== EXPLAINABILITY ========== -->
-<section class="section" id="explain-section">
-    <h2 class="section-title fade-in">AI Explainability</h2>
-    <p class="section-sub fade-in">Transparent decision-making: understand why sites were selected or rejected, and trace the full reasoning chain for each recommendation.</p>
-    <div class="explain-grid fade-in">
-        <div class="explain-card" style="grid-column: 1 / -1;">
-            <h3><span style="color:var(--green);">&#10003;</span> Reasoning Chain — Selected Sites</h3>
-            <p style="font-size:0.72rem;color:var(--text3);margin-bottom:16px;">Full decision pipeline for each AI-recommended site. Click any card to inspect the multi-criteria scoring, data sources, and final rationale.</p>
-            <div id="reasoningList"></div>
-        </div>
-        <div class="explain-card" style="grid-column: 1 / -1;">
-            <h3><span style="color:var(--red);">&#10005;</span> Rejected Candidate Sites</h3>
-            <div id="rejectedList"></div>
-        </div>
     </div>
 </section>
 
