@@ -4504,6 +4504,12 @@ function init() {
     initCharts();
     renderExplainability();
     initChatApiKey();
+    // Auto-run pipeline on page load (scroll to dashboard first)
+    setTimeout(() => {
+        const dash = document.getElementById('dashboard');
+        if (dash) dash.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => runCurrentMode(), 800);
+    }, 1500);
 }
 init();
 </script>
