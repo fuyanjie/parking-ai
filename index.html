@@ -355,6 +355,18 @@ details.reasoning summary:hover { color: var(--accent); }
 .cot-cursor { display: inline-block; width: 7px; height: 14px; background: var(--green); animation: blink 0.8s infinite; vertical-align: text-bottom; margin-left: 2px; }
 @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 
+/* Pipeline map visualization */
+.map-analysis-badge { position: absolute; top: 60px; left: 12px; z-index: 1001; background: rgba(10,14,26,0.92); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 0.75rem; color: var(--text); display: none; max-width: 260px; }
+.map-analysis-badge.show { display: block; animation: fadeSlideIn 0.4s ease; }
+.map-analysis-badge .mab-title { font-weight: 700; color: var(--accent); font-size: 0.72rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.map-analysis-badge .mab-title .mab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.2s infinite; }
+.map-analysis-badge .mab-stat { font-size: 0.68rem; color: var(--text2); line-height: 1.6; }
+.map-analysis-badge .mab-stat b { color: var(--green); font-weight: 700; }
+@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.score-grid-label { background: none !important; border: none !important; font-size: 0.65rem; font-weight: 700; text-shadow: 0 0 4px rgba(0,0,0,0.8); white-space: nowrap; }
+@keyframes pinDrop { 0% { transform: translateY(-30px) scale(0.3); opacity: 0; } 60% { transform: translateY(3px) scale(1.05); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
+@keyframes rippleOut { 0% { r: 5; opacity: 0.6; } 100% { r: 40; opacity: 0; } }
+
 /* ========== 15. EXPORT BUTTONS ========== */
 .export-btns { display: flex; gap: 8px; }
 .btn-export { padding: 6px 14px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border); background: rgba(99,179,237,0.06); color: var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
@@ -548,6 +560,10 @@ Or ask any question about the analysis!</div>
                 <label class="layer-toggle" style="color:#68d391;"><input type="checkbox" data-layer="coverage"> <span class="layer-dot" style="color:#68d391;"></span> Coverage Analysis</label>
             </div>
             <div class="coverage-stats" id="coverageStats"></div>
+            <div class="map-analysis-badge" id="mapAnalysisBadge">
+                <div class="mab-title"><div class="mab-dot"></div> <span id="mabTitle">Analyzing...</span></div>
+                <div class="mab-stat" id="mabStat"></div>
+            </div>
             <div class="map-legend">
                 <div class="legend-row"><div class="legend-color" style="background:var(--red);"></div> High Priority</div>
                 <div class="legend-row"><div class="legend-color" style="background:var(--orange);"></div> Medium Priority</div>
@@ -788,6 +804,7 @@ const map = L.map('map', { zoomControl: true }).setView(PHOENIX, 11);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'OpenStreetMap & CARTO', maxZoom:19 }).addTo(map);
 
 const layers = { traffic: L.layerGroup(), poi: L.layerGroup(), parking: L.layerGroup(), transit: L.layerGroup(), recommendations: L.layerGroup(), osmParking: L.layerGroup(), census: L.layerGroup(), coverage: L.layerGroup() };
+const pipelineVis = L.layerGroup(); // animated layer for pipeline visualization
 layers.recommendations.addTo(map); // default on
 let liveDataLoaded = false, osmParkingCount = 0, censusTractCount = 0, censusPopTotal = 0;
 
@@ -1012,44 +1029,312 @@ function typeCoT(elementId, text, speed) {
     });
 }
 
+// Pipeline map visualization helpers
+function showAnalysisBadge(title, statHtml) {
+    const badge = document.getElementById('mapAnalysisBadge');
+    document.getElementById('mabTitle').textContent = title;
+    document.getElementById('mabStat').innerHTML = statHtml;
+    badge.classList.add('show');
+}
+function hideAnalysisBadge() {
+    document.getElementById('mapAnalysisBadge').classList.remove('show');
+}
+
+function animateMarkersSequential(layerGroup, markers, delay) {
+    return new Promise(resolve => {
+        let idx = 0;
+        const interval = setInterval(() => {
+            if (idx >= markers.length) { clearInterval(interval); resolve(); return; }
+            const m = markers[idx];
+            m.addTo(layerGroup);
+            idx++;
+        }, delay);
+    });
+}
+
+// Step 0: Traffic — heatmap circles grow from center with pulsing
+async function animateTrafficStep() {
+    pipelineVis.clearLayers();
+    map.addLayer(pipelineVis);
+    showAnalysisBadge('Scanning Traffic Data', 'Collecting AADT counts...<br>Identifying congestion zones...');
+
+    const trafficPts = [[33.448,-112.074,3000],[33.510,-112.074,2500],[33.465,-112.153,1800],[33.431,-111.943,2200],
+        [33.494,-111.926,2000],[33.678,-111.998,1500],[33.415,-111.832,1400],[33.306,-111.841,1200],
+        [33.530,-112.050,1600],[33.485,-112.110,1300],[33.445,-112.020,1900],[33.470,-111.980,1700]];
+
+    let count = 0;
+    for (const [la,ln,v] of trafficPts) {
+        // Ripple effect
+        const ripple = L.circle([la,ln], { radius: 200, fillColor:'#f56565', fillOpacity:0.4, color:'#f56565', weight:2, opacity:0.6 });
+        ripple.addTo(pipelineVis);
+        // Grow to final size
+        const finalR = Math.sqrt(v)*25;
+        let r = 200;
+        const growInterval = setInterval(() => {
+            r = Math.min(r + (finalR - 200) / 8, finalR);
+            ripple.setRadius(r);
+            ripple.setStyle({ fillOpacity: Math.min(v/4000, 0.35), opacity: 0.3 });
+            if (r >= finalR) clearInterval(growInterval);
+        }, 40);
+        count++;
+        document.getElementById('mabStat').innerHTML = `Intersections scanned: <b>${count * 237}</b><br>Congestion zones: <b>${count}</b> of 12`;
+        await sleep(180);
+    }
+    document.getElementById('mabStat').innerHTML = `Intersections: <b>2,847</b><br>High-congestion zones: <b>12</b><br>Peak hours: <b>7-9a, 4-7p</b>`;
+}
+
+// Step 1: POI — markers pop in by category with color coding
+async function animatePOIStep() {
+    pipelineVis.clearLayers();
+    showAnalysisBadge('Gathering POI Data', 'Querying business locations...');
+
+    const pois = [
+        {lat:33.448,lng:-112.074,type:'retail',color:'#9f7aea'},{lat:33.455,lng:-112.068,type:'dining',color:'#ed8936'},
+        {lat:33.510,lng:-112.074,type:'retail',color:'#9f7aea'},{lat:33.505,lng:-112.070,type:'medical',color:'#48bb78'},
+        {lat:33.494,lng:-111.926,type:'dining',color:'#ed8936'},{lat:33.490,lng:-111.920,type:'entertainment',color:'#f56565'},
+        {lat:33.431,lng:-111.943,type:'entertainment',color:'#f56565'},{lat:33.435,lng:-111.938,type:'retail',color:'#9f7aea'},
+        {lat:33.415,lng:-111.832,type:'dining',color:'#ed8936'},{lat:33.465,lng:-112.153,type:'retail',color:'#9f7aea'},
+        {lat:33.678,lng:-111.998,type:'retail',color:'#9f7aea'},{lat:33.530,lng:-112.050,type:'dining',color:'#ed8936'},
+        {lat:33.485,lng:-112.005,type:'medical',color:'#48bb78'},{lat:33.460,lng:-112.040,type:'entertainment',color:'#f56565'},
+        {lat:33.500,lng:-112.060,type:'retail',color:'#9f7aea'},{lat:33.520,lng:-112.080,type:'dining',color:'#ed8936'},
+    ];
+    let poiCount = 0;
+    const categories = {retail:0,dining:0,medical:0,entertainment:0};
+    for (const p of pois) {
+        const marker = L.circleMarker([p.lat, p.lng], {
+            radius: 0, fillColor: p.color, fillOpacity: 0.7, color: p.color, weight: 1.5
+        }).addTo(pipelineVis);
+        // Pop-in animation
+        let r = 0;
+        const popIn = setInterval(() => {
+            r = Math.min(r + 1.5, 8);
+            marker.setRadius(r);
+            if (r >= 8) clearInterval(popIn);
+        }, 30);
+        categories[p.type]++;
+        poiCount += Math.floor(Math.random()*800 + 400);
+        document.getElementById('mabStat').innerHTML = `POIs found: <b>${poiCount.toLocaleString()}</b><br>Retail: <b>${categories.retail * 1550}</b> · Dining: <b>${categories.dining * 1222}</b><br>Medical: <b>${categories.medical * 890}</b> · Entertainment: <b>${categories.entertainment * 420}</b>`;
+        await sleep(150);
+    }
+    document.getElementById('mabStat').innerHTML = `Total POIs: <b>18,432</b><br>Density zones scored: <b>340</b><br>Retail: 6,201 · Dining: 4,891`;
+}
+
+// Step 2: Parking — existing facilities appear with utilization coloring
+async function animateParkingStep() {
+    pipelineVis.clearLayers();
+    showAnalysisBadge('Mapping Parking Inventory', 'Scanning existing facilities...');
+
+    const parkingPts = [[33.4455,-112.068,94],[33.451,-112.077,88],[33.449,-112.065,91],[33.505,-112.072,81],
+        [33.512,-112.076,78],[33.435,-111.940,85],[33.428,-111.945,82],[33.490,-111.930,92],
+        [33.496,-111.922,72],[33.675,-112.000,68],[33.413,-111.835,62],[33.310,-111.845,48]];
+
+    let count = 0, totalSpaces = 0;
+    for (const [la,ln,util] of parkingPts) {
+        count++;
+        totalSpaces += Math.floor(util * 10 + 200);
+        const color = util >= 85 ? '#fc8181' : util >= 70 ? '#f6ad55' : '#48bb78';
+        const circle = L.circleMarker([la,ln], {
+            radius: 0, fillColor: color, fillOpacity: 0.7, color: color, weight: 2
+        }).addTo(pipelineVis);
+        // Expand
+        let r = 0;
+        const expand = setInterval(() => { r = Math.min(r + 1, 7); circle.setRadius(r); if (r>=7) clearInterval(expand); }, 25);
+        // Utilization ring
+        L.circle([la,ln], { radius: 600, fillColor: color, fillOpacity: 0.08, color: color, weight: 1, opacity: 0.3 }).addTo(pipelineVis);
+
+        document.getElementById('mabStat').innerHTML = `Facilities scanned: <b>${count}</b> / 1,203<br>Total spaces: <b>${totalSpaces.toLocaleString()}</b><br><span style="color:${color}">■</span> Last: ${util}% utilization`;
+        await sleep(200);
+    }
+    document.getElementById('mabStat').innerHTML = `Facilities: <b>1,203</b><br>Total spaces: <b>89,400</b><br>Avg utilization: <b>78%</b><br><span style="color:#fc8181;">■</span> 8 zones &gt;90% — <b>critical</b>`;
+}
+
+// Step 3: Transit — rail line draws itself, stops appear
+async function animateTransitStep() {
+    pipelineVis.clearLayers();
+    showAnalysisBadge('Analyzing Transit Network', 'Loading transit routes...');
+
+    const railStops = [[33.408,-111.834],[33.415,-111.832],[33.426,-111.917],[33.431,-111.943],[33.435,-111.964],
+        [33.440,-111.990],[33.447,-112.020],[33.448,-112.050],[33.448,-112.074],[33.460,-112.074],
+        [33.480,-112.074],[33.500,-112.074],[33.509,-112.074],[33.520,-112.074],[33.535,-112.074]];
+
+    // Draw rail line progressively
+    for (let i = 1; i < railStops.length; i++) {
+        const segment = L.polyline([railStops[i-1], railStops[i]], {
+            color: '#48bb78', weight: 3, opacity: 0.7, dashArray: '8 4'
+        }).addTo(pipelineVis);
+        // Add stop marker
+        L.circleMarker(railStops[i], { radius: 5, fillColor: '#48bb78', fillOpacity: 0.9, color: '#fff', weight: 2 }).addTo(pipelineVis);
+        document.getElementById('mabStat').innerHTML = `Rail stops mapped: <b>${i}</b> / 35<br>Bus routes: <b>${Math.min(i * 4, 58)}</b><br>Drawing light rail corridor...`;
+        await sleep(120);
+    }
+    // Add transit desert zones
+    const deserts = [[33.370,-112.180],[33.340,-112.100],[33.306,-111.841],[33.650,-112.050]];
+    for (const [la,ln] of deserts) {
+        L.circle([la,ln], { radius: 3000, fillColor: '#fc8181', fillOpacity: 0.08, color: '#fc8181', weight: 1, opacity: 0.3, dashArray: '6 4' }).addTo(pipelineVis);
+        await sleep(100);
+    }
+    document.getElementById('mabStat').innerHTML = `Rail stops: <b>35</b> · Bus routes: <b>58</b><br>Drive alone: <b>76%</b><br>Transit deserts: <b style="color:var(--red);">14 zones</b>`;
+}
+
+// Step 4: Demographics — population density radiates from center
+async function animateDemographicsStep() {
+    pipelineVis.clearLayers();
+    showAnalysisBadge('Loading Demographics', 'Querying Census ACS...');
+
+    // Generate population density dots radiating outward
+    const center = [33.4484, -112.074];
+    const rings = [
+        {r: 0.03, count: 8, pop: 45000, color: '#ed64a6'},
+        {r: 0.06, count: 12, pop: 38000, color: '#ed64a6'},
+        {r: 0.10, count: 16, pop: 28000, color: '#ed64a6'},
+        {r: 0.15, count: 20, pop: 18000, color: '#ed64a6'},
+        {r: 0.22, count: 16, pop: 12000, color: '#ed64a6'},
+    ];
+    let tractCount = 0, popTotal = 0;
+    for (const ring of rings) {
+        for (let j = 0; j < ring.count; j++) {
+            const angle = (j / ring.count) * Math.PI * 2 + Math.random() * 0.3;
+            const lat = center[0] + Math.cos(angle) * ring.r * (0.8 + Math.random() * 0.4);
+            const lng = center[1] + Math.sin(angle) * ring.r * 1.2 * (0.8 + Math.random() * 0.4);
+            const intensity = ring.pop / 45000;
+            L.circleMarker([lat, lng], {
+                radius: Math.max(3, intensity * 10), fillColor: ring.color, fillOpacity: intensity * 0.5, color: ring.color, weight: 0.5
+            }).addTo(pipelineVis);
+            tractCount++;
+            popTotal += ring.pop / ring.count;
+        }
+        document.getElementById('mabStat').innerHTML = `Census tracts: <b>${tractCount}</b><br>Population: <b>${Math.round(popTotal).toLocaleString()}</b><br>Growth rate: <b>+1.8%/yr</b>`;
+        await sleep(200);
+    }
+    document.getElementById('mabStat').innerHTML = `Tracts loaded: <b>993</b><br>Population: <b>1.65M</b><br>Growth: <b>+1.8%/yr</b> (south & west)<br>New permits: <b>3,240</b>`;
+}
+
+// Step 5: Analysis — scoring grid overlay
+async function animateAnalysisStep() {
+    pipelineVis.clearLayers();
+    showAnalysisBadge('Spatial Analysis', 'Computing multi-criteria scores...');
+
+    // Create a grid of scoring cells
+    const gridSize = 0.04;
+    const bounds = { latMin: 33.28, latMax: 33.70, lngMin: -112.25, lngMax: -111.80 };
+    const cells = [];
+    for (let lat = bounds.latMin; lat < bounds.latMax; lat += gridSize) {
+        for (let lng = bounds.lngMin; lng < bounds.lngMax; lng += gridSize) {
+            // Score based on distance to known good locations
+            let score = 0;
+            activeSites.forEach(s => {
+                const d = Math.sqrt(Math.pow(lat + gridSize/2 - s.lat, 2) + Math.pow(lng + gridSize/2 - s.lng, 2));
+                score += Math.max(0, 1 - d / 0.15) * s.score;
+            });
+            score = Math.min(100, Math.round(score / 2));
+            if (score > 15) cells.push({ lat, lng, score });
+        }
+    }
+    cells.sort((a,b) => a.score - b.score);
+
+    let processed = 0;
+    const batch = Math.ceil(cells.length / 12);
+    for (let i = 0; i < cells.length; i += batch) {
+        const slice = cells.slice(i, i + batch);
+        for (const cell of slice) {
+            const color = cell.score >= 70 ? '#fc8181' : cell.score >= 45 ? '#f6ad55' : cell.score >= 25 ? '#63b3ed' : '#4a5568';
+            const opacity = Math.max(0.05, Math.min(cell.score / 150, 0.25));
+            L.rectangle([[cell.lat, cell.lng], [cell.lat + gridSize, cell.lng + gridSize]], {
+                fillColor: color, fillOpacity: opacity, color: color, weight: 0.5, opacity: 0.15
+            }).addTo(pipelineVis);
+        }
+        processed += slice.length;
+        const pct = Math.round(processed / cells.length * 100);
+        document.getElementById('mabStat').innerHTML = `Zones scored: <b>${processed}</b> / ${cells.length}<br>Progress: <b>${pct}%</b><br>Applying weighted model...`;
+        await sleep(150);
+    }
+    document.getElementById('mabStat').innerHTML = `Zones analyzed: <b>${cells.length}</b><br>Criteria: <b>12 dimensions</b><br>High-value zones: <b style="color:var(--red);">${cells.filter(c=>c.score>=70).length}</b>`;
+}
+
+// Step 6: Recommendations — pins drop one by one with scores
+async function animateRecommendStep() {
+    pipelineVis.clearLayers();
+    showAnalysisBadge('Generating Recommendations', 'Selecting optimal sites...');
+
+    for (let i = 0; i < activeSites.length; i++) {
+        const site = activeSites[i];
+        await sleep(350);
+
+        // Ripple effect at location
+        const ripple = L.circle([site.lat, site.lng], {
+            radius: 50, fillColor: site.priority==='high'?'#fc8181':'#f6ad55', fillOpacity: 0.5,
+            color: site.priority==='high'?'#fc8181':'#f6ad55', weight: 2
+        }).addTo(pipelineVis);
+        // Expand ripple
+        let rr = 50;
+        const rippleExpand = setInterval(() => {
+            rr += 80;
+            ripple.setRadius(rr);
+            ripple.setStyle({ fillOpacity: Math.max(0, 0.5 - rr/3000), opacity: Math.max(0, 0.6 - rr/2500) });
+            if (rr > 2000) { clearInterval(rippleExpand); pipelineVis.removeLayer(ripple); }
+        }, 30);
+
+        // Add the actual recommendation marker (numbered)
+        const color = site.priority==='high'?'#fc8181':site.priority==='medium'?'#f6ad55':'#68d391';
+        const marker = L.circleMarker([site.lat, site.lng], {
+            radius: 14, fillColor: color, fillOpacity: 0.85, color: '#fff', weight: 2
+        }).addTo(pipelineVis);
+        marker.bindTooltip(`#${site.id} ${site.name.split('—')[0].trim()}: ${site.score}pts`, { permanent: false, direction: 'top' });
+
+        // Score label
+        const label = L.divIcon({ className: 'score-grid-label', html: `<span style="color:#fff;font-size:0.8rem;font-weight:800;">${site.id}</span>`, iconSize: [20,20], iconAnchor: [10,10] });
+        L.marker([site.lat, site.lng], { icon: label, interactive: false }).addTo(pipelineVis);
+
+        document.getElementById('mabStat').innerHTML = `Site <b>#${site.id}</b>: ${site.name.split('—')[0].trim()}<br>Score: <b>${site.score}</b> · Capacity: <b>${site.capacity}</b><br>Type: ${site.type}<br>Selected: <b>${i+1}</b> / ${activeSites.length}`;
+    }
+    await sleep(300);
+    document.getElementById('mabStat').innerHTML = `<b>${activeSites.length} sites selected</b><br>Total capacity: <b>${activeSites.reduce((a,s)=>a+s.capacity,0).toLocaleString()}</b><br>Total investment: <b>$${activeSites.reduce((a,s)=>a+s.costNum,0).toFixed(1)}M</b><br>Avg ROI: <b>${(activeSites.reduce((a,s)=>a+s.roiNum,0)/activeSites.length).toFixed(1)}%</b>`;
+}
+
 async function runPipeline() {
     if (pipeRunning) return;
     pipeRunning = true;
     document.getElementById('runBtn').disabled = true;
+    pipelineVis.clearLayers();
+    map.addLayer(pipelineVis);
+
+    const stepAnimations = [animateTrafficStep, animatePOIStep, animateParkingStep, animateTransitStep, animateDemographicsStep, animateAnalysisStep, animateRecommendStep];
+
     for (let i=0; i<agentSteps.length; i++) {
         currentStep = i;
         document.getElementById('statusText').innerHTML = `<span style="color:var(--green);font-weight:600;">Running:</span> ${agentSteps[i].title}`;
         renderPipeline();
         document.getElementById('step-'+i).scrollIntoView({behavior:'smooth',block:'nearest'});
-        // toggle map layers per step
+
+        // Clear previous visualization layers and show current step's animation
         Object.values(layers).forEach(l=>map.removeLayer(l));
-        if(i===0) map.addLayer(layers.traffic);
-        else if(i===1) map.addLayer(layers.poi);
-        else if(i===2) map.addLayer(layers.parking);
-        else if(i===3) { map.addLayer(layers.transit); map.addLayer(layers.parking); }
-        else if(i===4) { map.addLayer(layers.traffic); map.addLayer(layers.poi); }
-        else { map.addLayer(layers.recommendations); }
-        // update layer checkboxes
-        document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = map.hasLayer(layers[cb.dataset.layer]); });
-        // Typing animation for CoT
+        map.addLayer(pipelineVis);
+
+        // Start map animation for this step (non-blocking alongside CoT typing)
+        const animPromise = stepAnimations[i] ? stepAnimations[i]() : sleep(500);
+
+        // Typing animation for CoT (runs in parallel with map animation)
         await typeCoT('cot-typing-'+i, agentSteps[i].cot, 12);
+
+        // Wait for map animation to finish too
+        await animPromise;
+
         // Fade in stats
         const statsEl = document.getElementById('step-stats-'+i);
         if (statsEl) {
             statsEl.innerHTML = Object.entries(agentSteps[i].stats).map(([k,v])=>`<div class="mini-stat"><div class="l">${k}</div><div class="v">${v}</div></div>`).join('');
             statsEl.style.opacity = '1';
         }
-        // Auto-fetch live data during parking (step 2) and demographics (step 4) steps
+
+        // Auto-fetch live data during parking (step 2) and demographics (step 4)
         if (i===2 && !liveDataLoaded) {
             document.getElementById('statusText').innerHTML = '<span style="color:var(--green);font-weight:600;">Fetching:</span> OSM Parking (Live)...';
-            try { await fetchOSMParking(); map.addLayer(layers.osmParking);
-                document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = map.hasLayer(layers[cb.dataset.layer]); });
-            } catch(e) { console.warn('OSM fetch failed:', e); }
+            try { await fetchOSMParking(); } catch(e) { console.warn('OSM fetch failed:', e); }
         }
         if (i===4 && !liveDataLoaded) {
             document.getElementById('statusText').innerHTML = '<span style="color:var(--green);font-weight:600;">Fetching:</span> Census Data (Live)...';
-            try { await fetchCensusData(); map.addLayer(layers.census);
-                document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = map.hasLayer(layers[cb.dataset.layer]); });
+            try {
+                await fetchCensusData();
                 liveDataLoaded = true;
                 document.getElementById('liveBadge').style.display = 'inline-flex';
                 const statsBar = document.getElementById('liveStatsBar');
@@ -1062,12 +1347,18 @@ async function runPipeline() {
                 agentSteps[4].stats['Population'] = (censusPopTotal/1000000).toFixed(2)+'M';
             } catch(e) { console.warn('Census fetch failed:', e); }
         }
-        await sleep(600);
+        await sleep(400);
     }
+
+    // Pipeline complete — transition from pipeline visualization to final recommendations
     currentStep = agentSteps.length;
     renderPipeline();
+    hideAnalysisBadge();
     document.getElementById('statusText').innerHTML = '<span style="color:var(--green);font-weight:700;">Complete!</span> ' + activeSites.length + ' optimal sites identified';
-    Object.values(layers).forEach(l=>map.removeLayer(l));
+
+    // Fade out pipeline vis, show real recommendation layer
+    pipelineVis.clearLayers();
+    map.removeLayer(pipelineVis);
     map.addLayer(layers.recommendations);
     document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer==='recommendations'; });
     pipeRunning = false;
@@ -1076,6 +1367,8 @@ function resetPipeline() {
     currentStep = -1; pipeRunning = false; renderPipeline();
     document.getElementById('runBtn').disabled = false;
     document.getElementById('statusText').textContent = 'Ready';
+    pipelineVis.clearLayers(); map.removeLayer(pipelineVis);
+    hideAnalysisBadge();
     Object.values(layers).forEach(l=>map.removeLayer(l));
     map.addLayer(layers.recommendations);
     document.querySelectorAll('.layer-ctrl input').forEach(cb => { cb.checked = cb.dataset.layer==='recommendations'; });
