@@ -30,7 +30,7 @@ a:hover { text-decoration: underline; }
 .nav-links a:hover, .nav-links a.active { color: var(--accent); }
 
 /* Hero */
-.hero { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 24px 60px;
+.hero { min-height: 55vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 24px 50px;
     background: radial-gradient(ellipse at 50% 30%, rgba(99,179,237,0.06) 0%, transparent 60%); }
 .hero-badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--orange); border: 1px solid rgba(246,173,85,0.3); padding: 6px 16px; border-radius: 20px; margin-bottom: 24px; }
 .hero h1 { font-size: clamp(2rem, 4.5vw, 3.2rem); font-weight: 900; line-height: 1.2; max-width: 850px; }
@@ -53,8 +53,9 @@ a:hover { text-decoration: underline; }
 .card ul { padding-left: 20px; margin-top: 8px; }
 .card li { margin-bottom: 4px; }
 
-/* Two column grid */
+/* Grids */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 
 /* Team */
 .team-grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; margin-top: 24px; }
@@ -62,10 +63,7 @@ a:hover { text-decoration: underline; }
 .team-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(99,179,237,0.1); }
 .tc-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 14px; color: #fff; font-weight: 800; }
 .tc-name { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.tc-role { font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 .tc-affil { font-size: 0.75rem; color: var(--text3); line-height: 1.5; }
-.tc-links { margin-top: 10px; display: flex; gap: 12px; justify-content: center; }
-.tc-links a { font-size: 0.72rem; color: var(--accent); font-weight: 500; }
 
 /* Data sources table */
 .data-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.82rem; }
@@ -94,9 +92,53 @@ a:hover { text-decoration: underline; }
 .pipe-node .p-label { font-size: 0.7rem; font-weight: 600; color: var(--text); }
 .pipe-arrow { color: var(--accent); font-size: 1.2rem; font-weight: 700; }
 
+/* Architecture diagram (matching demo) */
+.arch-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; }
+.arch-data-sources { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.data-src { background: rgba(99,179,237,0.06); border: 1px solid rgba(99,179,237,0.12); border-radius: 8px; padding: 6px 12px; font-size: 0.72rem; font-weight: 500; color: var(--text2); display: flex; align-items: center; gap: 5px; }
+.ds-icon { font-size: 0.85rem; }
+.ds-live { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.arch-flow-arrow { text-align: center; padding: 6px 0; }
+.arch-flow-arrow svg { width: 30px; height: 22px; }
+.flow-label { font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+.arch-agents { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0; }
+.arch-agent { background: rgba(15,22,41,0.6); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px; text-align: center; transition: border-color 0.3s; }
+.arch-agent:hover { border-color: var(--accent); }
+.ag-icon { font-size: 1.4rem; margin-bottom: 4px; }
+.ag-name { font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; }
+.ag-desc { font-size: 0.62rem; color: var(--text3); line-height: 1.4; margin-bottom: 6px; }
+.ag-tags { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.ag-tag { font-size: 0.58rem; padding: 1px 6px; border-radius: 6px; background: rgba(99,179,237,0.1); color: var(--accent); }
+.arch-orchestrator { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.arch-orch-node { background: rgba(15,22,41,0.6); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; min-width: 180px; }
+.arch-orch-node.orchestrator { border-color: rgba(99,179,237,0.3); }
+.arch-orch-node.engine { border-color: rgba(159,122,234,0.3); }
+.arch-orch-node.output { border-color: rgba(72,187,120,0.3); }
+.ao-icon { font-size: 1.3rem; margin-bottom: 4px; }
+.ao-name { font-size: 0.82rem; font-weight: 700; }
+.ao-desc { font-size: 0.62rem; color: var(--text3); margin-top: 3px; }
+.ao-sub { font-size: 0.58rem; color: var(--accent); margin-top: 4px; }
+.arch-connect svg { width: 36px; height: 16px; }
+.arch-outputs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+.arch-out { background: rgba(72,187,120,0.06); border: 1px solid rgba(72,187,120,0.15); border-radius: 10px; padding: 12px 14px; text-align: center; min-width: 140px; }
+.ao-label { font-size: 0.75rem; font-weight: 700; margin-top: 4px; }
+.ao-val { font-size: 0.6rem; color: var(--text3); margin-top: 2px; }
+.arch-llm-bar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; padding: 10px 16px; background: rgba(246,173,85,0.06); border: 1px solid rgba(246,173,85,0.15); border-radius: 10px; }
+.llm-icon { font-size: 1.1rem; }
+.llm-text { font-size: 0.72rem; color: var(--text2); }
+.llm-model { font-size: 0.65rem; padding: 2px 8px; border-radius: 6px; background: rgba(246,173,85,0.15); color: var(--orange); font-weight: 600; }
+
+/* Feature highlight */
+.feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; text-align: center; transition: all 0.3s; }
+.feature-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+.feature-card .f-icon { font-size: 2rem; margin-bottom: 10px; }
+.feature-card .f-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; }
+.feature-card .f-desc { font-size: 0.75rem; color: var(--text3); line-height: 1.6; }
+
 /* Responsive */
 @media (max-width: 768px) {
-    .grid-2 { grid-template-columns: 1fr; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
     .hero h1 { font-size: 1.8rem; }
     .section { padding: 40px 20px; }
     .team-card { width: 100%; max-width: 300px; }
@@ -106,6 +148,8 @@ a:hover { text-decoration: underline; }
     .pipeline-flow { gap: 4px; }
     .pipe-node { min-width: 70px; padding: 8px; }
     .pipe-node .p-label { font-size: 0.6rem; }
+    .arch-agents { grid-template-columns: 1fr 1fr; }
+    .arch-orchestrator { flex-direction: column; }
 }
 </style>
 </head>
@@ -124,10 +168,10 @@ a:hover { text-decoration: underline; }
 <section class="hero">
     <div class="hero-badge">Research Project</div>
     <h1>AI-Driven <span class="gradient">Urban Parking</span> Site Selection</h1>
-    <p class="subtitle">Leveraging multi-agent AI systems, real-time urban data integration, and spatial optimization to address the growing parking infrastructure deficit in rapidly expanding metropolitan areas.</p>
+    <p class="subtitle">A multi-agent AI system that integrates 9 real-time urban data sources, deploys 6 specialized agents across an 8-step pipeline, and generates explainable, policy-compliant, investment-ready parking infrastructure recommendations.</p>
     <div class="cta-bar" style="margin-top:32px;">
         <a href="index.html" class="cta-btn cta-primary">Launch Live Demo &rarr;</a>
-        <a href="#methodology" class="cta-btn cta-secondary">Read Methodology</a>
+        <a href="#architecture" class="cta-btn cta-secondary">System Architecture</a>
     </div>
 </section>
 
@@ -139,8 +183,8 @@ a:hover { text-decoration: underline; }
         Downtown utilization rates exceed 94%, and projections indicate a deficit of 12,400+ spaces by 2030.
         Traditional planning methods — relying on static surveys and manual assessment — fail to capture the dynamic,
         multi-dimensional nature of urban parking demand. This project develops a multi-agent AI system that autonomously
-        integrates heterogeneous urban data sources, performs spatial analysis across 12 dimensions, and generates
-        investment-ready recommendations for new parking infrastructure.
+        integrates heterogeneous urban data sources, performs spatial analysis across 12 dimensions, checks policy compliance,
+        stress-tests against economic scenarios, and generates investment-ready recommendations for new parking infrastructure.
     </p>
 
     <div class="grid-2">
@@ -149,19 +193,145 @@ a:hover { text-decoration: underline; }
             <ul>
                 <li>Design a multi-agent architecture for autonomous urban data integration and spatial reasoning</li>
                 <li>Develop a 12-dimension scoring model that quantifies parking site suitability across traffic, demographics, land use, transit access, and policy constraints</li>
-                <li>Create a supply-demand gap analysis framework using real-time data from 8+ municipal and federal sources</li>
-                <li>Build an interactive decision-support tool for urban planners and policymakers</li>
-                <li>Validate the system against real-world parking infrastructure decisions in Phoenix, AZ</li>
+                <li>Build a supply-demand gap analysis framework integrating OSM parking, Phoenix street meters, Census commuting data, and ADOT traffic volumes</li>
+                <li>Create a policy compliance agent that validates recommendations against zoning, ADA, environmental, and municipal codes</li>
+                <li>Implement policy stress testing with Monte Carlo simulation across economic, demographic, and climate scenarios</li>
+                <li>Build an interactive decision-support tool with conversational AI for urban planners and policymakers</li>
             </ul>
         </div>
         <div class="card">
             <h3><span class="icon">💡</span> Key Contributions</h3>
             <ul>
-                <li><b>Multi-Agent Pipeline</b> — 6 specialized agents (Data Collector, Traffic Analyst, Demand Estimator, Spatial Optimizer, Policy Checker, Investment Advisor) collaborate in an 8-step pipeline</li>
-                <li><b>Real-Time Data Fusion</b> — Integrates OSM, Census ACS, Phoenix Open Data, ADOT AADT, and Valley Metro GTFS in the browser without backend infrastructure</li>
-                <li><b>Explainable AI</b> — Full chain-of-thought reasoning traces for every recommendation, with rejected-site rationale</li>
-                <li><b>What-If Analysis</b> — Monte Carlo ROI simulation, sensitivity tornado charts, and before/after coverage comparison</li>
+                <li><b>6-Agent Pipeline</b> — Traffic, POI, Parking, Transit, Demographics, and Policy agents collaborate in an 8-step pipeline with chain-of-thought reasoning</li>
+                <li><b>9-Source Data Fusion</b> — Integrates OSM, Census ACS (B01003, B08301, B19013, B25044), Phoenix Open Data (meters + zoning), ADOT AADT, Valley Metro GTFS, and FEMA flood maps — all in-browser without backend</li>
+                <li><b>Supply Estimation Model</b> — 3.5 km radius analysis combining OSM parking facilities, Phoenix meter database, and area-calibrated baseline estimates</li>
+                <li><b>Policy Stress Testing</b> — 8 parking policies evaluated under 5 pressure scenarios (economic recession, population surge, autonomous vehicles, climate events, transit expansion)</li>
+                <li><b>Explainable AI</b> — Full chain-of-thought reasoning traces, rejected-site rationale, before/after coverage comparison, and sensitivity tornado charts</li>
+                <li><b>Conversational Control</b> — LLM agent (Llama 3.3 70B via Groq) understands natural language to adjust weights, toggle scenarios, run pipeline, and answer analytical questions</li>
             </ul>
+        </div>
+    </div>
+</section>
+
+<!-- System Architecture -->
+<section class="section" id="architecture">
+    <h2 class="section-title"><span class="accent">System</span> Architecture</h2>
+    <p class="section-sub">8-step pipeline with 6 specialized AI agents — ingesting 9 data sources, scoring 12 spatial dimensions, verifying policy compliance, and generating investment-ready recommendations.</p>
+
+    <div class="arch-container">
+        <!-- Layer 1: Data Sources -->
+        <div class="arch-data-sources">
+            <div class="data-src"><span class="ds-icon">🏛️</span> Phoenix Open Data <span class="ds-live"></span></div>
+            <div class="data-src"><span class="ds-icon">📊</span> Census ACS 2022</div>
+            <div class="data-src"><span class="ds-icon">🗺️</span> OpenStreetMap <span class="ds-live"></span></div>
+            <div class="data-src"><span class="ds-icon">🚦</span> ADOT AADT</div>
+            <div class="data-src"><span class="ds-icon">🚇</span> Valley Metro GTFS</div>
+            <div class="data-src"><span class="ds-icon">📍</span> Google Places</div>
+            <div class="data-src"><span class="ds-icon">🏗️</span> Zoning / Parcels</div>
+            <div class="data-src"><span class="ds-icon">🌊</span> FEMA Flood Maps</div>
+            <div class="data-src"><span class="ds-icon">🅿️</span> Parking Meters DB <span class="ds-live"></span></div>
+        </div>
+
+        <!-- Flow Arrow: Ingest -->
+        <div class="arch-flow-arrow">
+            <svg viewBox="0 0 40 28"><path d="M20 0 L20 18 M12 12 L20 20 L28 12" stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            <div class="flow-label">Ingest &amp; Normalize</div>
+        </div>
+
+        <!-- Layer 2: Specialized Agents -->
+        <div class="arch-agents">
+            <div class="arch-agent">
+                <div class="ag-icon">🚗</div>
+                <div class="ag-name">Traffic Agent</div>
+                <div class="ag-desc">AADT volumes, congestion zones, peak-hour patterns, intersection counts</div>
+                <div class="ag-tags"><span class="ag-tag">2,847 nodes</span><span class="ag-tag">real-time</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">📍</div>
+                <div class="ag-name">POI Agent</div>
+                <div class="ag-desc">Business density scoring, retail/dining/medical/entertainment classification</div>
+                <div class="ag-tags"><span class="ag-tag">18K+ POIs</span><span class="ag-tag">4 categories</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">🅿️</div>
+                <div class="ag-name">Parking Agent</div>
+                <div class="ag-desc">Supply inventory, utilization rates, capacity gaps, meter density analysis</div>
+                <div class="ag-tags"><span class="ag-tag">1,203 lots</span><span class="ag-tag">OSM + PHX</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">🚇</div>
+                <div class="ag-name">Transit Agent</div>
+                <div class="ag-desc">Light rail proximity, bus coverage, commute mode share, transit deserts</div>
+                <div class="ag-tags"><span class="ag-tag">35 stops</span><span class="ag-tag">58 routes</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">👥</div>
+                <div class="ag-name">Demographics Agent</div>
+                <div class="ag-desc">Population density, growth rate, income, vehicle ownership, commute patterns</div>
+                <div class="ag-tags"><span class="ag-tag">993 tracts</span><span class="ag-tag">Census</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">📜</div>
+                <div class="ag-name">Policy Agent</div>
+                <div class="ag-desc">Zoning codes, ADA compliance, FEMA flood, environmental &amp; permit checks</div>
+                <div class="ag-tags"><span class="ag-tag">24 ordinances</span><span class="ag-tag">PHX Code</span></div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow: Process -->
+        <div class="arch-flow-arrow">
+            <svg viewBox="0 0 40 28"><path d="M20 0 L20 18 M12 12 L20 20 L28 12" stroke="var(--purple)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            <div class="flow-label">Multi-Criteria Fusion</div>
+        </div>
+
+        <!-- Layer 3: Orchestrator → Engine → Output -->
+        <div class="arch-orchestrator">
+            <div class="arch-orch-node orchestrator">
+                <div class="ao-icon">🎯</div>
+                <div class="ao-name" style="color:var(--accent);">Orchestrator</div>
+                <div class="ao-desc">Pipeline sequencing, state management, agent coordination</div>
+                <div class="ao-sub">8-step DAG execution</div>
+            </div>
+            <div class="arch-connect">
+                <svg viewBox="0 0 48 20"><path d="M0 10 L38 10 M32 4 L40 10 L32 16" stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            </div>
+            <div class="arch-orch-node engine">
+                <div class="ao-icon">🧠</div>
+                <div class="ao-name" style="color:var(--purple);">Analysis Engine</div>
+                <div class="ao-desc">Weighted spatial scoring, supply-demand gap, Monte Carlo simulation</div>
+                <div class="ao-sub">12 dimensions &times; 5 weights</div>
+            </div>
+            <div class="arch-connect">
+                <svg viewBox="0 0 48 20"><path d="M0 10 L38 10 M32 4 L40 10 L32 16" stroke="var(--purple)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            </div>
+            <div class="arch-orch-node output">
+                <div class="ao-icon">📊</div>
+                <div class="ao-name" style="color:var(--green);">Recommendation</div>
+                <div class="ao-desc">Ranked site selection, ROI projection, capacity optimization</div>
+                <div class="ao-sub">Top-K with budget constraint</div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow: Deliver -->
+        <div class="arch-flow-arrow">
+            <svg viewBox="0 0 40 28"><path d="M20 0 L20 18 M12 12 L20 20 L28 12" stroke="var(--green)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            <div class="flow-label">Deliverables</div>
+        </div>
+
+        <!-- Layer 4: Outputs -->
+        <div class="arch-outputs">
+            <div class="arch-out"><div class="ao-icon">🗺️</div><div class="ao-label">Interactive Map</div><div class="ao-val">3D markers, heatmaps, layers</div></div>
+            <div class="arch-out"><div class="ao-icon">📈</div><div class="ao-label">Analytics Suite</div><div class="ao-val">7 charts, Monte Carlo, sensitivity</div></div>
+            <div class="arch-out"><div class="ao-icon">🔍</div><div class="ao-label">Explainability</div><div class="ao-val">CoT reasoning, rejected sites</div></div>
+            <div class="arch-out"><div class="ao-icon">🔬</div><div class="ao-label">Stress Testing</div><div class="ao-val">8 policies &times; 5 scenarios</div></div>
+            <div class="arch-out"><div class="ao-icon">💬</div><div class="ao-label">LLM Chat Agent</div><div class="ao-val">Natural language control</div></div>
+        </div>
+
+        <!-- LLM Bar -->
+        <div class="arch-llm-bar">
+            <span class="llm-icon">🤖</span>
+            <span class="llm-text">Conversational AI layer — understands natural language and controls the entire pipeline</span>
+            <span class="llm-model">Llama 3.3 70B via Groq</span>
         </div>
     </div>
 </section>
@@ -171,47 +341,26 @@ a:hover { text-decoration: underline; }
     <h2 class="section-title"><span class="accent">Methodology</span></h2>
     <div class="divider"></div>
 
-    <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:16px;">Agent Pipeline Architecture</h3>
-    <div class="pipeline-flow">
-        <div class="pipe-node"><div class="p-icon">📡</div><div class="p-label">Data<br>Collection</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node"><div class="p-icon">🚗</div><div class="p-label">Traffic<br>Analysis</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node"><div class="p-icon">📍</div><div class="p-label">POI &amp;<br>Land Use</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node"><div class="p-icon">🅿️</div><div class="p-label">Supply<br>Mapping</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node"><div class="p-icon">🚇</div><div class="p-label">Transit<br>Access</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node"><div class="p-icon">👥</div><div class="p-label">Demo-<br>graphics</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node"><div class="p-icon">🧮</div><div class="p-label">Spatial<br>Scoring</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node" style="border-color:var(--orange);"><div class="p-icon">📋</div><div class="p-label">Policy<br>Check</div></div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-node" style="border-color:var(--green);"><div class="p-icon">✅</div><div class="p-label">Recom-<br>mend</div></div>
-    </div>
-
     <div class="grid-2" style="margin-top:24px;">
         <div class="card">
             <h3><span class="icon">📐</span> Supply Estimation Model</h3>
-            <p>For each candidate site, we estimate existing parking supply within a <b>3.5 km radius</b> using three complementary data layers:</p>
+            <p>For each candidate site, existing parking supply is estimated within a <b>3.5 km radius</b> using three complementary data layers:</p>
             <ul>
-                <li><b>OSM Parking Facilities</b> — All amenity=parking features with capacity tags (when available) or estimated at 150 spaces per facility</li>
+                <li><b>OSM Parking Facilities</b> — All <code>amenity=parking</code> features with capacity tags (when available) or estimated at 150 spaces per facility</li>
                 <li><b>Phoenix Street Meters</b> — Official parking meter locations from the City of Phoenix ArcGIS REST API, each counted as 1 space</li>
-                <li><b>Baseline Estimate</b> — Area-calibrated estimate using known infrastructure density (50-300 spaces per km² depending on zoning)</li>
-                <li>Formula: <code style="color:var(--green);">Supply = OSM_spaces + Meter_count + Baseline × area_factor</code></li>
+                <li><b>Baseline Estimate</b> — Area-calibrated estimate using known infrastructure density (50-300 spaces/km&sup2; depending on zoning)</li>
+                <li>Formula: <code style="color:var(--green);">Supply = OSM_spaces + Meter_count + Baseline &times; area_factor</code></li>
             </ul>
         </div>
         <div class="card">
             <h3><span class="icon">📈</span> Demand Estimation Model</h3>
             <p>Parking demand is modeled as a function of traffic volume, population density, commercial activity, and commute patterns:</p>
             <ul>
-                <li><b>Traffic Component</b> — AADT volume × parking generation rate (5-8% of daily traffic)</li>
-                <li><b>Population Component</b> — Resident density × vehicle ownership rate (from Census B25044)</li>
-                <li><b>Commercial Component</b> — POI density × category-specific parking demand factors</li>
+                <li><b>Traffic Component</b> — AADT volume &times; parking generation rate (5-8% of daily traffic)</li>
+                <li><b>Population Component</b> — Resident density &times; vehicle ownership rate (from Census B25044)</li>
+                <li><b>Commercial Component</b> — POI density &times; category-specific parking demand factors</li>
                 <li><b>Drive-Alone Rate</b> — Census B08301 commuting data by tract</li>
-                <li>Formula: <code style="color:var(--green);">Demand = α·Traffic + β·Population + γ·Commercial + δ·Events</code></li>
+                <li>Formula: <code style="color:var(--green);">Demand = &alpha;&middot;Traffic + &beta;&middot;Population + &gamma;&middot;Commercial + &delta;&middot;Events</code></li>
             </ul>
         </div>
         <div class="card">
@@ -224,7 +373,7 @@ a:hover { text-decoration: underline; }
                 <li><b>POI Score (0-100)</b> — Retail/dining/medical/entertainment density within 1 km</li>
                 <li><b>Transit Score (0-100)</b> — Distance to nearest rail stop, bus route coverage, park-and-ride potential</li>
             </ul>
-            <p style="margin-top:8px;">Final score: <code style="color:var(--green);">S = w₁·Traffic + w₂·Gap + w₃·Growth + w₄·POI + w₅·Transit</code></p>
+            <p style="margin-top:8px;">Final score: <code style="color:var(--green);">S = w&sub1;&middot;Traffic + w&sub2;&middot;Gap + w&sub3;&middot;Growth + w&sub4;&middot;POI + w&sub5;&middot;Transit</code></p>
         </div>
         <div class="card">
             <h3><span class="icon">📋</span> Policy Compliance Agent</h3>
@@ -236,13 +385,87 @@ a:hover { text-decoration: underline; }
                 <li><b>Municipal Code</b> — Validates setback requirements, height limits, and stormwater management</li>
             </ul>
         </div>
+        <div class="card">
+            <h3><span class="icon">🔬</span> Policy Stress Testing</h3>
+            <p>8 distinct parking policies are evaluated under 5 pressure scenarios to identify robust strategies:</p>
+            <ul>
+                <li><b>Policies</b> — Status Quo, Transit-Oriented, Maximum Coverage, Budget-Constrained, Green Infrastructure, Shared Parking, Dynamic Pricing, Peripheral Hub</li>
+                <li><b>Pressure Scenarios</b> — Economic Recession (-20% demand, -30% budget), Population Surge (+40% demand), Autonomous Vehicle Shift, Climate Event (flood exclusion), Transit Expansion</li>
+                <li><b>Metrics</b> — Sites selected, total capacity, avg score, investment cost, avg ROI, high-priority count, cost per space</li>
+                <li><b>Output</b> — Most resilient policy, highest ROI under stress, key insights for planners</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3><span class="icon">📊</span> Monte Carlo ROI Simulation</h3>
+            <p>Investment returns are modeled using stochastic simulation to capture uncertainty:</p>
+            <ul>
+                <li><b>Method</b> — Box-Muller normal distribution, 5,000 iterations per site</li>
+                <li><b>Variables</b> — Utilization rate (&sigma;=15%), construction cost (&sigma;=20%), revenue per space (&sigma;=10%)</li>
+                <li><b>Output</b> — P10/P50/P90 ROI distribution, probability of positive return, histogram with confidence intervals</li>
+                <li><b>Sensitivity</b> — Tornado chart showing score impact when each dimension weight is minimized vs maximized</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- System Features -->
+<section class="section" id="features">
+    <h2 class="section-title"><span class="accent">System</span> Features</h2>
+    <p class="section-sub">The demo platform includes a comprehensive set of interactive analytical tools for urban parking planning.</p>
+
+    <div class="grid-3">
+        <div class="feature-card">
+            <div class="f-icon">🗺️</div>
+            <div class="f-title">Interactive Map with 13 Layers</div>
+            <div class="f-desc">Traffic heatmap, POIs, parking facilities, transit routes, demographics, OSM data, Census tracts, meters, commute patterns, AADT, zoning, competitors, coverage</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">🏗️</div>
+            <div class="f-title">3D Visualization</div>
+            <div class="f-desc">3D building markers with height proportional to capacity and side-face depth effect for spatial perception</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">📊</div>
+            <div class="f-title">7 Analytics Charts</div>
+            <div class="f-desc">Score comparison bar, multi-dimension radar, ROI trend line, cost-score scatter, 24h demand heatmap, cost breakdown, Monte Carlo histogram</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">🔄</div>
+            <div class="f-title">Before vs After Coverage</div>
+            <div class="f-desc">Synchronized split-map view comparing current parking supply with projected coverage after recommended sites are built</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">⚡</div>
+            <div class="f-title">What-If Scenarios</div>
+            <div class="f-desc">Toggle EV charging mandate, transit expansion, remote work increase, and event surge to see real-time impact on recommendations</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">🏆</div>
+            <div class="f-title">Competitor Analysis</div>
+            <div class="f-desc">8 existing operators (LAZ, SP+, ABM, ParkJockey) mapped with color-coded diamond markers and market share data</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">💬</div>
+            <div class="f-title">Conversational AI Agent</div>
+            <div class="f-desc">Natural language interface to adjust parameters, run pipeline, query analysis results, and control presets/weights/toggles</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">📋</div>
+            <div class="f-title">Explainable Reasoning</div>
+            <div class="f-desc">Chain-of-thought traces for every pipeline step, rejected site rationale, and full transparency into scoring decisions</div>
+        </div>
+        <div class="feature-card">
+            <div class="f-icon">📤</div>
+            <div class="f-title">Export &amp; Reporting</div>
+            <div class="f-desc">CSV data export for all results and PDF-ready print layout with optimized styling for professional reports</div>
+        </div>
     </div>
 </section>
 
 <!-- Data Sources -->
 <section class="section" id="data">
     <h2 class="section-title"><span class="accent">Data</span> Sources</h2>
-    <p class="section-sub">The system integrates 8+ heterogeneous data sources, all accessible via public APIs directly from the browser.</p>
+    <p class="section-sub">The system integrates 9 heterogeneous data sources, all accessible via public APIs directly from the browser — no backend required.</p>
 
     <div class="card">
         <table class="data-table">
@@ -252,14 +475,14 @@ a:hover { text-decoration: underline; }
             <tbody>
                 <tr>
                     <td><b>OpenStreetMap</b></td>
-                    <td>Parking facilities, capacity, type, access, fee, EV charging</td>
+                    <td>Parking facilities, capacity, type, access, fee, EV charging, park-and-ride</td>
                     <td><code>overpass-api.de/api/interpreter</code></td>
                     <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
                     <td>JSON</td>
                 </tr>
                 <tr>
                     <td><b>Phoenix Open Data</b></td>
-                    <td>Street parking meters — type, rate, status, ADA, bike rack</td>
+                    <td>Street parking meters — type, rate, status, ADA, bike rack, dual-head</td>
                     <td><code>maps.phoenix.gov/pub/rest/services</code></td>
                     <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
                     <td>GeoJSON</td>
@@ -300,8 +523,15 @@ a:hover { text-decoration: underline; }
                     <td>JSON</td>
                 </tr>
                 <tr>
+                    <td><b>FEMA Flood Maps</b></td>
+                    <td>Flood zone boundaries for environmental compliance</td>
+                    <td><code>hazards.fema.gov/gis/nfhl/rest/services</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>GeoJSON</td>
+                </tr>
+                <tr>
                     <td><b>Groq LLM API</b></td>
-                    <td>Natural language interaction (Llama 3.3 70B) for agent reasoning</td>
+                    <td>Natural language interaction (Llama 3.3 70B) for agent reasoning and conversational control</td>
                     <td><code>api.groq.com/openai/v1/chat/completions</code></td>
                     <td><span class="badge api">API Key</span> <span class="badge cors">CORS</span></td>
                     <td>JSON</td>
@@ -341,7 +571,7 @@ a:hover { text-decoration: underline; }
 
 <!-- Footer -->
 <div class="footer">
-    A research project by Arizona State University, University of Kansas &amp; Clemson University &middot; <a href="index.html">Launch System Demo &rarr;</a>
+    A research project by Arizona State University, University of Kansas &amp; Clemson University &middot; <a href="index.html">Launch Agentic Parking AI Demo &rarr;</a>
 </div>
 
 </body>
