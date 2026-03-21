@@ -457,6 +457,42 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .backend-log .bl-entry .bl-action { color: var(--green); }
 .backend-log .bl-entry .bl-msg { color: var(--text2); }
 
+/* ========== 13a. POLICY STRESS TEST ========== */
+.policy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.policy-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all 0.3s; position: relative; }
+.policy-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.policy-card.selected { border-color: var(--green); box-shadow: 0 0 20px rgba(72,187,120,0.15); }
+.policy-card .pc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.policy-card .pc-icon { font-size: 1.4rem; }
+.policy-card .pc-title { font-size: 0.88rem; font-weight: 700; }
+.policy-card .pc-desc { font-size: 0.72rem; color: var(--text3); line-height: 1.6; margin-bottom: 10px; }
+.policy-card .pc-params { display: flex; flex-wrap: wrap; gap: 4px; }
+.policy-card .pc-tag { font-size: 0.62rem; padding: 2px 7px; border-radius: 6px; background: rgba(99,179,237,0.1); color: var(--accent); }
+.policy-card .pc-tag.warn { background: rgba(252,129,129,0.12); color: var(--red); }
+.policy-card .pc-tag.pos { background: rgba(72,187,120,0.12); color: var(--green); }
+.policy-card .pc-check { position: absolute; top: 10px; right: 12px; font-size: 1rem; color: var(--green); display: none; }
+.policy-card.selected .pc-check { display: block; }
+
+.stress-actions { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.stress-actions .btn { padding: 10px 24px; }
+.stress-status { font-size: 0.78rem; color: var(--text3); }
+
+.stress-results { display: none; }
+.stress-results.show { display: block; }
+.stress-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-bottom: 16px; }
+.stress-table th { text-align: left; padding: 10px 12px; background: rgba(99,179,237,0.08); color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.stress-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.stress-table tr:hover td { background: rgba(99,179,237,0.03); }
+.stress-table .best { color: var(--green); font-weight: 700; }
+.stress-table .worst { color: var(--red); font-weight: 700; }
+.stress-bar { height: 6px; border-radius: 3px; background: var(--bg-secondary); overflow: hidden; display: inline-block; width: 80px; vertical-align: middle; margin-left: 6px; }
+.stress-bar .fill { height: 100%; border-radius: 3px; }
+
+.stress-insights { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 16px; }
+.stress-insights h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
+.stress-insights .si-item { font-size: 0.78rem; color: var(--text2); line-height: 1.7; margin-bottom: 6px; padding-left: 18px; position: relative; }
+.stress-insights .si-item::before { content: '→'; position: absolute; left: 0; color: var(--accent); }
+
 /* ========== 13. FOOTER ========== */
 .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text3); }
 .footer a { color: var(--orange); text-decoration: none; }
@@ -1005,6 +1041,41 @@ Or ask any question about the analysis!</div>
             </div>
         </div>
         <div class="ba-summary" id="baSummary" style="display:none;"></div>
+    </div>
+</section>
+
+<!-- ========== POLICY STRESS TEST ========== -->
+<section class="section" id="policy-section" style="display:none;">
+    <h2 class="section-title fade-in">Policy Stress Testing</h2>
+    <p class="section-sub fade-in">Evaluate how different Phoenix parking policies perform under varying economic, demographic, and environmental scenarios. Select policies and run pressure tests to compare outcomes.</p>
+
+    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--accent);">Select Policies to Test</h3>
+    <div class="policy-grid fade-in" id="policyGrid"></div>
+
+    <div class="stress-actions fade-in">
+        <button class="btn btn-primary" id="stressRunBtn" onclick="runStressTest()">🔬 Run Pressure Test</button>
+        <button class="btn btn-secondary" onclick="selectAllPolicies()">Select All</button>
+        <span class="stress-status" id="stressStatus"></span>
+    </div>
+
+    <div class="stress-results" id="stressResults">
+        <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;">Comparative Results</h3>
+        <div style="overflow-x:auto;">
+            <table class="stress-table" id="stressTable">
+                <thead id="stressHead"></thead>
+                <tbody id="stressBody"></tbody>
+            </table>
+        </div>
+
+        <h3 style="font-size:0.9rem;font-weight:700;margin:20px 0 12px;">Pressure Scenarios</h3>
+        <div style="overflow-x:auto;">
+            <table class="stress-table" id="pressureTable">
+                <thead id="pressureHead"></thead>
+                <tbody id="pressureBody"></tbody>
+            </table>
+        </div>
+
+        <div class="stress-insights" id="stressInsights"></div>
     </div>
 </section>
 
@@ -2320,16 +2391,19 @@ async function runPipeline() {
 }
 
 function showResultsSections() {
-    ['results-section','explain-section','beforeafter-section','analytics'].forEach(id => {
+    ['results-section','explain-section','beforeafter-section','policy-section','analytics'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = '';
     });
     // Auto-generate Before/After split view
     setTimeout(() => initBeforeAfterMaps(), 300);
+    // Render policy cards and auto-run stress test
+    renderPolicyCards();
+    setTimeout(() => runStressTest(), 500);
 }
 
 function hideResultsSections() {
-    ['results-section','explain-section','beforeafter-section','analytics'].forEach(id => {
+    ['results-section','explain-section','beforeafter-section','policy-section','analytics'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -3636,6 +3710,20 @@ function buildContextString() {
         });
     }
 
+    // === POLICY STRESS TEST RESULTS ===
+    if (lastStressData) {
+        ctx.push(`\nPOLICY STRESS TEST:`);
+        ctx.push(`Policies tested: ${lastStressData.policies.map(p => p.title).join(', ')}`);
+        lastStressData.baseResults.forEach(br => {
+            ctx.push(`  ${br.policy.title}: Score=${br.result.avgScore.toFixed(1)}, Sites=${br.result.count}, Capacity=${br.result.totalCap.toLocaleString()}, Cost=$${br.result.totalCost.toFixed(1)}M, ROI=${br.result.avgROI.toFixed(1)}%`);
+        });
+        ctx.push(`Resilience ranking (lowest avg score swing = most resilient):`);
+        lastStressData.resilience.forEach((r,i) => {
+            ctx.push(`  ${i+1}. ${r.policy.title}: avg swing ±${r.avgAbsDelta.toFixed(1)}`);
+        });
+        ctx.push(`Pressure scenarios tested: ${lastStressData.pressureScenarios.map(ps => ps.name).join(', ')}`);
+    }
+
     return ctx.join('\n') || 'No analysis has been run yet. Click "Run Agent Pipeline" first.';
 }
 
@@ -4762,6 +4850,211 @@ function initBeforeAfterMaps() {
     // Scroll into view
     splitEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// ========== I3. POLICY STRESS TEST ==========
+const policyScenarios = [
+    { id:'status-quo', icon:'📋', title:'Status Quo (Baseline)', desc:'Current policies remain unchanged. No EV mandates, no transit expansion, standard zoning.',
+      weights:{traffic:25,gap:25,growth:20,poi:15,transit:15}, budget:150, toggles:{flood:false,transit:false,future:false},
+      tags:[{t:'Business as usual',c:''},{ t:'No policy change',c:''}] },
+    { id:'transit-first', icon:'🚇', title:'Transit-First Policy', desc:'Prioritize parking near transit hubs. Expand light rail, incentivize park-and-ride. Reduce downtown parking minimums.',
+      weights:{traffic:10,gap:15,growth:10,poi:10,transit:55}, budget:150, toggles:{flood:false,transit:true,future:false},
+      tags:[{t:'Transit weight 55%',c:'pos'},{t:'-30% downtown min',c:'warn'},{t:'Park & Ride',c:'pos'}] },
+    { id:'ev-mandate', icon:'⚡', title:'EV Infrastructure Mandate', desc:'Require 25% EV charging at all new lots. Higher construction costs (+18%) but future-proofing and federal tax credits.',
+      weights:{traffic:20,gap:30,growth:25,poi:10,transit:15}, budget:130, toggles:{flood:false,transit:false,future:true},
+      tags:[{t:'25% EV spaces',c:'pos'},{t:'+18% build cost',c:'warn'},{t:'Tax credit eligible',c:'pos'}] },
+    { id:'climate-resilience', icon:'🌊', title:'Climate Resilience', desc:'Exclude flood zones, require permeable surfaces, mandate shade structures. Higher cost but lower long-term risk.',
+      weights:{traffic:20,gap:25,growth:20,poi:15,transit:20}, budget:120, toggles:{flood:true,transit:false,future:false},
+      tags:[{t:'Exclude flood zones',c:'warn'},{t:'Permeable surfaces',c:'pos'},{t:'+22% cost',c:'warn'}] },
+    { id:'suburban-growth', icon:'🏘️', title:'Suburban Expansion', desc:'Focus on high-growth suburban areas. Include future development zones, prioritize population growth corridors.',
+      weights:{traffic:15,gap:15,growth:45,poi:10,transit:15}, budget:180, toggles:{flood:false,transit:false,future:true},
+      tags:[{t:'Growth weight 45%',c:'pos'},{t:'Future dev areas',c:'pos'},{t:'$180M budget',c:''}] },
+    { id:'demand-driven', icon:'📊', title:'Pure Demand-Driven', desc:'Allocate resources strictly based on traffic volume and supply-demand gap. No social equity adjustments.',
+      weights:{traffic:40,gap:35,growth:5,poi:15,transit:5}, budget:150, toggles:{flood:false,transit:false,future:false},
+      tags:[{t:'Traffic 40%',c:''},{t:'Gap 35%',c:''},{t:'Efficiency max',c:'pos'}] },
+    { id:'budget-austerity', icon:'💰', title:'Budget Austerity', desc:'Severe budget cuts — only $60M available. Focus on highest-impact surface lots, no garages. Exclude risky areas.',
+      weights:{traffic:20,gap:35,growth:10,poi:15,transit:20}, budget:60, toggles:{flood:true,transit:false,future:false},
+      tags:[{t:'$60M only',c:'warn'},{t:'Surface lots only',c:'warn'},{t:'Low risk',c:'pos'}] },
+    { id:'equity-focused', icon:'⚖️', title:'Equity-Focused Access', desc:'Prioritize underserved communities and transit deserts. Ensure parking access in low-income areas with limited alternatives.',
+      weights:{traffic:10,gap:30,growth:15,poi:10,transit:35}, budget:150, toggles:{flood:false,transit:true,future:true},
+      tags:[{t:'Gap+Transit 65%',c:'pos'},{t:'Underserved areas',c:'pos'},{t:'Social equity',c:'pos'}] }
+];
+
+const pressureScenarios = [
+    { id:'pop-boom', name:'Population Boom (+25%)', modifier: s => ({...s, subScores:{...s.subScores, growth:Math.min(100,s.subScores.growth*1.3), gap:Math.min(100,s.subScores.gap*1.2)}}) },
+    { id:'remote-surge', name:'Remote Work Surge (40%)', modifier: s => ({...s, subScores:{...s.subScores, traffic:s.subScores.traffic*0.7, gap:s.subScores.gap*0.75, poi:s.subScores.poi*0.85}}) },
+    { id:'gas-spike', name:'Gas Price Spike ($6/gal)', modifier: s => ({...s, subScores:{...s.subScores, transit:Math.min(100,s.subScores.transit*1.4), traffic:s.subScores.traffic*0.85}}) },
+    { id:'recession', name:'Economic Recession', modifier: s => ({...s, subScores:{...s.subScores, growth:s.subScores.growth*0.5, poi:s.subScores.poi*0.7}, costNum:s.costNum*0.9}) },
+    { id:'heat-extreme', name:'Extreme Heat (+5°F avg)', modifier: s => ({...s, subScores:{...s.subScores, gap:Math.min(100,s.subScores.gap*1.1)}, costNum:s.costNum*1.15}) },
+];
+
+let selectedPolicies = new Set(['status-quo','transit-first','ev-mandate','climate-resilience']);
+
+function renderPolicyCards() {
+    const grid = document.getElementById('policyGrid');
+    if (!grid) return;
+    grid.innerHTML = policyScenarios.map(p => `
+        <div class="policy-card ${selectedPolicies.has(p.id)?'selected':''}" onclick="togglePolicy('${p.id}')" data-policy="${p.id}">
+            <div class="pc-check">✓</div>
+            <div class="pc-header"><span class="pc-icon">${p.icon}</span><span class="pc-title">${p.title}</span></div>
+            <div class="pc-desc">${p.desc}</div>
+            <div class="pc-params">${p.tags.map(t=>`<span class="pc-tag ${t.c}">${t.t}</span>`).join('')}</div>
+        </div>`).join('');
+}
+
+function togglePolicy(id) {
+    if (selectedPolicies.has(id)) selectedPolicies.delete(id);
+    else selectedPolicies.add(id);
+    renderPolicyCards();
+}
+function selectAllPolicies() {
+    policyScenarios.forEach(p => selectedPolicies.add(p.id));
+    renderPolicyCards();
+}
+
+function simulatePolicy(policy, pressureMod) {
+    const w = {...policy.weights};
+    const sum = Object.values(w).reduce((a,b)=>a+b,0) || 1;
+    Object.keys(w).forEach(k => w[k] = w[k]/sum);
+
+    let sites = allSites.filter(s => {
+        if (s.hidden && !policy.toggles.future) return false;
+        return true;
+    });
+    if (policy.toggles.flood) sites = sites.filter(s => !s.floodZone);
+
+    sites = sites.map(s => {
+        let sim = { ...s, subScores: {...s.subScores}, costNum: s.costNum };
+        if (pressureMod) sim = pressureMod(sim);
+        sim.score = Math.round(sim.subScores.traffic*w.traffic + sim.subScores.gap*w.gap + sim.subScores.growth*w.growth + sim.subScores.poi*w.poi + sim.subScores.transit*w.transit);
+        return sim;
+    });
+    sites.sort((a,b) => b.score - a.score);
+
+    let cumCost = 0, selected = [];
+    for (const s of sites) {
+        if (cumCost + s.costNum <= policy.budget) { selected.push(s); cumCost += s.costNum; }
+    }
+
+    const avgScore = selected.length ? (selected.reduce((a,s)=>a+s.score,0)/selected.length) : 0;
+    const totalCap = selected.reduce((a,s)=>a+s.capacity,0);
+    const totalCost = cumCost;
+    const avgROI = selected.length ? (selected.reduce((a,s)=>a+s.roiNum,0)/selected.length) : 0;
+    const highPriority = selected.filter(s=>s.score>=85).length;
+
+    return { selected, avgScore, totalCap, totalCost, avgROI, highPriority, count: selected.length };
+}
+
+function runStressTest() {
+    const policies = policyScenarios.filter(p => selectedPolicies.has(p.id));
+    if (policies.length < 2) { document.getElementById('stressStatus').textContent = 'Select at least 2 policies'; return; }
+
+    document.getElementById('stressStatus').textContent = 'Running simulations...';
+    document.getElementById('stressRunBtn').disabled = true;
+
+    setTimeout(() => {
+        // === Baseline comparison table ===
+        const baseResults = policies.map(p => ({ policy: p, result: simulatePolicy(p, null) }));
+
+        const thead = document.getElementById('stressHead');
+        thead.innerHTML = `<tr><th>Metric</th>${policies.map(p=>`<th>${p.icon} ${p.title}</th>`).join('')}</tr>`;
+
+        const metrics = [
+            { name:'Sites Selected', key:'count', fmt: v => v, best:'max' },
+            { name:'Total Capacity', key:'totalCap', fmt: v => v.toLocaleString(), best:'max' },
+            { name:'Avg Score', key:'avgScore', fmt: v => v.toFixed(1), best:'max' },
+            { name:'Investment ($M)', key:'totalCost', fmt: v => '$'+v.toFixed(1)+'M', best:'min' },
+            { name:'Avg ROI', key:'avgROI', fmt: v => v.toFixed(1)+'%', best:'max' },
+            { name:'High Priority Sites', key:'highPriority', fmt: v => v, best:'max' },
+            { name:'Cost per Space', key:'costPerSpace', fmt: v => '$'+v.toLocaleString(), best:'min' },
+        ];
+
+        baseResults.forEach(br => {
+            br.result.costPerSpace = br.result.totalCap > 0 ? Math.round(br.result.totalCost * 1000000 / br.result.totalCap) : 0;
+        });
+
+        const tbody = document.getElementById('stressBody');
+        tbody.innerHTML = metrics.map(m => {
+            const vals = baseResults.map(br => br.result[m.key] || 0);
+            const bestVal = m.best === 'max' ? Math.max(...vals) : Math.min(...vals);
+            const worstVal = m.best === 'max' ? Math.min(...vals) : Math.max(...vals);
+            const maxVal = Math.max(...vals) || 1;
+            return `<tr><td style="font-weight:600;">${m.name}</td>${baseResults.map((br,i) => {
+                const v = br.result[m.key] || 0;
+                const cls = v === bestVal && vals.filter(x=>x===bestVal).length===1 ? 'best' : v === worstVal && vals.filter(x=>x===worstVal).length===1 ? 'worst' : '';
+                const barPct = (v / maxVal * 100).toFixed(0);
+                const barColor = cls==='best' ? 'var(--green)' : cls==='worst' ? 'var(--red)' : 'var(--accent)';
+                return `<td class="${cls}">${m.fmt(v)} <div class="stress-bar"><div class="fill" style="width:${barPct}%;background:${barColor};"></div></div></td>`;
+            }).join('')}</tr>`;
+        }).join('');
+
+        // === Pressure scenarios table ===
+        const phead = document.getElementById('pressureHead');
+        phead.innerHTML = `<tr><th>Pressure Scenario</th>${policies.map(p=>`<th>${p.icon} ${p.title}</th>`).join('')}</tr>`;
+
+        const pbody = document.getElementById('pressureBody');
+        pbody.innerHTML = pressureScenarios.map(ps => {
+            const pressureResults = policies.map(p => {
+                const base = simulatePolicy(p, null);
+                const stressed = simulatePolicy(p, ps.modifier);
+                const delta = stressed.avgScore - base.avgScore;
+                const capDelta = stressed.totalCap - base.totalCap;
+                return { stressed, delta, capDelta, base };
+            });
+            const deltas = pressureResults.map(r => r.delta);
+            const bestDelta = Math.max(...deltas);
+            const worstDelta = Math.min(...deltas);
+            return `<tr><td style="font-weight:600;">${ps.name}</td>${pressureResults.map((r,i) => {
+                const cls = r.delta === bestDelta && deltas.filter(x=>x===bestDelta).length===1 ? 'best' :
+                           r.delta === worstDelta && deltas.filter(x=>x===worstDelta).length===1 ? 'worst' : '';
+                const arrow = r.delta >= 0 ? '▲' : '▼';
+                const color = r.delta >= 0 ? 'var(--green)' : 'var(--red)';
+                const capArrow = r.capDelta >= 0 ? '+' : '';
+                return `<td class="${cls}"><span style="color:${color};font-weight:700;">${arrow} ${r.delta>=0?'+':''}${r.delta.toFixed(1)}</span> score<br>
+                    <span style="font-size:0.68rem;color:var(--text3);">${capArrow}${r.capDelta.toLocaleString()} spaces · ${r.stressed.count} sites</span></td>`;
+            }).join('')}</tr>`;
+        }).join('');
+
+        // === Generate insights ===
+        const insightsEl = document.getElementById('stressInsights');
+
+        // Find most resilient policy (smallest avg absolute delta across pressures)
+        const resilience = policies.map((p,i) => {
+            const avgAbsDelta = pressureScenarios.reduce((sum, ps) => {
+                const base = simulatePolicy(p, null);
+                const stressed = simulatePolicy(p, ps.modifier);
+                return sum + Math.abs(stressed.avgScore - base.avgScore);
+            }, 0) / pressureScenarios.length;
+            return { policy: p, avgAbsDelta };
+        });
+        resilience.sort((a,b) => a.avgAbsDelta - b.avgAbsDelta);
+        const mostResilient = resilience[0];
+        const leastResilient = resilience[resilience.length - 1];
+
+        // Find best overall policy
+        const bestOverall = baseResults.reduce((best, br) => br.result.avgScore > best.result.avgScore ? br : best);
+        const bestROI = baseResults.reduce((best, br) => br.result.avgROI > best.result.avgROI ? br : best);
+        const bestCap = baseResults.reduce((best, br) => br.result.totalCap > best.result.totalCap ? br : best);
+
+        insightsEl.innerHTML = `
+            <h4>🔍 Key Findings</h4>
+            <div class="si-item"><b>${bestOverall.policy.icon} ${bestOverall.policy.title}</b> achieves the highest average site score (${bestOverall.result.avgScore.toFixed(1)}) — best overall quality of selected sites.</div>
+            <div class="si-item"><b>${bestCap.policy.icon} ${bestCap.policy.title}</b> delivers the most parking capacity (${bestCap.result.totalCap.toLocaleString()} spaces) — maximizes total supply.</div>
+            <div class="si-item"><b>${bestROI.policy.icon} ${bestROI.policy.title}</b> yields the highest ROI (${bestROI.result.avgROI.toFixed(1)}%) — best financial return.</div>
+            <div class="si-item"><b>${mostResilient.policy.icon} ${mostResilient.policy.title}</b> is the <b style="color:var(--green);">most resilient</b> to external shocks (avg score swing: ±${mostResilient.avgAbsDelta.toFixed(1)}) — safest long-term bet.</div>
+            <div class="si-item"><b>${leastResilient.policy.icon} ${leastResilient.policy.title}</b> is the <b style="color:var(--red);">most volatile</b> under pressure (avg score swing: ±${leastResilient.avgAbsDelta.toFixed(1)}) — high risk under uncertainty.</div>
+            <div class="si-item"><b>Recommendation:</b> For Phoenix's balanced growth trajectory, a combination of <b>${mostResilient.policy.title}</b> (resilience) with elements of <b>${bestOverall.policy.title}</b> (performance) would provide the optimal risk-adjusted parking strategy.</div>
+        `;
+
+        document.getElementById('stressResults').classList.add('show');
+        document.getElementById('stressStatus').textContent = `✓ ${policies.length} policies × ${pressureScenarios.length} scenarios = ${policies.length * pressureScenarios.length} simulations complete`;
+        document.getElementById('stressRunBtn').disabled = false;
+
+        // Auto-run on show
+        lastStressData = { policies, baseResults, resilience, pressureScenarios };
+    }, 100);
+}
+
+let lastStressData = null;
 
 // ========== J. INIT ==========
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
