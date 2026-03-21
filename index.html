@@ -417,15 +417,22 @@ details.reasoning summary:hover { color: var(--accent); }
             <a href="https://console.groq.com" target="_blank">Get free key &rarr;</a>
         </div>
         <div class="dash-chat-suggestions" id="chatSuggestions">
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Why did Downtown score highest?</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Run pipeline</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Fetch live data</span>
             <span class="chat-suggestion" onclick="useSuggestion(this)">Set traffic weight to 40%</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Compare top 3 sites</span>
             <span class="chat-suggestion" onclick="useSuggestion(this)">Exclude flood zones</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Set budget to $80M</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">What data sources are used?</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Show traffic layer</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Zoom to downtown</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Use transit preset</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Why did Downtown score highest?</span>
         </div>
         <div class="dash-chat-messages" id="dashChatMessages">
-            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent, powered by <strong>Llama 3.3 70B</strong>. Ask me anything about the analysis, or adjust parameters via natural language — e.g., <em>"set traffic weight to 40%"</em> or <em>"exclude flood zones"</em>.</div>
+            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent, powered by <strong>Llama 3.3 70B</strong>. I can <strong>fully control the dashboard</strong> — try commands like:<br>
+<div class="msg-action">💬 "run pipeline" · "fetch live data" · "set traffic weight to 40%"</div>
+<div class="msg-action">🗺️ "show traffic layer" · "zoom to downtown" · "zoom out"</div>
+<div class="msg-action">⚙️ "use transit preset" · "exclude flood zones" · "set budget to $80M"</div>
+<div class="msg-action">📊 "show results" · "show analytics" · "recalculate"</div>
+Or ask any question about the analysis!</div>
         </div>
         <div class="dash-chat-input">
             <input type="text" id="dashChatInput" placeholder="Ask about analysis or adjust parameters..." onkeydown="if(event.key==='Enter')sendDashChat()">
@@ -1354,18 +1361,21 @@ function renderExplainability() {
 // ========== H. CHAT MODULE (Direct Groq LLM from Browser) ==========
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You help users understand the parking analysis results and recommendations.
+const CHAT_SYSTEM_PROMPT = `You are the AI assistant for the Phoenix Parking Lot Planning system. You help users understand results AND control the dashboard.
 
-You have access to the current analysis context provided below. Answer questions based on this data. Be concise but insightful. When discussing specific sites, reference their ID numbers, scores, and key metrics. If asked about methodology, explain the multi-criteria spatial analysis approach.
+The dashboard supports these natural language commands (parsed automatically before your response):
+• WEIGHTS: "set traffic weight to 40%", "increase poi to 30" (traffic, gap, growth, poi, transit)
+• BUDGET: "set budget to $80M"  •  CAPACITY: "set min capacity to 300"
+• TOGGLES: "exclude flood zones", "enable transit priority", "include future dev areas"
+• PRESETS: "use balanced/transit/growth/demand/budget preset"
+• PIPELINE: "run pipeline", "start analysis"  •  DATA: "fetch live data", "load osm data"
+• MAP LAYERS: "show/hide traffic/poi/parking/transit/recommendations/osm/census layer"
+• NAVIGATION: "zoom to site #1", "zoom to downtown", "zoom out", "show results", "show analytics"
+• RESET: "reset pipeline"  •  RECALCULATE: "recalculate scores"
 
-You can also:
-- Suggest which parameter adjustments would change rankings
-- Explain why certain sites scored higher/lower
-- Compare sites when asked
-- Discuss trade-offs between cost, capacity, and location
-- Explain data sources (OpenStreetMap, US Census ACS)
+When users ask analytical questions, answer based on the context data. When they want to DO something, suggest the right command. If they ask both, answer the question AND suggest the command.
 
-Keep responses under 150 words unless the user asks for detail. Use specific numbers from the context data.`;
+Be concise (under 120 words). Use specific numbers from the context. When suggesting commands, format them as: **Try:** \`command here\``;
 
 const chatFallback = [
     { patterns: [/downtown|core|jefferson/i], response: "Downtown Core (Site #1) scored highest at 96/100. Key factors: highest traffic density, 94% utilization, proximity to Chase Field. Recommended: 900-space multi-story garage, $22.5M, 21% ROI." },
@@ -1500,7 +1510,7 @@ async function callGroqDirect(userMessage) {
     return reply;
 }
 
-// Natural language parameter parsing
+// Natural language command parsing — full dashboard control
 function tryParseParameterCommand(text) {
     const lower = text.toLowerCase();
     const actions = [];
@@ -1536,37 +1546,132 @@ function tryParseParameterCommand(text) {
         actions.push({ type: 'constraint', slider: 'cap-slider', value: val, name: 'Min Capacity', display: val.toString() });
     }
 
-    // What-if toggles
+    // What-if toggles (enable)
     if (/exclude\s*flood|no\s*flood|remove\s*flood|filter\s*flood/i.test(lower)) {
         const el = document.getElementById('wif-flood');
         if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: true, name: 'Exclude Flood Zones' });
     }
-    if (/include\s*flood|allow\s*flood|keep\s*flood/i.test(lower)) {
-        const el = document.getElementById('wif-flood');
-        if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: false, name: 'Include Flood Zones' });
-    }
-    if (/(?:enable|activate|turn\s*on)\s*transit\s*priority/i.test(lower)) {
+    if (/(?:enable|activate|turn\s*on)\s*transit\s*priority|prioritize\s*transit|transit[- ]first/i.test(lower)) {
         const el = document.getElementById('wif-transit');
         if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-transit', enable: true, name: 'Transit Priority Mode' });
+    }
+    if (/include\s*future|future\s*(?:dev|areas|development)|add\s*future/i.test(lower)) {
+        const el = document.getElementById('wif-future');
+        if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-future', enable: true, name: 'Include Future Dev Areas' });
+    }
+    // What-if toggles (disable)
+    if (/include\s*flood|allow\s*flood|keep\s*flood|remove.*flood.*filter/i.test(lower)) {
+        const el = document.getElementById('wif-flood');
+        if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-flood', enable: false, name: 'Include Flood Zones' });
     }
     if (/(?:disable|deactivate|turn\s*off)\s*transit\s*priority/i.test(lower)) {
         const el = document.getElementById('wif-transit');
         if (el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-transit', enable: false, name: 'Disable Transit Priority' });
     }
-    if (/include\s*future|future\s*(?:dev|areas|development)/i.test(lower)) {
-        const el = document.getElementById('wif-future');
-        if (!el.classList.contains('active')) actions.push({ type: 'toggle', id: 'wif-future', enable: true, name: 'Include Future Dev Areas' });
-    }
 
-    // Presets: "use transit preset", "switch to growth preset"
-    const presetMatch = lower.match(/(?:use|apply|switch\s*to)\s*(balanced|transit|growth|demand|budget)\s*(?:preset|mode)?/i);
+    // Presets: "use transit preset", "switch to growth preset", "balanced mode"
+    const presetMatch = lower.match(/(?:use|apply|switch\s*to|try)?\s*(balanced|transit|growth|demand|budget)\s*(?:preset|mode|profile|config)/i);
     if (presetMatch) {
         actions.push({ type: 'preset', preset: presetMatch[1].toLowerCase(), name: presetMatch[1] + ' Preset' });
     }
 
-    // Run pipeline
-    if (/(?:run|start|execute)\s*(?:the\s*)?(?:agent\s*)?pipeline/i.test(lower)) {
-        actions.push({ type: 'run', name: 'Run Pipeline' });
+    // ===== PIPELINE & DATA COMMANDS =====
+    // Run pipeline: "run pipeline", "start analysis", "analyze", "run agents"
+    if (/(?:run|start|execute|launch|begin)\s*(?:the\s*)?(?:agent\s*)?(?:pipeline|analysis|agents?)|^analyze$|^run$/i.test(lower)) {
+        actions.push({ type: 'run', name: 'Run Agent Pipeline' });
+    }
+
+    // Fetch live data: "fetch live data", "load real data", "get osm data", "load census"
+    if (/(?:fetch|load|get|pull|download)\s*(?:the\s*)?(?:live|real|osm|census|actual)\s*data|load\s*(?:live|data)|fetch\s*data/i.test(lower)) {
+        actions.push({ type: 'fetchLive', name: 'Fetch Live Data (OSM + Census)' });
+    }
+
+    // Reset: "reset", "clear", "start over", "reset pipeline"
+    if (/^(?:reset|clear|restart)$|reset\s*(?:pipeline|all|everything)|start\s*over|clear\s*(?:all|data)/i.test(lower)) {
+        actions.push({ type: 'reset', name: 'Reset Pipeline' });
+    }
+
+    // Recalculate: "recalculate", "recompute", "update scores"
+    if (/recalculate|recompute|update\s*scores|refresh\s*scores/i.test(lower)) {
+        actions.push({ type: 'recalc', name: 'Recalculate Scores' });
+    }
+
+    // ===== MAP LAYER COMMANDS =====
+    const layerMap = {
+        traffic: ['traffic', 'traffic density', 'traffic layer'],
+        poi: ['poi', 'business', 'points of interest', 'poi layer'],
+        parking: ['parking', 'existing parking', 'parking layer'],
+        transit: ['transit', 'transit lines', 'bus', 'rail', 'transit layer'],
+        recommendations: ['recommendations', 'recommended', 'recommendation layer', 'sites'],
+        osmParking: ['osm parking', 'osm', 'live parking', 'osm layer'],
+        census: ['census', 'population', 'census layer', 'demographics']
+    };
+
+    // Show layer: "show traffic layer", "display poi", "enable transit on map", "add census layer"
+    const showMatch = lower.match(/(?:show|display|enable|add|turn\s*on|activate|view)\s+(?:the\s+)?(.+?)(?:\s+(?:layer|on\s*(?:the\s*)?map))?$/i);
+    if (showMatch) {
+        const target = showMatch[1].trim();
+        for (const [layerName, aliases] of Object.entries(layerMap)) {
+            if (aliases.some(a => target.includes(a))) {
+                actions.push({ type: 'showLayer', layer: layerName, name: `Show ${layerName} layer` });
+                break;
+            }
+        }
+    }
+
+    // Hide layer: "hide traffic", "remove poi layer", "turn off census"
+    const hideMatch = lower.match(/(?:hide|remove|disable|turn\s*off|deactivate|clear)\s+(?:the\s+)?(.+?)(?:\s+(?:layer|from\s*(?:the\s*)?map))?$/i);
+    if (hideMatch) {
+        const target = hideMatch[1].trim();
+        for (const [layerName, aliases] of Object.entries(layerMap)) {
+            if (aliases.some(a => target.includes(a))) {
+                actions.push({ type: 'hideLayer', layer: layerName, name: `Hide ${layerName} layer` });
+                break;
+            }
+        }
+    }
+
+    // Show all layers: "show all layers", "enable all layers"
+    if (/show\s*all\s*layers?|enable\s*all\s*layers?|all\s*layers\s*on/i.test(lower)) {
+        Object.keys(layerMap).forEach(l => actions.push({ type: 'showLayer', layer: l, name: `Show ${l}` }));
+    }
+    // Hide all layers: "hide all layers", "clear map"
+    if (/hide\s*all\s*layers?|clear\s*(?:the\s*)?map|disable\s*all\s*layers?|all\s*layers\s*off/i.test(lower)) {
+        Object.keys(layerMap).forEach(l => actions.push({ type: 'hideLayer', layer: l, name: `Hide ${l}` }));
+    }
+
+    // ===== MAP NAVIGATION =====
+    // Zoom to Phoenix overview (check FIRST before site zoom): "zoom out", "overview", "full map"
+    if (/^(?:zoom\s*out|overview|show\s*(?:all|phoenix)|full\s*map|reset\s*(?:map|zoom|view))$/i.test(lower)) {
+        actions.push({ type: 'zoomOverview', name: 'Reset map view' });
+    }
+    // Zoom to specific site: "zoom to site #1", "zoom to downtown", "fly to tempe"
+    else {
+        const siteZoomMatch = lower.match(/(?:zoom|go|fly|navigate|pan|focus)\s*(?:to|on|in)\s+(?:site\s*#?\s*(\d+)|(.+?))\s*$/i);
+        if (siteZoomMatch) {
+            const siteNum = siteZoomMatch[1] ? parseInt(siteZoomMatch[1]) : null;
+            const siteName = siteZoomMatch[2]?.trim();
+            if (siteNum || siteName) {
+                actions.push({ type: 'zoomSite', siteNum, siteName, name: `Zoom to ${siteNum ? 'Site #' + siteNum : siteName}` });
+            }
+        }
+    }
+
+    // ===== NAVIGATION TO SECTIONS =====
+    if (/(?:show|go\s*to|scroll\s*to|view|open)\s*(?:the\s*)?(?:results?|table|ranking)/i.test(lower)) {
+        actions.push({ type: 'scrollTo', target: 'results-section', name: 'Show Results Table' });
+    }
+    if (/(?:show|go\s*to|scroll\s*to|view|open)\s*(?:the\s*)?(?:analytics?|charts?|insights?)/i.test(lower)) {
+        actions.push({ type: 'scrollTo', target: 'analytics', name: 'Show Analytics' });
+    }
+    if (/(?:show|go\s*to|scroll\s*to|view|open)\s*(?:the\s*)?(?:explain|explainability|methodology|how\s*it\s*works)/i.test(lower)) {
+        actions.push({ type: 'scrollTo', target: 'explainability', name: 'Show Explainability' });
+    }
+    if (/(?:show|go\s*to|scroll\s*to|view|open)\s*(?:the\s*)?(?:architecture|system|agents)/i.test(lower)) {
+        actions.push({ type: 'scrollTo', target: 'arch-section', name: 'Show Architecture' });
+    }
+    if (/(?:show|go\s*to|scroll\s*to|view|open)\s*(?:the\s*)?(?:map|dashboard)/i.test(lower)) {
+        actions.push({ type: 'scrollTo', target: 'dashboard', name: 'Show Dashboard' });
     }
 
     return actions.length > 0 ? actions : null;
@@ -1593,12 +1698,48 @@ function applyParameterActions(actions) {
             descriptions.push(`Applied ${action.name}`);
         } else if (action.type === 'run') {
             runCurrentMode();
-            descriptions.push('Pipeline started');
+            descriptions.push('Agent pipeline started — watch the progress below');
+        } else if (action.type === 'fetchLive') {
+            fetchLiveData();
+            descriptions.push('Fetching live data from OSM + Census APIs...');
+        } else if (action.type === 'reset') {
+            resetPipeline();
+            descriptions.push('Pipeline reset to initial state');
+        } else if (action.type === 'recalc') {
+            recalculate();
+            addScenarioEntry('Chat: Recalculate');
+            descriptions.push('Scores recalculated');
+        } else if (action.type === 'showLayer') {
+            const cb = document.querySelector(`input[data-layer="${action.layer}"]`);
+            if (cb && !cb.checked) { cb.checked = true; map.addLayer(layers[action.layer]); }
+            descriptions.push(`Map layer ON: ${action.layer}`);
+        } else if (action.type === 'hideLayer') {
+            const cb = document.querySelector(`input[data-layer="${action.layer}"]`);
+            if (cb && cb.checked) { cb.checked = false; map.removeLayer(layers[action.layer]); }
+            descriptions.push(`Map layer OFF: ${action.layer}`);
+        } else if (action.type === 'zoomSite') {
+            let site = null;
+            if (action.siteNum) site = activeSites.find(s => s.id === action.siteNum);
+            if (!site && action.siteName) site = activeSites.find(s => s.name.toLowerCase().includes(action.siteName.toLowerCase()));
+            if (site) {
+                map.flyTo([site.lat, site.lng], 15, { duration: 1.2 });
+                descriptions.push(`Zoomed to ${site.name} (Score: ${site.score})`);
+            } else {
+                descriptions.push(`Site not found — try "zoom to site #1" or "zoom to downtown"`);
+            }
+        } else if (action.type === 'zoomOverview') {
+            map.flyTo([33.4484, -112.074], 11, { duration: 1.2 });
+            descriptions.push('Map reset to Phoenix overview');
+        } else if (action.type === 'scrollTo') {
+            const el = document.getElementById(action.target);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            descriptions.push(action.name);
         }
     }
-    // Update sliders display and recalculate
-    onSliderChange();
-    if (!actions.some(a => a.type === 'preset' || a.type === 'run')) {
+    // Update sliders display and recalculate for weight/constraint changes
+    const hasWeightOrConstraint = actions.some(a => ['weight', 'constraint', 'toggle'].includes(a.type));
+    if (hasWeightOrConstraint) onSliderChange();
+    if (hasWeightOrConstraint && !actions.some(a => a.type === 'preset' || a.type === 'run')) {
         recalculate();
         addScenarioEntry('Chat: ' + descriptions.join(', '));
     }
@@ -1624,15 +1765,25 @@ async function sendDashChat() {
     input.value = '';
     msgs.scrollTop = msgs.scrollHeight;
 
-    // 1. Try parsing as a parameter command
+    // 1. Try parsing as a dashboard command
     const paramActions = tryParseParameterCommand(text);
     if (paramActions) {
         const descriptions = applyParameterActions(paramActions);
         const actionHtml = descriptions.map(d => `<div class="msg-action">✓ ${d}</div>`).join('');
+        const hasDataAction = paramActions.some(a => ['run', 'fetchLive', 'reset', 'scrollTo', 'zoomSite', 'zoomOverview', 'showLayer', 'hideLayer'].includes(a.type));
+        const summary = hasDataAction ? 'Executed:' : 'Done! Updated:';
         setTimeout(() => {
-            msgs.innerHTML += `<div class="msg bot">Done! I've updated the parameters:<br>${actionHtml}<br><span style="font-size:0.72rem;color:var(--text3);">The analysis has been recalculated with the new settings.</span></div>`;
+            msgs.innerHTML += `<div class="msg bot">${summary}<br>${actionHtml}</div>`;
             msgs.scrollTop = msgs.scrollHeight;
-        }, 300);
+        }, 200);
+        // Also get LLM commentary for weight/constraint changes (non-blocking)
+        const hasAnalytical = paramActions.some(a => ['weight', 'constraint', 'toggle', 'preset'].includes(a.type));
+        if (hasAnalytical && getGroqKey()?.startsWith('gsk_')) {
+            callGroqDirect(`I just made these changes: ${descriptions.join('; ')}. In 1-2 sentences, briefly explain how this affects the analysis results. Reference the current top site scores.`).then(reply => {
+                msgs.innerHTML += `<div class="msg bot">${escapeHtml(reply)}<div class="msg-model">via ${GROQ_MODEL}</div></div>`;
+                msgs.scrollTop = msgs.scrollHeight;
+            }).catch(() => {});
+        }
         return;
     }
 
