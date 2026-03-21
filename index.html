@@ -367,6 +367,41 @@ details.reasoning summary:hover { color: var(--accent); }
 @keyframes pinDrop { 0% { transform: translateY(-30px) scale(0.3); opacity: 0; } 60% { transform: translateY(3px) scale(1.05); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
 @keyframes rippleOut { 0% { r: 5; opacity: 0.6; } 100% { r: 40; opacity: 0; } }
 
+/* ========== 14b. BEFORE/AFTER SPLIT MAP ========== */
+.ba-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.ba-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.72rem; color: var(--text2); }
+.ba-legend-item { display: flex; align-items: center; gap: 5px; }
+.ba-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.ba-split { display: flex; gap: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-card); }
+.ba-panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ba-label { padding: 10px 16px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+.ba-label-before { background: rgba(66,153,225,0.08); color: #4299e1; border-bottom: 2px solid rgba(66,153,225,0.3); }
+.ba-label-after { background: rgba(72,187,120,0.08); color: #48bb78; border-bottom: 2px solid rgba(72,187,120,0.3); }
+.ba-map { height: 400px; }
+.ba-map .leaflet-container { background: #1a202c; }
+.ba-stats { padding: 12px 16px; background: rgba(0,0,0,0.2); font-size: 0.72rem; color: var(--text2); display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; border-top: 1px solid rgba(255,255,255,0.05); }
+.ba-stats .bs { font-weight: 700; }
+.ba-stats .bs.blue { color: #4299e1; }
+.ba-stats .bs.green { color: #48bb78; }
+.ba-stats .bs.red { color: var(--red); }
+.ba-divider { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 32px; background: var(--bg-primary); flex-shrink: 0; }
+.ba-divider-line { flex: 1; width: 2px; background: linear-gradient(180deg, transparent, var(--border), transparent); }
+.ba-divider-icon { font-size: 1rem; color: var(--text3); padding: 8px 0; }
+.ba-summary { margin-top: 16px; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.ba-summary-card { text-align: center; min-width: 120px; }
+.ba-summary-card .bsc-val { font-size: 1.6rem; font-weight: 800; line-height: 1.2; }
+.ba-summary-card .bsc-val.improve { color: var(--green); }
+.ba-summary-card .bsc-val.current { color: #4299e1; }
+.ba-summary-card .bsc-label { font-size: 0.68rem; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ba-summary-card .bsc-delta { font-size: 0.72rem; color: var(--green); font-weight: 600; margin-top: 2px; }
+
+@media (max-width: 768px) {
+    .ba-split { flex-direction: column; }
+    .ba-divider { flex-direction: row; width: 100%; height: 32px; }
+    .ba-divider-line { height: 2px; width: auto; flex: 1; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+    .ba-map { height: 280px; }
+}
+
 /* ========== 15. EXPORT BUTTONS ========== */
 .export-btns { display: flex; gap: 8px; }
 .btn-export { padding: 6px 14px; font-size: 0.72rem; font-weight: 600; border: 1px solid var(--border); background: rgba(99,179,237,0.06); color: var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
@@ -441,6 +476,7 @@ details.reasoning summary:hover { color: var(--accent); }
         <a href="#dashboard">Dashboard</a>
         <a href="#analytics">Analytics</a>
         <a href="#results-section">Results</a>
+        <a href="#beforeafter-section">Before/After</a>
         <a href="#explain-section">Explainability</a>
     </div>
 </nav>
@@ -676,6 +712,41 @@ Or ask any question about the analysis!</div>
             <th style="width:30px;">&#128205;</th>
         </tr></thead><tbody id="resultsBody"></tbody></table>
         <div class="compare-panel" id="comparePanel"></div>
+    </div>
+</section>
+
+<!-- ========== BEFORE/AFTER MAP ========== -->
+<section class="section" id="beforeafter-section">
+    <h2 class="section-title fade-in">Before vs After — Coverage Analysis</h2>
+    <p class="section-sub fade-in">Split-map comparison: current parking supply coverage (left) vs projected coverage with AI-recommended sites (right).</p>
+    <div class="fade-in">
+        <div class="ba-controls">
+            <div class="ba-legend">
+                <span class="ba-legend-item"><span class="ba-dot" style="background:#4299e1;"></span> Existing Parking</span>
+                <span class="ba-legend-item"><span class="ba-dot" style="background:rgba(66,153,225,0.15);border:1px dashed #4299e1;width:14px;height:14px;border-radius:50%;"></span> Current Coverage (1.5km)</span>
+                <span class="ba-legend-item"><span class="ba-dot" style="background:#48bb78;"></span> AI Recommended</span>
+                <span class="ba-legend-item"><span class="ba-dot" style="background:rgba(72,187,120,0.15);border:1px dashed #48bb78;width:14px;height:14px;border-radius:50%;"></span> New Coverage (1.5km)</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="initBeforeAfterMaps()" id="baInitBtn">Generate Split View</button>
+        </div>
+        <div class="ba-split" id="baSplit" style="display:none;">
+            <div class="ba-panel">
+                <div class="ba-label ba-label-before">BEFORE — Current Supply</div>
+                <div id="mapBefore" class="ba-map"></div>
+                <div class="ba-stats" id="baStatsBefore"></div>
+            </div>
+            <div class="ba-divider">
+                <div class="ba-divider-line"></div>
+                <div class="ba-divider-icon">⟷</div>
+                <div class="ba-divider-line"></div>
+            </div>
+            <div class="ba-panel">
+                <div class="ba-label ba-label-after">AFTER — With AI Recommendations</div>
+                <div id="mapAfter" class="ba-map"></div>
+                <div class="ba-stats" id="baStatsAfter"></div>
+            </div>
+        </div>
+        <div class="ba-summary" id="baSummary" style="display:none;"></div>
     </div>
 </section>
 
@@ -2912,6 +2983,189 @@ const heroObs = new IntersectionObserver(([e]) => {
     }
 }, { threshold: 0.5 });
 heroObs.observe(document.querySelector('.stats-row'));
+
+// ========== I2. BEFORE/AFTER SPLIT MAP ==========
+let mapBefore = null, mapAfter = null;
+
+function initBeforeAfterMaps() {
+    const splitEl = document.getElementById('baSplit');
+    splitEl.style.display = 'flex';
+    document.getElementById('baInitBtn').disabled = true;
+    document.getElementById('baInitBtn').textContent = 'Generated ✓';
+
+    // Destroy previous instances if re-initialized
+    if (mapBefore) { mapBefore.remove(); mapBefore = null; }
+    if (mapAfter) { mapAfter.remove(); mapAfter = null; }
+
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    const tileOpts = { attribution:'', maxZoom:19 };
+
+    // ----- LEFT MAP: Before (current supply only) -----
+    mapBefore = L.map('mapBefore', { zoomControl: false, attributionControl: false }).setView(PHOENIX, 11);
+    L.tileLayer(tileUrl, tileOpts).addTo(mapBefore);
+
+    // Existing parking facilities
+    const existingParking = [[33.4455,-112.068],[33.451,-112.077],[33.449,-112.065],[33.505,-112.072],[33.512,-112.076],
+        [33.435,-111.940],[33.428,-111.945],[33.490,-111.930],[33.496,-111.922],[33.675,-112.000],[33.413,-111.835],[33.310,-111.845]];
+
+    let beforeCoverageArea = 0;
+    existingParking.forEach(([la,ln]) => {
+        L.circleMarker([la,ln], { radius: 6, fillColor: '#4299e1', fillOpacity: 0.8, color: '#fff', weight: 1.5 }).addTo(mapBefore);
+        L.circle([la,ln], { radius: 1500, fillColor: '#4299e1', fillOpacity: 0.06, color: '#4299e1', weight: 1, opacity: 0.25, dashArray: '6 4' }).addTo(mapBefore);
+        beforeCoverageArea += Math.PI * 1.5 * 1.5; // km²
+    });
+
+    // Add utilization badges on before map
+    const utilData = [94,88,91,81,78,85,82,92,72,68,62,48];
+    existingParking.forEach(([la,ln], i) => {
+        const util = utilData[i];
+        const color = util >= 85 ? '#fc8181' : util >= 70 ? '#f6ad55' : '#48bb78';
+        const label = L.divIcon({
+            className: 'score-grid-label',
+            html: `<span style="color:${color};font-size:0.6rem;font-weight:700;background:rgba(0,0,0,0.7);padding:1px 4px;border-radius:3px;">${util}%</span>`,
+            iconSize: [30,14], iconAnchor: [15, -8]
+        });
+        L.marker([la,ln], { icon: label, interactive: false }).addTo(mapBefore);
+    });
+
+    // Underserved zones (gaps) on before map
+    const gapZones = [[33.37,-112.15,'South West'],[33.55,-112.10,'North Central'],[33.48,-111.98,'East Central'],[33.35,-111.88,'South East']];
+    gapZones.forEach(([la,ln,name]) => {
+        L.circle([la,ln], { radius: 2500, fillColor: '#fc8181', fillOpacity: 0.06, color: '#fc8181', weight: 1.5, opacity: 0.3, dashArray: '8 6' }).addTo(mapBefore);
+        const gapLabel = L.divIcon({
+            className: 'score-grid-label',
+            html: `<span style="color:#fc8181;font-size:0.58rem;font-weight:600;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;">⚠ Gap</span>`,
+            iconSize: [40,14], iconAnchor: [20,7]
+        });
+        L.marker([la,ln], { icon: gapLabel, interactive: false }).addTo(mapBefore);
+    });
+
+    // Before stats
+    const metroArea = 1340; // Phoenix metro approx km²
+    const beforePct = Math.min(100, (beforeCoverageArea / metroArea * 100)).toFixed(1);
+    document.getElementById('baStatsBefore').innerHTML = `
+        Facilities: <span class="bs blue">${existingParking.length}</span> &middot;
+        Spaces: <span class="bs blue">89,400</span> &middot;
+        Coverage: <span class="bs blue">${beforePct}%</span> &middot;
+        Avg Utilization: <span class="bs red">78%</span> &middot;
+        Gap Zones: <span class="bs red">${gapZones.length}</span>`;
+
+    // ----- RIGHT MAP: After (existing + recommended) -----
+    mapAfter = L.map('mapAfter', { zoomControl: false, attributionControl: false }).setView(PHOENIX, 11);
+    L.tileLayer(tileUrl, tileOpts).addTo(mapAfter);
+
+    // Same existing parking (dimmer on after map)
+    existingParking.forEach(([la,ln]) => {
+        L.circleMarker([la,ln], { radius: 5, fillColor: '#4299e1', fillOpacity: 0.4, color: '#4299e1', weight: 1 }).addTo(mapAfter);
+        L.circle([la,ln], { radius: 1500, fillColor: '#4299e1', fillOpacity: 0.04, color: '#4299e1', weight: 0.5, opacity: 0.15, dashArray: '6 4' }).addTo(mapAfter);
+    });
+
+    // Recommended sites with coverage
+    let afterCoverageArea = beforeCoverageArea;
+    const totalNewSpaces = activeSites.reduce((a,s) => a+s.capacity, 0);
+
+    activeSites.forEach(site => {
+        const color = site.priority==='high'?'#48bb78':site.priority==='medium'?'#38b2ac':'#68d391';
+        // Coverage circle
+        L.circle([site.lat, site.lng], { radius: 1500, fillColor: '#48bb78', fillOpacity: 0.10, color: '#48bb78', weight: 1.5, opacity: 0.4 }).addTo(mapAfter);
+        afterCoverageArea += Math.PI * 1.5 * 1.5;
+
+        // Site marker (larger, with number)
+        L.circleMarker([site.lat, site.lng], {
+            radius: 12, fillColor: color, fillOpacity: 0.85, color: '#fff', weight: 2
+        }).addTo(mapAfter);
+
+        // Number + capacity label
+        const siteLabel = L.divIcon({
+            className: 'score-grid-label',
+            html: `<span style="color:#fff;font-size:0.75rem;font-weight:800;">${site.id}</span>`,
+            iconSize: [18,18], iconAnchor: [9,9]
+        });
+        L.marker([site.lat, site.lng], { icon: siteLabel, interactive: false }).addTo(mapAfter);
+
+        // Capacity tooltip label
+        const capLabel = L.divIcon({
+            className: 'score-grid-label',
+            html: `<span style="color:#48bb78;font-size:0.58rem;font-weight:700;background:rgba(0,0,0,0.7);padding:1px 5px;border-radius:3px;">+${site.capacity}</span>`,
+            iconSize: [40,14], iconAnchor: [20, -12]
+        });
+        L.marker([site.lat, site.lng], { icon: capLabel, interactive: false }).addTo(mapAfter);
+    });
+
+    // Show which gap zones are now covered
+    gapZones.forEach(([la,ln]) => {
+        const covered = activeSites.some(s => {
+            const d = Math.sqrt(Math.pow(la - s.lat, 2) + Math.pow(ln - s.lng, 2));
+            return d < 0.08; // ~8km approx
+        });
+        if (covered) {
+            const fixLabel = L.divIcon({
+                className: 'score-grid-label',
+                html: `<span style="color:#48bb78;font-size:0.58rem;font-weight:600;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;">✓ Covered</span>`,
+                iconSize: [50,14], iconAnchor: [25,7]
+            });
+            L.marker([la,ln], { icon: fixLabel, interactive: false }).addTo(mapAfter);
+        }
+    });
+
+    // After stats
+    const afterPct = Math.min(100, (afterCoverageArea / metroArea * 100)).toFixed(1);
+    const coveredGaps = gapZones.filter(([la,ln]) => activeSites.some(s => Math.sqrt(Math.pow(la-s.lat,2)+Math.pow(ln-s.lng,2)) < 0.08)).length;
+    document.getElementById('baStatsAfter').innerHTML = `
+        New Sites: <span class="bs green">+${activeSites.length}</span> &middot;
+        New Spaces: <span class="bs green">+${totalNewSpaces.toLocaleString()}</span> &middot;
+        Coverage: <span class="bs green">${afterPct}%</span> &middot;
+        Projected Util: <span class="bs green">65%</span> &middot;
+        Gaps Filled: <span class="bs green">${coveredGaps}/${gapZones.length}</span>`;
+
+    // Sync map movement
+    mapBefore.on('move', () => { if (!mapAfter._moving) mapAfter.setView(mapBefore.getCenter(), mapBefore.getZoom(), {animate:false}); });
+    mapAfter.on('move', () => { if (!mapBefore._moving) mapBefore.setView(mapAfter.getCenter(), mapAfter.getZoom(), {animate:false}); });
+
+    // Summary cards
+    const coverageImprove = (parseFloat(afterPct) - parseFloat(beforePct)).toFixed(1);
+    const summaryEl = document.getElementById('baSummary');
+    summaryEl.style.display = 'flex';
+    summaryEl.innerHTML = `
+        <div class="ba-summary-card">
+            <div class="bsc-val current">${existingParking.length}</div>
+            <div class="bsc-label">Existing Facilities</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val improve">+${activeSites.length}</div>
+            <div class="bsc-label">New AI Sites</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val current">89,400</div>
+            <div class="bsc-label">Current Spaces</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val improve">+${totalNewSpaces.toLocaleString()}</div>
+            <div class="bsc-label">New Spaces</div>
+            <div class="bsc-delta">Total: ${(89400 + totalNewSpaces).toLocaleString()}</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val current">${beforePct}%</div>
+            <div class="bsc-label">Before Coverage</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val improve">${afterPct}%</div>
+            <div class="bsc-label">After Coverage</div>
+            <div class="bsc-delta">+${coverageImprove}% improvement</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val red" style="color:var(--red);">${gapZones.length}</div>
+            <div class="bsc-label">Gap Zones Before</div>
+        </div>
+        <div class="ba-summary-card">
+            <div class="bsc-val improve">${gapZones.length - coveredGaps}</div>
+            <div class="bsc-label">Gaps Remaining</div>
+            <div class="bsc-delta">${coveredGaps} gaps resolved</div>
+        </div>`;
+
+    // Scroll into view
+    splitEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 // ========== J. INIT ==========
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
