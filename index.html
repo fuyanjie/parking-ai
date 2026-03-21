@@ -133,12 +133,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 
 /* Preset buttons */
 .preset-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.preset-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid rgba(99,179,237,0.15); background: rgba(99,179,237,0.04); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.72rem; color: var(--text2); text-align: left; }
+.preset-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid rgba(99,179,237,0.15); background: rgba(99,179,237,0.04); border-radius: 8px; cursor: pointer; transition: all 0.25s; font-size: 0.72rem; color: var(--text2); text-align: left; position: relative; overflow: hidden; }
 .preset-btn:hover { background: rgba(99,179,237,0.1); border-color: var(--accent); }
-.preset-btn.active { background: rgba(99,179,237,0.15); border-color: var(--accent); color: var(--accent); }
+.preset-btn.active { background: linear-gradient(135deg, rgba(49,130,206,0.2), rgba(128,90,213,0.12)); border-color: var(--accent); color: var(--text); box-shadow: 0 0 12px rgba(49,130,206,0.2), inset 0 1px 0 rgba(255,255,255,0.05); }
+.preset-btn.active::before { content: '✓'; position: absolute; top: 4px; right: 6px; font-size: 0.6rem; color: var(--green); font-weight: 700; background: rgba(72,187,120,0.15); width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.preset-btn.active::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), #805ad5); }
+.preset-btn.active .pname { color: var(--accent); }
+.preset-btn.active .pdesc { color: var(--text2); }
 .preset-btn .pi { font-size: 1rem; flex-shrink: 0; }
-.preset-btn .pname { font-weight: 600; font-size: 0.73rem; }
-.preset-btn .pdesc { font-size: 0.65rem; color: var(--text3); }
+.preset-btn .pname { font-weight: 600; font-size: 0.73rem; transition: color 0.2s; }
+.preset-btn .pdesc { font-size: 0.65rem; color: var(--text3); transition: color 0.2s; }
 
 /* Weight distribution bar */
 .weight-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
@@ -984,11 +988,32 @@ function applyPreset(name) {
     p.flood ? flood.classList.add('on') : flood.classList.remove('on');
     p.transitP ? trans.classList.add('on') : trans.classList.remove('on');
     p.future ? future.classList.add('on') : future.classList.remove('on');
+    // Directly highlight this preset (skip matching check in onSliderChange)
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-preset="${name}"]`).classList.add('active');
+    document.querySelector(`[data-preset="${name}"]`)?.classList.add('active');
     onSliderChange();
     recalculate();
     addScenarioEntry('Preset: ' + name.charAt(0).toUpperCase() + name.slice(1));
+}
+
+function highlightMatchingPreset() {
+    const cur = {
+        traffic: +document.getElementById('w-traffic').value,
+        gap: +document.getElementById('w-gap').value,
+        growth: +document.getElementById('w-growth').value,
+        poi: +document.getElementById('w-poi').value,
+        transit: +document.getElementById('w-transit').value,
+        budget: +document.getElementById('budget-slider').value,
+        cap: +document.getElementById('cap-slider').value
+    };
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    for (const [name, p] of Object.entries(presets)) {
+        if (cur.traffic === p.traffic && cur.gap === p.gap && cur.growth === p.growth &&
+            cur.poi === p.poi && cur.transit === p.transit && cur.budget === p.budget && cur.cap === p.cap) {
+            document.querySelector(`[data-preset="${name}"]`)?.classList.add('active');
+            break;
+        }
+    }
 }
 
 function getWeights() {
@@ -1016,8 +1041,8 @@ function onSliderChange() {
     // Update weight distribution bar
     updateWeightBar();
 
-    // Deactivate preset buttons (custom config)
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    // Highlight matching preset or deactivate all
+    highlightMatchingPreset();
 
     // Debounced live preview
     clearTimeout(livePreviewTimer);
