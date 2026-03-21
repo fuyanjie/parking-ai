@@ -459,16 +459,10 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .backend-log .bl-entry .bl-action { color: var(--green); }
 .backend-log .bl-entry .bl-msg { color: var(--text2); }
 
-/* ========== 13. RESEARCH TEAM & FOOTER ========== */
-.research-team { padding: 60px 40px 40px; max-width: 1000px; margin: 0 auto; text-align: center; }
-.team-grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; margin-top: 32px; }
-.team-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; width: 220px; text-align: center; transition: all 0.3s; }
-.team-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(99,179,237,0.1); }
-.team-card .tc-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 12px; color: #fff; font-weight: 800; }
-.team-card .tc-name { font-size: 0.92rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.team-card .tc-role { font-size: 0.7rem; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
-.team-card .tc-affil { font-size: 0.68rem; color: var(--text3); line-height: 1.5; }
+/* ========== 13. FOOTER ========== */
 .footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text3); }
+.footer a { color: var(--orange); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
 
 /* ========== 14. COT ANIMATION ========== */
 .cot-block { font-family: 'Fira Code', monospace; font-size: 0.72rem; color: var(--green); background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px 12px; margin-top: 8px; white-space: pre-wrap; line-height: 1.6; border-left: 2px solid var(--green); }
@@ -635,6 +629,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         <a href="#explain-section">Explainability</a>
         <a href="#beforeafter-section">Before/After</a>
         <a href="#analytics">Analytics</a>
+        <a href="research.html" style="color:var(--orange);">Research</a>
     </div>
 </nav>
 
@@ -1038,41 +1033,9 @@ Or ask any question about the analysis!</div>
     </div>
 </section>
 
-<!-- ========== RESEARCH TEAM ========== -->
-<section class="research-team" id="team-section">
-    <h2 class="section-title fade-in">Research Team</h2>
-    <p class="section-sub fade-in">An interdisciplinary collaboration across AI, urban planning, and data science.</p>
-    <div class="team-grid fade-in">
-        <div class="team-card">
-            <div class="tc-avatar">YF</div>
-            <div class="tc-name">Yanjie Fu</div>
-            <div class="tc-role">Principal Investigator</div>
-            <div class="tc-affil">Arizona State University<br>School of Computing and AI</div>
-        </div>
-        <div class="team-card">
-            <div class="tc-avatar" style="background:linear-gradient(135deg, var(--orange), var(--red));">DK</div>
-            <div class="tc-name">David King</div>
-            <div class="tc-role">Co-Investigator</div>
-            <div class="tc-affil">Arizona State University<br>School of Geographical Sciences and Urban Planning</div>
-        </div>
-        <div class="team-card">
-            <div class="tc-avatar" style="background:linear-gradient(135deg, var(--green), var(--accent));">DW</div>
-            <div class="tc-name">Dongjie Wang</div>
-            <div class="tc-role">Co-Investigator</div>
-            <div class="tc-affil">University of Kansas</div>
-        </div>
-        <div class="team-card">
-            <div class="tc-avatar" style="background:linear-gradient(135deg, var(--purple), #ed64a6);">KL</div>
-            <div class="tc-name">Kunpeng Liu</div>
-            <div class="tc-role">Co-Investigator</div>
-            <div class="tc-affil">Clemson University</div>
-        </div>
-    </div>
-</section>
-
 <!-- ========== FOOTER ========== -->
 <div class="footer">
-    Powered by Multi-Agent AI System &middot; Data sources: City of Phoenix, Census ACS, OpenStreetMap, MAG, Valley Metro &middot; A research project by ASU, University of Kansas &amp; Clemson University
+    Powered by Multi-Agent AI System &middot; Data: City of Phoenix, Census ACS, OpenStreetMap, ADOT, Valley Metro &middot; <a href="research.html" style="color:var(--orange);">Research Team &amp; Methodology &rarr;</a>
 </div>
 
 <!-- ========== CHAT ========== -->

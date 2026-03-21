@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research — AI-Driven Parking Site Selection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+:root {
+    --bg-primary: #0a0e1a; --bg-secondary: #0f1629; --bg-card: #111827;
+    --accent: #63b3ed; --orange: #f6ad55; --green: #48bb78; --red: #fc8181; --purple: #9f7aea;
+    --text: #e2e8f0; --text2: #a0aec0; --text3: #718096;
+    --border: rgba(99,179,237,0.15);
+}
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text); overflow-x: hidden; }
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Navigation */
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 5000; padding: 0 32px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(10,14,26,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-logo { font-weight: 800; font-size: 0.95rem; color: var(--accent); }
+.nav-logo span { color: var(--orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--text3); text-decoration: none; font-size: 0.8rem; font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+/* Hero */
+.hero { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 24px 60px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(99,179,237,0.06) 0%, transparent 60%); }
+.hero-badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--orange); border: 1px solid rgba(246,173,85,0.3); padding: 6px 16px; border-radius: 20px; margin-bottom: 24px; }
+.hero h1 { font-size: clamp(2rem, 4.5vw, 3.2rem); font-weight: 900; line-height: 1.2; max-width: 850px; }
+.hero h1 .gradient { background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero .subtitle { font-size: 1.05rem; color: var(--text2); max-width: 700px; margin: 20px auto 0; line-height: 1.8; }
+
+/* Section */
+.section { padding: 60px 40px; max-width: 1100px; margin: 0 auto; }
+.section-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; }
+.section-title .accent { color: var(--accent); }
+.section-sub { font-size: 0.95rem; color: var(--text2); margin-bottom: 32px; line-height: 1.7; }
+.divider { width: 60px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 2px; margin: 32px 0; }
+
+/* Cards */
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; margin-bottom: 20px; transition: border-color 0.3s; }
+.card:hover { border-color: var(--accent); }
+.card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.card h3 .icon { font-size: 1.3rem; }
+.card p, .card li { font-size: 0.88rem; color: var(--text2); line-height: 1.8; }
+.card ul { padding-left: 20px; margin-top: 8px; }
+.card li { margin-bottom: 4px; }
+
+/* Two column grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* Team */
+.team-grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; margin-top: 24px; }
+.team-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 28px 22px; width: 230px; text-align: center; transition: all 0.3s; }
+.team-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(99,179,237,0.1); }
+.tc-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 14px; color: #fff; font-weight: 800; }
+.tc-name { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.tc-role { font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.tc-affil { font-size: 0.75rem; color: var(--text3); line-height: 1.5; }
+.tc-links { margin-top: 10px; display: flex; gap: 12px; justify-content: center; }
+.tc-links a { font-size: 0.72rem; color: var(--accent); font-weight: 500; }
+
+/* Data sources table */
+.data-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.82rem; }
+.data-table th { text-align: left; padding: 10px 12px; background: rgba(99,179,237,0.08); color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text2); vertical-align: top; }
+.data-table tr:hover td { background: rgba(99,179,237,0.03); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.68rem; font-weight: 600; }
+.badge.free { background: rgba(72,187,120,0.15); color: var(--green); }
+.badge.cors { background: rgba(99,179,237,0.15); color: var(--accent); }
+.badge.api { background: rgba(246,173,85,0.15); color: var(--orange); }
+
+/* CTA */
+.cta-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 24px; }
+.cta-btn { padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; transition: transform 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(49,130,206,0.3); text-decoration: none; }
+.cta-primary { background: linear-gradient(135deg, #3182ce, #2b6cb0); color: #fff; }
+.cta-secondary { background: transparent; border: 1px solid var(--border); color: var(--accent); }
+
+/* Footer */
+.footer { text-align: center; padding: 32px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text3); }
+
+/* Pipeline diagram */
+.pipeline-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 24px 0; }
+.pipe-node { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; text-align: center; min-width: 100px; }
+.pipe-node .p-icon { font-size: 1.3rem; margin-bottom: 4px; }
+.pipe-node .p-label { font-size: 0.7rem; font-weight: 600; color: var(--text); }
+.pipe-arrow { color: var(--accent); font-size: 1.2rem; font-weight: 700; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.8rem; }
+    .section { padding: 40px 20px; }
+    .team-card { width: 100%; max-width: 300px; }
+    .nav-links { gap: 12px; }
+    .nav-links a { font-size: 0.72rem; }
+    .data-table { font-size: 0.72rem; }
+    .pipeline-flow { gap: 4px; }
+    .pipe-node { min-width: 70px; padding: 8px; }
+    .pipe-node .p-label { font-size: 0.6rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">AI Agent <span>Parking Planner</span></a>
+    <div class="nav-links">
+        <a href="index.html">System Demo</a>
+        <a href="#overview" class="active">Overview</a>
+        <a href="#methodology">Methodology</a>
+        <a href="#data">Data</a>
+        <a href="#team">Team</a>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-badge">Research Project</div>
+    <h1>AI-Driven <span class="gradient">Urban Parking</span> Site Selection</h1>
+    <p class="subtitle">Leveraging multi-agent AI systems, real-time urban data integration, and spatial optimization to address the growing parking infrastructure deficit in rapidly expanding metropolitan areas.</p>
+    <div class="cta-bar" style="margin-top:32px;">
+        <a href="index.html" class="cta-btn cta-primary">Launch Live Demo &rarr;</a>
+        <a href="#methodology" class="cta-btn cta-secondary">Read Methodology</a>
+    </div>
+</section>
+
+<!-- Overview -->
+<section class="section" id="overview">
+    <h2 class="section-title"><span class="accent">Research</span> Overview</h2>
+    <p class="section-sub">
+        Rapid urbanization in Sun Belt cities like Phoenix has created a critical gap between parking demand and supply.
+        Downtown utilization rates exceed 94%, and projections indicate a deficit of 12,400+ spaces by 2030.
+        Traditional planning methods — relying on static surveys and manual assessment — fail to capture the dynamic,
+        multi-dimensional nature of urban parking demand. This project develops a multi-agent AI system that autonomously
+        integrates heterogeneous urban data sources, performs spatial analysis across 12 dimensions, and generates
+        investment-ready recommendations for new parking infrastructure.
+    </p>
+
+    <div class="grid-2">
+        <div class="card">
+            <h3><span class="icon">🎯</span> Research Objectives</h3>
+            <ul>
+                <li>Design a multi-agent architecture for autonomous urban data integration and spatial reasoning</li>
+                <li>Develop a 12-dimension scoring model that quantifies parking site suitability across traffic, demographics, land use, transit access, and policy constraints</li>
+                <li>Create a supply-demand gap analysis framework using real-time data from 8+ municipal and federal sources</li>
+                <li>Build an interactive decision-support tool for urban planners and policymakers</li>
+                <li>Validate the system against real-world parking infrastructure decisions in Phoenix, AZ</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3><span class="icon">💡</span> Key Contributions</h3>
+            <ul>
+                <li><b>Multi-Agent Pipeline</b> — 6 specialized agents (Data Collector, Traffic Analyst, Demand Estimator, Spatial Optimizer, Policy Checker, Investment Advisor) collaborate in an 8-step pipeline</li>
+                <li><b>Real-Time Data Fusion</b> — Integrates OSM, Census ACS, Phoenix Open Data, ADOT AADT, and Valley Metro GTFS in the browser without backend infrastructure</li>
+                <li><b>Explainable AI</b> — Full chain-of-thought reasoning traces for every recommendation, with rejected-site rationale</li>
+                <li><b>What-If Analysis</b> — Monte Carlo ROI simulation, sensitivity tornado charts, and before/after coverage comparison</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- Methodology -->
+<section class="section" id="methodology">
+    <h2 class="section-title"><span class="accent">Methodology</span></h2>
+    <div class="divider"></div>
+
+    <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:16px;">Agent Pipeline Architecture</h3>
+    <div class="pipeline-flow">
+        <div class="pipe-node"><div class="p-icon">📡</div><div class="p-label">Data<br>Collection</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node"><div class="p-icon">🚗</div><div class="p-label">Traffic<br>Analysis</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node"><div class="p-icon">📍</div><div class="p-label">POI &amp;<br>Land Use</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node"><div class="p-icon">🅿️</div><div class="p-label">Supply<br>Mapping</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node"><div class="p-icon">🚇</div><div class="p-label">Transit<br>Access</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node"><div class="p-icon">👥</div><div class="p-label">Demo-<br>graphics</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node"><div class="p-icon">🧮</div><div class="p-label">Spatial<br>Scoring</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node" style="border-color:var(--orange);"><div class="p-icon">📋</div><div class="p-label">Policy<br>Check</div></div>
+        <div class="pipe-arrow">&rarr;</div>
+        <div class="pipe-node" style="border-color:var(--green);"><div class="p-icon">✅</div><div class="p-label">Recom-<br>mend</div></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:24px;">
+        <div class="card">
+            <h3><span class="icon">📐</span> Supply Estimation Model</h3>
+            <p>For each candidate site, we estimate existing parking supply within a <b>3.5 km radius</b> using three complementary data layers:</p>
+            <ul>
+                <li><b>OSM Parking Facilities</b> — All amenity=parking features with capacity tags (when available) or estimated at 150 spaces per facility</li>
+                <li><b>Phoenix Street Meters</b> — Official parking meter locations from the City of Phoenix ArcGIS REST API, each counted as 1 space</li>
+                <li><b>Baseline Estimate</b> — Area-calibrated estimate using known infrastructure density (50-300 spaces per km² depending on zoning)</li>
+                <li>Formula: <code style="color:var(--green);">Supply = OSM_spaces + Meter_count + Baseline × area_factor</code></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3><span class="icon">📈</span> Demand Estimation Model</h3>
+            <p>Parking demand is modeled as a function of traffic volume, population density, commercial activity, and commute patterns:</p>
+            <ul>
+                <li><b>Traffic Component</b> — AADT volume × parking generation rate (5-8% of daily traffic)</li>
+                <li><b>Population Component</b> — Resident density × vehicle ownership rate (from Census B25044)</li>
+                <li><b>Commercial Component</b> — POI density × category-specific parking demand factors</li>
+                <li><b>Drive-Alone Rate</b> — Census B08301 commuting data by tract</li>
+                <li>Formula: <code style="color:var(--green);">Demand = α·Traffic + β·Population + γ·Commercial + δ·Events</code></li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3><span class="icon">🧮</span> Multi-Criteria Scoring (12 Dimensions)</h3>
+            <p>Each candidate site is scored across 5 weighted dimensions (user-adjustable), with 12 underlying sub-criteria:</p>
+            <ul>
+                <li><b>Traffic Score (0-100)</b> — AADT volume, congestion index, intersection density</li>
+                <li><b>Gap Score (0-100)</b> — Supply-demand deficit, utilization rate, overflow frequency</li>
+                <li><b>Growth Score (0-100)</b> — Population growth rate, new building permits, land value appreciation</li>
+                <li><b>POI Score (0-100)</b> — Retail/dining/medical/entertainment density within 1 km</li>
+                <li><b>Transit Score (0-100)</b> — Distance to nearest rail stop, bus route coverage, park-and-ride potential</li>
+            </ul>
+            <p style="margin-top:8px;">Final score: <code style="color:var(--green);">S = w₁·Traffic + w₂·Gap + w₃·Growth + w₄·POI + w₅·Transit</code></p>
+        </div>
+        <div class="card">
+            <h3><span class="icon">📋</span> Policy Compliance Agent</h3>
+            <p>Before final recommendation, each site passes through an automated policy check against:</p>
+            <ul>
+                <li><b>Zoning Compliance</b> — Verifies land use designation permits parking development (C-2, C-3, A-1/A-2 zones)</li>
+                <li><b>Environmental Review</b> — Checks proximity to protected areas, flood zones, and heritage sites</li>
+                <li><b>ADA Accessibility</b> — Ensures minimum accessible parking ratios per ADA standards</li>
+                <li><b>Municipal Code</b> — Validates setback requirements, height limits, and stormwater management</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- Data Sources -->
+<section class="section" id="data">
+    <h2 class="section-title"><span class="accent">Data</span> Sources</h2>
+    <p class="section-sub">The system integrates 8+ heterogeneous data sources, all accessible via public APIs directly from the browser.</p>
+
+    <div class="card">
+        <table class="data-table">
+            <thead>
+                <tr><th>Source</th><th>Data</th><th>API Endpoint</th><th>Access</th><th>Format</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>OpenStreetMap</b></td>
+                    <td>Parking facilities, capacity, type, access, fee, EV charging</td>
+                    <td><code>overpass-api.de/api/interpreter</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td><b>Phoenix Open Data</b></td>
+                    <td>Street parking meters — type, rate, status, ADA, bike rack</td>
+                    <td><code>maps.phoenix.gov/pub/rest/services</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>GeoJSON</td>
+                </tr>
+                <tr>
+                    <td><b>US Census ACS</b></td>
+                    <td>Population (B01003), income (B19013), commuting mode (B08301), vehicles (B25044)</td>
+                    <td><code>api.census.gov/data/2022/acs/acs5</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td><b>ADOT AADT</b></td>
+                    <td>Annual Average Daily Traffic counts by road segment</td>
+                    <td><code>azgeo-open-data-agic.hub.arcgis.com</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>GeoJSON</td>
+                </tr>
+                <tr>
+                    <td><b>Valley Metro GTFS</b></td>
+                    <td>Light rail stops, bus routes, transit coverage areas</td>
+                    <td><code>valleymetro.org/GTFS</code></td>
+                    <td><span class="badge free">Free</span></td>
+                    <td>GTFS</td>
+                </tr>
+                <tr>
+                    <td><b>Phoenix Zoning</b></td>
+                    <td>Land use zones, overlay districts, infill incentive areas</td>
+                    <td><code>maps.phoenix.gov/.../AllZoning/MapServer</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>GeoJSON</td>
+                </tr>
+                <tr>
+                    <td><b>Maricopa Assessor</b></td>
+                    <td>Parcel boundaries, vacant lots, property use codes</td>
+                    <td><code>gis.mcassessor.maricopa.gov</code></td>
+                    <td><span class="badge free">Free</span> <span class="badge cors">CORS</span></td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td><b>Groq LLM API</b></td>
+                    <td>Natural language interaction (Llama 3.3 70B) for agent reasoning</td>
+                    <td><code>api.groq.com/openai/v1/chat/completions</code></td>
+                    <td><span class="badge api">API Key</span> <span class="badge cors">CORS</span></td>
+                    <td>JSON</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Team -->
+<section class="section" id="team">
+    <h2 class="section-title" style="text-align:center;"><span class="accent">Research</span> Team</h2>
+    <p class="section-sub" style="text-align:center;">An interdisciplinary collaboration across AI, urban planning, and data science.</p>
+    <div class="team-grid">
+        <div class="team-card">
+            <div class="tc-avatar">YF</div>
+            <div class="tc-name">Yanjie Fu</div>
+            <div class="tc-role">Principal Investigator</div>
+            <div class="tc-affil">Arizona State University<br>School of Computing and AI</div>
+        </div>
+        <div class="team-card">
+            <div class="tc-avatar" style="background:linear-gradient(135deg, var(--orange), var(--red));">DK</div>
+            <div class="tc-name">David King</div>
+            <div class="tc-role">Co-Investigator</div>
+            <div class="tc-affil">Arizona State University<br>School of Geographical Sciences and Urban Planning</div>
+        </div>
+        <div class="team-card">
+            <div class="tc-avatar" style="background:linear-gradient(135deg, var(--green), var(--accent));">DW</div>
+            <div class="tc-name">Dongjie Wang</div>
+            <div class="tc-role">Co-Investigator</div>
+            <div class="tc-affil">University of Kansas</div>
+        </div>
+        <div class="team-card">
+            <div class="tc-avatar" style="background:linear-gradient(135deg, var(--purple), #ed64a6);">KL</div>
+            <div class="tc-name">Kunpeng Liu</div>
+            <div class="tc-role">Co-Investigator</div>
+            <div class="tc-affil">Clemson University</div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+    A research project by Arizona State University, University of Kansas &amp; Clemson University &middot; <a href="index.html">Launch System Demo &rarr;</a>
+</div>
+
+</body>
+</html>
