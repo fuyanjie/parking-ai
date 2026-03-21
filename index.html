@@ -845,7 +845,7 @@ Or ask any question about the analysis!</div>
     <div class="gap-summary-row fade-in" id="gapSummaryRow"></div>
     <div class="gap-chart-wrap fade-in">
         <h4>Supply vs Demand by Site (Live Data)</h4>
-        <canvas id="gapChart" height="280"></canvas>
+        <div style="position:relative;height:260px;"><canvas id="gapChart"></canvas></div>
     </div>
     <div class="gap-grid fade-in" id="gapGrid"></div>
 </section>
@@ -2902,11 +2902,27 @@ function renderExplainability() {
 function renderGapTable() {
     const wrap = document.getElementById('gapTableWrap');
     if (!wrap) return;
-    const gaps = computeGapAnalysis();
-    if (!gaps || gaps.length === 0) {
-        wrap.innerHTML = '<p style="color:var(--text3);font-size:0.75rem;">Click "Fetch Live Data" to populate the supply-demand evidence table with real data from 6 sources.</p>';
+
+    // If no live data, show a static summary from base site data
+    if (!liveDataLoaded || layers.osmParking.getLayers().length === 0) {
+        wrap.innerHTML = `<table class="gap-table">
+            <thead><tr><th>Site</th><th>Score</th><th>Capacity</th><th>Type</th><th>Priority</th><th>Rationale</th></tr></thead>
+            <tbody>${activeSites.map(s => {
+                const color = s.priority==='high'?'#fc8181':s.priority==='medium'?'#f6ad55':'#68d391';
+                return `<tr>
+                    <td><div class="gt-site"><span class="gt-id" style="background:${color};">${s.id}</span>${s.name.split('—')[0].trim()}</div></td>
+                    <td><b>${s.score}</b>/100</td><td>${s.capacity.toLocaleString()}</td><td>${s.type}</td>
+                    <td style="color:${color};font-weight:700;">${s.priority}</td>
+                    <td><div class="gt-impact">${s.reason}</div></td>
+                </tr>`;
+            }).join('')}</tbody>
+        </table>
+        <p style="color:var(--green);font-size:0.72rem;margin-top:10px;cursor:pointer;" onclick="fetchLiveData()">▶ Click "Fetch Live Data" to see full supply-demand gap analysis with data from 6 live sources</p>`;
         return;
     }
+
+    const gaps = computeGapAnalysis();
+    if (!gaps || gaps.length === 0) return;
 
     const totalSupply = gaps.reduce((a,g) => a+g.supply.total, 0);
     const totalDemand = gaps.reduce((a,g) => a+g.demand.totalDemand, 0);
