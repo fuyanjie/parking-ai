@@ -238,13 +238,16 @@ details.reasoning summary:hover { color: var(--accent); }
 .chat-head h3 { font-size: 0.9rem; color: var(--accent); }
 .chat-head button { background: none; border: none; color: var(--text3); font-size: 1.2rem; cursor: pointer; }
 .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.82rem; line-height: 1.5; }
-.msg.bot { background: var(--bg-card); color: var(--text2); align-self: flex-start; border-bottom-left-radius: 4px; }
-.msg.user { background: #3182ce; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-.msg .msg-model { font-size: 0.62rem; color: var(--text3); margin-top: 4px; font-style: italic; }
-.msg .msg-action { font-size: 0.68rem; color: var(--green); margin-top: 6px; padding: 4px 8px; background: rgba(72,187,120,0.1); border-radius: 4px; border-left: 2px solid var(--green); }
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.82rem; line-height: 1.6; position: relative; animation: msgFadeIn 0.3s ease; }
+@keyframes msgFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.msg.bot { background: linear-gradient(135deg, rgba(17,24,39,0.95), rgba(26,32,50,0.95)); color: var(--text2); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid rgba(99,179,237,0.1); box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+.msg.bot::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), #805ad5, transparent); border-radius: 14px 14px 0 0; opacity: 0.6; }
+.msg.user { background: linear-gradient(135deg, #3182ce, #2b6cb0); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 2px 12px rgba(49,130,206,0.3); }
+.msg .msg-model { font-size: 0.6rem; color: var(--text3); margin-top: 6px; font-style: italic; display: flex; align-items: center; gap: 4px; opacity: 0.7; }
+.msg .msg-model::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
+.msg .msg-action { font-size: 0.7rem; color: var(--green); margin-top: 8px; padding: 6px 10px; background: rgba(72,187,120,0.08); border-radius: 8px; border-left: 3px solid var(--green); font-weight: 500; }
 .msg.thinking { opacity: 0.7; }
-.msg.thinking::after { content: ''; display: inline-block; width: 12px; height: 12px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle; }
+.msg.thinking::after { content: ''; display: inline-block; width: 14px; height: 14px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
 .chat-input input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 0.82rem; outline: none; }
@@ -255,30 +258,48 @@ details.reasoning summary:hover { color: var(--accent); }
 .chat-status .fallback-badge { color: var(--orange); font-weight: 600; }
 
 /* Dashboard embedded chat */
-.dash-chat { border-top: 1px solid var(--border); display: flex; flex-direction: column; height: 260px; background: var(--bg-primary); }
-.dash-chat .dash-chat-head { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--bg-card); flex-shrink: 0; }
-.dash-chat .dash-chat-head h3 { font-size: 0.85rem; color: var(--accent); margin: 0; }
-.dash-chat .dash-chat-head .chat-hints { font-size: 0.65rem; color: var(--text3); }
-.api-key-bar { display: flex; align-items: center; gap: 8px; padding: 6px 20px; background: rgba(99,179,237,0.04); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.api-key-bar label { font-size: 0.68rem; color: var(--text3); white-space: nowrap; font-weight: 600; }
-.api-key-bar input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; color: var(--text); font-size: 0.72rem; font-family: 'Fira Code', monospace; outline: none; max-width: 320px; }
-.api-key-bar input:focus { border-color: var(--accent); }
-.api-key-bar .key-status { font-size: 0.65rem; font-weight: 600; }
-.api-key-bar .key-status.ok { color: var(--green); }
-.api-key-bar .key-status.missing { color: var(--orange); }
-.api-key-bar a { font-size: 0.65rem; color: var(--accent); text-decoration: none; }
-.api-key-bar a:hover { text-decoration: underline; }
+.dash-chat { display: flex; flex-direction: column; height: 380px; background: linear-gradient(180deg, rgba(10,15,30,0.97), rgba(15,22,41,0.97)); position: relative; overflow: hidden; border-radius: 16px; margin: 0 20px 16px; border: 1px solid rgba(99,179,237,0.1); box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(99,179,237,0.05); }
+.dash-chat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), #805ad5, transparent); border-radius: 16px 16px 0 0; }
+.dash-chat .dash-chat-head { padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(99,179,237,0.1); background: linear-gradient(135deg, rgba(17,24,39,0.98), rgba(26,32,50,0.95)); flex-shrink: 0; position: relative; }
+.dash-chat .dash-chat-head::after { content: ''; position: absolute; bottom: -1px; left: 24px; right: 24px; height: 1px; background: linear-gradient(90deg, transparent, rgba(99,179,237,0.15), transparent); }
+.dash-chat .dash-chat-head h3 { font-size: 0.92rem; color: var(--text); margin: 0; font-weight: 700; display: flex; align-items: center; gap: 10px; letter-spacing: 0.02em; }
+.dash-chat .dash-chat-head h3 .chat-icon { width: 28px; height: 28px; border-radius: 10px; background: linear-gradient(135deg, #3182ce, #805ad5); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; box-shadow: 0 2px 10px rgba(49,130,206,0.3); }
+.dash-chat .dash-chat-head .chat-hints { font-size: 0.65rem; color: var(--text3); display: flex; align-items: center; gap: 6px; }
+.dash-chat .dash-chat-head .chat-hints .llm-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; display: inline-block; }
+
+/* API key collapsible bar */
+.api-key-bar { display: flex; align-items: center; gap: 10px; padding: 8px 24px; background: rgba(99,179,237,0.03); border-bottom: 1px solid rgba(99,179,237,0.06); flex-shrink: 0; transition: all 0.3s; }
+.api-key-bar label { font-size: 0.68rem; color: var(--text3); white-space: nowrap; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+.api-key-bar label::before { content: ''; font-size: 0.75rem; }
+.api-key-bar input { flex: 1; background: rgba(17,24,39,0.6); border: 1px solid rgba(99,179,237,0.12); border-radius: 8px; padding: 6px 12px; color: var(--text); font-size: 0.72rem; font-family: 'Fira Code', monospace; outline: none; max-width: 300px; transition: border-color 0.2s, box-shadow 0.2s; }
+.api-key-bar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,179,237,0.08); }
+.api-key-bar .key-status { font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+.api-key-bar .key-status.ok { color: var(--green); background: rgba(72,187,120,0.1); }
+.api-key-bar .key-status.missing { color: var(--orange); background: rgba(237,137,54,0.1); }
+.api-key-bar a { font-size: 0.62rem; color: var(--accent); text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+.api-key-bar a:hover { text-decoration: underline; opacity: 1; }
+
 .dash-chat-body { display: flex; flex: 1; overflow: hidden; }
-.dash-chat-messages { flex: 1; overflow-y: auto; padding: 12px 20px; display: flex; flex-direction: column; gap: 10px; }
-.dash-chat-input { display: flex; gap: 8px; padding: 10px 20px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--bg-secondary); align-items: center; }
-.dash-chat-input input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 0.82rem; outline: none; font-family: 'Inter', sans-serif; }
-.dash-chat-input input:focus { border-color: var(--accent); }
-.dash-chat-input button { background: linear-gradient(135deg, #3182ce, #2b6cb0); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; font-size: 0.82rem; transition: transform 0.1s; }
-.dash-chat-input button:hover { transform: scale(1.02); }
+.dash-chat-messages { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+.dash-chat-messages::-webkit-scrollbar { width: 4px; }
+.dash-chat-messages::-webkit-scrollbar-track { background: transparent; }
+.dash-chat-messages::-webkit-scrollbar-thumb { background: rgba(99,179,237,0.2); border-radius: 4px; }
+.dash-chat-messages::-webkit-scrollbar-thumb:hover { background: rgba(99,179,237,0.4); }
+
+/* Input area */
+.dash-chat-input { display: flex; gap: 10px; padding: 14px 24px; border-top: 1px solid rgba(99,179,237,0.08); flex-shrink: 0; background: linear-gradient(180deg, rgba(15,22,41,0.95), rgba(10,15,30,0.98)); align-items: center; }
+.dash-chat-input input { flex: 1; background: rgba(17,24,39,0.7); border: 1px solid rgba(99,179,237,0.12); border-radius: 12px; padding: 12px 18px; color: var(--text); font-size: 0.82rem; outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.2s, box-shadow 0.2s; }
+.dash-chat-input input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,179,237,0.08); }
+.dash-chat-input input::placeholder { color: var(--text3); opacity: 0.6; }
+.dash-chat-input button { background: linear-gradient(135deg, #3182ce, #805ad5); color: white; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 600; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; box-shadow: 0 2px 12px rgba(49,130,206,0.25); letter-spacing: 0.02em; }
+.dash-chat-input button:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(49,130,206,0.35); }
+.dash-chat-input button:active { transform: translateY(0); }
 .dash-chat-input .chat-status-inline { font-size: 0.62rem; color: var(--text3); white-space: nowrap; }
-.dash-chat-suggestions { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 20px 4px; flex-shrink: 0; }
-.chat-suggestion { font-size: 0.68rem; padding: 4px 10px; border-radius: 12px; background: rgba(99,179,237,0.08); border: 1px solid rgba(99,179,237,0.15); color: var(--accent); cursor: pointer; transition: all 0.2s; }
-.chat-suggestion:hover { background: rgba(99,179,237,0.15); border-color: var(--accent); }
+
+/* Suggestion chips */
+.dash-chat-suggestions { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 24px 6px; flex-shrink: 0; }
+.chat-suggestion { font-size: 0.68rem; padding: 6px 14px; border-radius: 20px; background: rgba(99,179,237,0.06); border: 1px solid rgba(99,179,237,0.12); color: var(--accent); cursor: pointer; transition: all 0.25s; font-weight: 500; }
+.chat-suggestion:hover { background: linear-gradient(135deg, rgba(49,130,206,0.15), rgba(128,90,213,0.1)); border-color: rgba(99,179,237,0.3); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(49,130,206,0.15); }
 
 /* ========== 11. LIVE DATA ========== */
 .live-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; background: rgba(72,187,120,0.15); color: var(--green); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -385,6 +406,35 @@ details.reasoning summary:hover { color: var(--accent); }
         </div>
     </div>
     <div id="liveStatsBar" class="live-stats-bar" style="display:none;"></div>
+    <!-- Embedded Chat in Dashboard (top position) -->
+    <div class="dash-chat" id="dashChat">
+        <div class="dash-chat-head">
+            <h3><span class="chat-icon">🤖</span> Ask the Agent</h3>
+            <span class="chat-hints"><span class="llm-dot"></span> AI-powered &middot; Natural language</span>
+        </div>
+        <div class="api-key-bar" id="apiKeyBar">
+            <label>Groq API Key:</label>
+            <input type="password" id="groqKeyInput" placeholder="gsk_..." oninput="onApiKeyChange()" />
+            <span class="key-status missing" id="keyStatus">No key</span>
+            <a href="https://console.groq.com" target="_blank">Get free key &rarr;</a>
+        </div>
+        <div class="dash-chat-suggestions" id="chatSuggestions">
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Why did Downtown score highest?</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Set traffic weight to 40%</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Compare top 3 sites</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Exclude flood zones</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">Set budget to $80M</span>
+            <span class="chat-suggestion" onclick="useSuggestion(this)">What data sources are used?</span>
+        </div>
+        <div class="dash-chat-messages" id="dashChatMessages">
+            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent, powered by <strong>Llama 3.3 70B</strong>. Ask me anything about the analysis, or adjust parameters via natural language — e.g., <em>"set traffic weight to 40%"</em> or <em>"exclude flood zones"</em>.</div>
+        </div>
+        <div class="dash-chat-input">
+            <input type="text" id="dashChatInput" placeholder="Ask about analysis or adjust parameters..." onkeydown="if(event.key==='Enter')sendDashChat()">
+            <button onclick="sendDashChat()">Send</button>
+            <span class="chat-status-inline" id="dashChatStatus"></span>
+        </div>
+    </div>
     <div class="dash-body">
         <!-- LEFT: Pipeline -->
         <div class="sidebar" id="sidebarSteps"></div>
@@ -463,35 +513,6 @@ details.reasoning summary:hover { color: var(--accent); }
                 <div class="panel-label">Scenario History</div>
                 <div class="scenario-log" id="scenarioLog"></div>
             </div>
-        </div>
-    </div>
-    <!-- Embedded Chat in Dashboard -->
-    <div class="dash-chat" id="dashChat">
-        <div class="dash-chat-head">
-            <h3>Ask the Agent</h3>
-            <span class="chat-hints">AI-powered analysis chat &middot; Adjust parameters via natural language</span>
-        </div>
-        <div class="api-key-bar" id="apiKeyBar">
-            <label>Groq API Key:</label>
-            <input type="password" id="groqKeyInput" placeholder="gsk_..." oninput="onApiKeyChange()" />
-            <span class="key-status missing" id="keyStatus">No key</span>
-            <a href="https://console.groq.com" target="_blank">Get free key &rarr;</a>
-        </div>
-        <div class="dash-chat-suggestions" id="chatSuggestions">
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Why did Downtown score highest?</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Set traffic weight to 40%</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Compare top 3 sites</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Exclude flood zones</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">Set budget to $80M</span>
-            <span class="chat-suggestion" onclick="useSuggestion(this)">What data sources are used?</span>
-        </div>
-        <div class="dash-chat-messages" id="dashChatMessages">
-            <div class="msg bot">Hello! I'm the Phoenix Parking AI Agent, powered by <strong>Llama 3.3 70B</strong>. Ask me anything about the analysis, or adjust parameters via natural language — e.g., <em>"set traffic weight to 40%"</em> or <em>"exclude flood zones"</em>.</div>
-        </div>
-        <div class="dash-chat-input">
-            <input type="text" id="dashChatInput" placeholder="Ask about analysis or adjust parameters..." onkeydown="if(event.key==='Enter')sendDashChat()">
-            <button onclick="sendDashChat()">Send</button>
-            <span class="chat-status-inline" id="dashChatStatus"></span>
         </div>
     </div>
 </section>
