@@ -58,17 +58,94 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary
 .fade-in.visible { opacity: 1; transform: translateY(0); }
 
 /* ========== 5. ARCHITECTURE ========== */
-.arch-grid { display: flex; flex-direction: column; gap: 32px; align-items: center; }
-.arch-row { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; }
-.arch-node { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 16px; width: 155px; text-align: center; transition: border-color 0.3s, transform 0.3s; }
-.arch-node:hover { border-color: var(--accent); transform: translateY(-4px); }
-.arch-node .icon { font-size: 2rem; margin-bottom: 8px; }
-.arch-node .name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
-.arch-node .desc { font-size: 0.68rem; color: var(--text3); margin-top: 4px; }
-.arch-arrow { color: var(--text3); font-size: 1.5rem; }
-.arch-arrow.down { transform: rotate(90deg); }
-.arch-sources { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-.source-tag { font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; background: rgba(99,179,237,0.1); color: var(--accent); }
+.arch-container { position: relative; max-width: 1100px; margin: 0 auto; }
+
+/* Data Sources Row */
+.arch-data-sources { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 32px; }
+.data-src { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(99,179,237,0.06); border: 1px solid rgba(99,179,237,0.15); border-radius: 8px; font-size: 0.72rem; color: var(--text2); transition: all 0.3s; }
+.data-src:hover { border-color: var(--accent); color: var(--accent); background: rgba(99,179,237,0.1); transform: translateY(-2px); }
+.data-src .ds-icon { font-size: 0.9rem; }
+.data-src .ds-live { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2s infinite; }
+
+/* Flow connector */
+.arch-flow-arrow { text-align: center; padding: 8px 0; }
+.arch-flow-arrow svg { width: 40px; height: 28px; }
+.arch-flow-arrow .flow-label { font-size: 0.62rem; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+
+/* Agent Cards Row */
+.arch-agents { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 8px; }
+.arch-agent { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 12px 14px; text-align: center; transition: all 0.3s; position: relative; overflow: hidden; }
+.arch-agent::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+.arch-agent:nth-child(1)::before { background: linear-gradient(90deg, #fc8181, #f56565); }
+.arch-agent:nth-child(2)::before { background: linear-gradient(90deg, #9f7aea, #805ad5); }
+.arch-agent:nth-child(3)::before { background: linear-gradient(90deg, #63b3ed, #4299e1); }
+.arch-agent:nth-child(4)::before { background: linear-gradient(90deg, #48bb78, #38a169); }
+.arch-agent:nth-child(5)::before { background: linear-gradient(90deg, #ed8936, #dd6b20); }
+.arch-agent:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 12px 40px rgba(99,179,237,0.12); }
+.arch-agent .ag-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.arch-agent .ag-name { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.arch-agent .ag-desc { font-size: 0.65rem; color: var(--text3); line-height: 1.5; }
+.arch-agent .ag-tags { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 8px; }
+.arch-agent .ag-tag { font-size: 0.58rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text3); border: 1px solid rgba(255,255,255,0.06); }
+
+/* Orchestrator Row */
+.arch-orchestrator { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0; align-items: center; margin-bottom: 8px; }
+.arch-orch-node { background: var(--bg-card); border-radius: 14px; padding: 20px 16px; text-align: center; position: relative; overflow: hidden; transition: all 0.3s; }
+.arch-orch-node:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(99,179,237,0.1); }
+.arch-orch-node.orchestrator { border: 1.5px solid var(--accent); background: linear-gradient(135deg, rgba(99,179,237,0.08), rgba(99,179,237,0.02)); }
+.arch-orch-node.engine { border: 1.5px solid var(--purple); background: linear-gradient(135deg, rgba(159,122,234,0.08), rgba(159,122,234,0.02)); }
+.arch-orch-node.output { border: 1.5px solid var(--green); background: linear-gradient(135deg, rgba(72,187,120,0.08), rgba(72,187,120,0.02)); }
+.arch-orch-node .ao-icon { font-size: 1.6rem; margin-bottom: 6px; }
+.arch-orch-node .ao-name { font-size: 0.88rem; font-weight: 700; }
+.arch-orch-node .ao-desc { font-size: 0.68rem; color: var(--text3); margin-top: 4px; }
+.arch-orch-node .ao-sub { font-size: 0.6rem; color: var(--text3); margin-top: 6px; font-family: 'Fira Code', monospace; opacity: 0.7; }
+.arch-connect { display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+.arch-connect svg { width: 48px; height: 20px; }
+
+/* Output Row */
+.arch-outputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.arch-out { background: rgba(72,187,120,0.04); border: 1px solid rgba(72,187,120,0.15); border-radius: 10px; padding: 14px 10px; text-align: center; transition: all 0.3s; }
+.arch-out:hover { border-color: var(--green); transform: translateY(-3px); }
+.arch-out .ao-icon { font-size: 1.3rem; margin-bottom: 4px; }
+.arch-out .ao-label { font-size: 0.72rem; font-weight: 600; color: var(--text); }
+.arch-out .ao-val { font-size: 0.62rem; color: var(--text3); margin-top: 2px; }
+
+/* LLM Chat bar */
+.arch-llm-bar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px 20px; background: linear-gradient(90deg, rgba(159,122,234,0.08), rgba(99,179,237,0.08), rgba(159,122,234,0.08)); background-size: 200% 100%; animation: shimmerBg 4s ease infinite; border: 1px solid rgba(159,122,234,0.25); border-radius: 10px; margin-top: 8px; }
+@keyframes shimmerBg { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+.arch-llm-bar .llm-icon { font-size: 1.2rem; }
+.arch-llm-bar .llm-text { font-size: 0.72rem; color: var(--text2); }
+.arch-llm-bar .llm-model { font-size: 0.68rem; font-family: 'Fira Code', monospace; color: var(--purple); background: rgba(159,122,234,0.15); padding: 3px 10px; border-radius: 4px; border: 1px solid rgba(159,122,234,0.2); }
+
+/* Agent card glow on hover */
+.arch-agent::after { content: ''; position: absolute; inset: -1px; border-radius: 14px; opacity: 0; transition: opacity 0.4s; z-index: -1; }
+.arch-agent:nth-child(1)::after { background: radial-gradient(circle at 50% 0%, rgba(252,129,129,0.2), transparent 70%); }
+.arch-agent:nth-child(2)::after { background: radial-gradient(circle at 50% 0%, rgba(159,122,234,0.2), transparent 70%); }
+.arch-agent:nth-child(3)::after { background: radial-gradient(circle at 50% 0%, rgba(99,179,237,0.2), transparent 70%); }
+.arch-agent:nth-child(4)::after { background: radial-gradient(circle at 50% 0%, rgba(72,187,120,0.2), transparent 70%); }
+.arch-agent:nth-child(5)::after { background: radial-gradient(circle at 50% 0%, rgba(237,137,54,0.2), transparent 70%); }
+.arch-agent:hover::after { opacity: 1; }
+
+/* Staggered entrance animations */
+.arch-container .arch-data-sources { animation: fadeSlideUp 0.6s ease both; animation-delay: 0.1s; }
+.arch-container .arch-agents { animation: fadeSlideUp 0.6s ease both; animation-delay: 0.3s; }
+.arch-container .arch-orchestrator { animation: fadeSlideUp 0.6s ease both; animation-delay: 0.5s; }
+.arch-container .arch-outputs { animation: fadeSlideUp 0.6s ease both; animation-delay: 0.7s; }
+.arch-container .arch-llm-bar { animation: fadeSlideUp 0.6s ease both; animation-delay: 0.9s; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Orchestrator node pulse ring */
+.arch-orch-node.orchestrator::after { content: ''; position: absolute; inset: -2px; border-radius: 14px; border: 1px solid var(--accent); opacity: 0; animation: orchPulse 3s ease infinite; }
+.arch-orch-node.engine::after { content: ''; position: absolute; inset: -2px; border-radius: 14px; border: 1px solid var(--purple); opacity: 0; animation: orchPulse 3s ease 1s infinite; }
+.arch-orch-node.output::after { content: ''; position: absolute; inset: -2px; border-radius: 14px; border: 1px solid var(--green); opacity: 0; animation: orchPulse 3s ease 2s infinite; }
+@keyframes orchPulse { 0%{opacity:0;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.02)} 100%{opacity:0;transform:scale(1.05)} }
+
+@media (max-width: 768px) {
+    .arch-agents { grid-template-columns: repeat(2, 1fr); }
+    .arch-orchestrator { grid-template-columns: 1fr; gap: 8px; }
+    .arch-connect { transform: rotate(90deg); padding: 4px 0; }
+    .arch-outputs { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* ========== 6. DASHBOARD ========== */
 .dashboard { background: var(--bg-secondary); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0; max-width: none; }
@@ -567,25 +644,117 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 <!-- ========== ARCHITECTURE ========== -->
 <section class="section" id="arch-section">
     <h2 class="section-title fade-in">Multi-Agent System Architecture</h2>
-    <p class="section-sub fade-in">An orchestrated pipeline of specialized AI agents that autonomously collect, process, analyze, and recommend optimal parking infrastructure investments.</p>
-    <div class="arch-grid fade-in">
-        <div class="arch-sources">
-            <span class="source-tag">City of Phoenix Open Data</span><span class="source-tag">Census / ACS</span><span class="source-tag">Google Places API</span><span class="source-tag">OpenStreetMap</span><span class="source-tag">Yelp API</span><span class="source-tag">Valley Metro GTFS</span><span class="source-tag">MAG Traffic Counts</span><span class="source-tag">FEMA Flood Maps</span><span class="source-tag">Parking Violations DB</span>
+    <p class="section-sub fade-in">7 specialized AI agents orchestrated in a real-time pipeline — ingesting 9 data sources, scoring 12 spatial dimensions, and generating investment-ready recommendations in under 60 seconds.</p>
+    <div class="arch-container fade-in">
+
+        <!-- Layer 1: Data Sources -->
+        <div class="arch-data-sources">
+            <div class="data-src"><span class="ds-icon">🏛️</span> Phoenix Open Data <span class="ds-live"></span></div>
+            <div class="data-src"><span class="ds-icon">📊</span> Census ACS 2022</div>
+            <div class="data-src"><span class="ds-icon">🗺️</span> OpenStreetMap <span class="ds-live"></span></div>
+            <div class="data-src"><span class="ds-icon">🚦</span> ADOT AADT</div>
+            <div class="data-src"><span class="ds-icon">🚇</span> Valley Metro GTFS</div>
+            <div class="data-src"><span class="ds-icon">📍</span> Google Places</div>
+            <div class="data-src"><span class="ds-icon">🏗️</span> Zoning / Parcels</div>
+            <div class="data-src"><span class="ds-icon">🌊</span> FEMA Flood Maps</div>
+            <div class="data-src"><span class="ds-icon">🅿️</span> Parking Meters DB <span class="ds-live"></span></div>
         </div>
-        <div class="arch-row">
-            <div class="arch-node"><div class="icon">🚗</div><div class="name">Traffic Agent</div><div class="desc">Volume, congestion, peak hours</div></div>
-            <div class="arch-node"><div class="icon">📍</div><div class="name">POI Agent</div><div class="desc">Business density, event venues</div></div>
-            <div class="arch-node"><div class="icon">🅿️</div><div class="name">Parking Agent</div><div class="desc">Existing inventory, utilization</div></div>
-            <div class="arch-node"><div class="icon">🚌</div><div class="name">Transit Agent</div><div class="desc">Coverage, ridership, gaps</div></div>
-            <div class="arch-node"><div class="icon">👥</div><div class="name">Demographics Agent</div><div class="desc">Population, growth, permits</div></div>
+
+        <!-- Flow Arrow: Ingest -->
+        <div class="arch-flow-arrow">
+            <svg viewBox="0 0 40 28"><path d="M20 0 L20 18 M12 12 L20 20 L28 12" stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            <div class="flow-label">Ingest &amp; Normalize</div>
         </div>
-        <div class="arch-row">
-            <div class="arch-node" style="width:200px; border-color: var(--accent);"><div class="icon">🎯</div><div class="name">Orchestrator Agent</div><div class="desc">Coordinates pipeline, manages state</div></div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node" style="width:200px; border-color: var(--purple);"><div class="icon">🧠</div><div class="name">Analysis Engine</div><div class="desc">Spatial scoring, capacity optimization</div></div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node" style="width:200px; border-color: var(--green);"><div class="icon">📊</div><div class="name">Recommendation Agent</div><div class="desc">Site selection, ROI, final report</div></div>
+
+        <!-- Layer 2: Specialized Agents -->
+        <div class="arch-agents">
+            <div class="arch-agent">
+                <div class="ag-icon">🚗</div>
+                <div class="ag-name">Traffic Agent</div>
+                <div class="ag-desc">AADT volumes, congestion zones, peak-hour patterns, intersection counts</div>
+                <div class="ag-tags"><span class="ag-tag">2,847 nodes</span><span class="ag-tag">real-time</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">📍</div>
+                <div class="ag-name">POI Agent</div>
+                <div class="ag-desc">Business density scoring, retail/dining/medical/entertainment classification</div>
+                <div class="ag-tags"><span class="ag-tag">18K+ POIs</span><span class="ag-tag">4 categories</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">🅿️</div>
+                <div class="ag-name">Parking Agent</div>
+                <div class="ag-desc">Supply inventory, utilization rates, capacity gaps, meter density analysis</div>
+                <div class="ag-tags"><span class="ag-tag">1,203 lots</span><span class="ag-tag">OSM + PHX</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">🚇</div>
+                <div class="ag-name">Transit Agent</div>
+                <div class="ag-desc">Light rail proximity, bus coverage, commute mode share, transit deserts</div>
+                <div class="ag-tags"><span class="ag-tag">35 stops</span><span class="ag-tag">58 routes</span></div>
+            </div>
+            <div class="arch-agent">
+                <div class="ag-icon">👥</div>
+                <div class="ag-name">Demographics Agent</div>
+                <div class="ag-desc">Population density, growth rate, income, vehicle ownership, commute patterns</div>
+                <div class="ag-tags"><span class="ag-tag">993 tracts</span><span class="ag-tag">Census</span></div>
+            </div>
         </div>
+
+        <!-- Flow Arrow: Process -->
+        <div class="arch-flow-arrow">
+            <svg viewBox="0 0 40 28"><path d="M20 0 L20 18 M12 12 L20 20 L28 12" stroke="var(--purple)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            <div class="flow-label">Multi-Criteria Fusion</div>
+        </div>
+
+        <!-- Layer 3: Orchestrator → Engine → Output -->
+        <div class="arch-orchestrator">
+            <div class="arch-orch-node orchestrator">
+                <div class="ao-icon">🎯</div>
+                <div class="ao-name" style="color:var(--accent);">Orchestrator</div>
+                <div class="ao-desc">Pipeline sequencing, state management, agent coordination</div>
+                <div class="ao-sub">7-step DAG execution</div>
+            </div>
+            <div class="arch-connect">
+                <svg viewBox="0 0 48 20"><path d="M0 10 L38 10 M32 4 L40 10 L32 16" stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            </div>
+            <div class="arch-orch-node engine">
+                <div class="ao-icon">🧠</div>
+                <div class="ao-name" style="color:var(--purple);">Analysis Engine</div>
+                <div class="ao-desc">Weighted spatial scoring, supply-demand gap, Monte Carlo simulation</div>
+                <div class="ao-sub">12 dimensions × 5 weights</div>
+            </div>
+            <div class="arch-connect">
+                <svg viewBox="0 0 48 20"><path d="M0 10 L38 10 M32 4 L40 10 L32 16" stroke="var(--purple)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            </div>
+            <div class="arch-orch-node output">
+                <div class="ao-icon">📊</div>
+                <div class="ao-name" style="color:var(--green);">Recommendation</div>
+                <div class="ao-desc">Ranked site selection, ROI projection, capacity optimization</div>
+                <div class="ao-sub">Top-K with budget constraint</div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow: Deliver -->
+        <div class="arch-flow-arrow">
+            <svg viewBox="0 0 40 28"><path d="M20 0 L20 18 M12 12 L20 20 L28 12" stroke="var(--green)" stroke-width="2" fill="none" opacity="0.5"/></svg>
+            <div class="flow-label">Deliverables</div>
+        </div>
+
+        <!-- Layer 4: Outputs -->
+        <div class="arch-outputs">
+            <div class="arch-out"><div class="ao-icon">🗺️</div><div class="ao-label">Interactive Map</div><div class="ao-val">3D markers, heatmaps, layers</div></div>
+            <div class="arch-out"><div class="ao-icon">📈</div><div class="ao-label">Analytics Suite</div><div class="ao-val">7 charts, Monte Carlo, sensitivity</div></div>
+            <div class="arch-out"><div class="ao-icon">🔍</div><div class="ao-label">Explainability</div><div class="ao-val">CoT reasoning, rejected sites</div></div>
+            <div class="arch-out"><div class="ao-icon">💬</div><div class="ao-label">LLM Chat Agent</div><div class="ao-val">Natural language control</div></div>
+        </div>
+
+        <!-- LLM Bar -->
+        <div class="arch-llm-bar">
+            <span class="llm-icon">🤖</span>
+            <span class="llm-text">Conversational AI layer — understands natural language and controls the entire pipeline</span>
+            <span class="llm-model">Llama 3.3 70B via Groq</span>
+        </div>
+
     </div>
 </section>
 
