@@ -1261,6 +1261,20 @@ function animateMarkersSequential(layerGroup, markers, delay) {
     });
 }
 
+// Helper: fit map to a set of [lat,lng] points with padding
+function fitMapToPoints(points, padRatio = 0.15) {
+    if (!points || points.length === 0) return;
+    const lats = points.map(p => Array.isArray(p) ? p[0] : p.lat);
+    const lngs = points.map(p => Array.isArray(p) ? p[1] : p.lng);
+    const latMin = Math.min(...lats), latMax = Math.max(...lats);
+    const lngMin = Math.min(...lngs), lngMax = Math.max(...lngs);
+    const latPad = (latMax - latMin) * padRatio || 0.02;
+    const lngPad = (lngMax - lngMin) * padRatio || 0.02;
+    map.flyToBounds([[latMin - latPad, lngMin - lngPad], [latMax + latPad, lngMax + lngPad]], {
+        duration: 1.2, easeLinearity: 0.25, maxZoom: 14
+    });
+}
+
 // Step 0: Traffic — heatmap circles grow from center with pulsing
 async function animateTrafficStep() {
     pipelineVis.clearLayers();
@@ -1270,6 +1284,7 @@ async function animateTrafficStep() {
     const trafficPts = [[33.448,-112.074,3000],[33.510,-112.074,2500],[33.465,-112.153,1800],[33.431,-111.943,2200],
         [33.494,-111.926,2000],[33.678,-111.998,1500],[33.415,-111.832,1400],[33.306,-111.841,1200],
         [33.530,-112.050,1600],[33.485,-112.110,1300],[33.445,-112.020,1900],[33.470,-111.980,1700]];
+    fitMapToPoints(trafficPts.map(p => [p[0], p[1]]));
 
     let count = 0;
     for (const [la,ln,v] of trafficPts) {
@@ -1307,6 +1322,7 @@ async function animatePOIStep() {
         {lat:33.485,lng:-112.005,type:'medical',color:'#48bb78'},{lat:33.460,lng:-112.040,type:'entertainment',color:'#f56565'},
         {lat:33.500,lng:-112.060,type:'retail',color:'#9f7aea'},{lat:33.520,lng:-112.080,type:'dining',color:'#ed8936'},
     ];
+    fitMapToPoints(pois);
     let poiCount = 0;
     const categories = {retail:0,dining:0,medical:0,entertainment:0};
     for (const p of pois) {
@@ -1336,6 +1352,7 @@ async function animateParkingStep() {
     const parkingPts = [[33.4455,-112.068,94],[33.451,-112.077,88],[33.449,-112.065,91],[33.505,-112.072,81],
         [33.512,-112.076,78],[33.435,-111.940,85],[33.428,-111.945,82],[33.490,-111.930,92],
         [33.496,-111.922,72],[33.675,-112.000,68],[33.413,-111.835,62],[33.310,-111.845,48]];
+    fitMapToPoints(parkingPts.map(p => [p[0], p[1]]));
 
     let count = 0, totalSpaces = 0;
     for (const [la,ln,util] of parkingPts) {
@@ -1365,6 +1382,7 @@ async function animateTransitStep() {
     const railStops = [[33.408,-111.834],[33.415,-111.832],[33.426,-111.917],[33.431,-111.943],[33.435,-111.964],
         [33.440,-111.990],[33.447,-112.020],[33.448,-112.050],[33.448,-112.074],[33.460,-112.074],
         [33.480,-112.074],[33.500,-112.074],[33.509,-112.074],[33.520,-112.074],[33.535,-112.074]];
+    fitMapToPoints(railStops);
 
     // Draw rail line progressively
     for (let i = 1; i < railStops.length; i++) {
@@ -1389,6 +1407,9 @@ async function animateTransitStep() {
 async function animateDemographicsStep() {
     pipelineVis.clearLayers();
     showAnalysisBadge('Loading Demographics', 'Querying Census ACS...');
+
+    // Zoom into downtown core for demographics
+    map.flyTo([33.4484, -112.074], 11, { duration: 1.2, easeLinearity: 0.25 });
 
     // Generate population density dots radiating outward
     const center = [33.4484, -112.074];
@@ -1422,6 +1443,9 @@ async function animateDemographicsStep() {
 async function animateAnalysisStep() {
     pipelineVis.clearLayers();
     showAnalysisBadge('Spatial Analysis', 'Computing multi-criteria scores...');
+
+    // Zoom out to show full scoring grid
+    map.flyToBounds([[33.28, -112.25], [33.70, -111.80]], { duration: 1.2, easeLinearity: 0.25, maxZoom: 11 });
 
     // Create a grid of scoring cells
     const gridSize = 0.04;
@@ -1465,8 +1489,12 @@ async function animateRecommendStep() {
     pipelineVis.clearLayers();
     showAnalysisBadge('Generating Recommendations', 'Selecting optimal sites...');
 
+    fitMapToPoints(activeSites);
+
     for (let i = 0; i < activeSites.length; i++) {
         const site = activeSites[i];
+        // Fly to each site as it's selected
+        map.flyTo([site.lat, site.lng], 13, { duration: 0.8, easeLinearity: 0.3 });
         await sleep(350);
 
         // Ripple effect at location
@@ -1563,6 +1591,8 @@ async function runPipeline() {
     currentStep = agentSteps.length;
     renderPipeline();
     hideAnalysisBadge();
+    // Zoom out to show all recommended sites
+    fitMapToPoints(activeSites, 0.2);
     document.getElementById('statusText').innerHTML = '<span style="color:var(--green);font-weight:700;">Complete!</span> ' + activeSites.length + ' optimal sites identified';
 
     // Fade out pipeline vis, show real recommendation layer
