@@ -143,6 +143,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 .preset-btn .pi { font-size: 1rem; flex-shrink: 0; }
 .preset-btn .pname { font-weight: 600; font-size: 0.73rem; transition: color 0.2s; }
 .preset-btn .pdesc { font-size: 0.65rem; color: var(--text3); transition: color 0.2s; }
+.preset-btn.flash { animation: presetFlash 1.5s ease; }
+@keyframes presetFlash { 0%,100% { box-shadow: 0 0 12px rgba(49,130,206,0.2); } 25%,75% { box-shadow: 0 0 24px rgba(49,130,206,0.6), 0 0 48px rgba(128,90,213,0.3); } 50% { box-shadow: 0 0 32px rgba(49,130,206,0.8), 0 0 64px rgba(128,90,213,0.4); } }
 
 /* Weight distribution bar */
 .weight-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
@@ -1720,6 +1722,13 @@ function applyParameterActions(actions) {
             descriptions.push(`${action.name}: ${action.enable ? 'ON' : 'OFF'}`);
         } else if (action.type === 'preset') {
             applyPreset(action.preset);
+            // Scroll preset into view and flash it
+            const presetEl = document.querySelector(`[data-preset="${action.preset}"]`);
+            if (presetEl) {
+                presetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                presetEl.classList.add('flash');
+                setTimeout(() => presetEl.classList.remove('flash'), 1500);
+            }
             descriptions.push(`Applied ${action.name}`);
         } else if (action.type === 'run') {
             runCurrentMode();
@@ -1767,6 +1776,9 @@ function applyParameterActions(actions) {
     if (hasWeightOrConstraint && !actions.some(a => a.type === 'preset' || a.type === 'run')) {
         recalculate();
         addScenarioEntry('Chat: ' + descriptions.join(', '));
+        // Scroll the right panel into view so user sees changes
+        const rightPanel = document.querySelector('.right-panel');
+        if (rightPanel) rightPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     return descriptions;
 }
