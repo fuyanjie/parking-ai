@@ -3522,6 +3522,75 @@ Formula: FinalScore = T×w_traffic + G×w_gap + Gr×w_growth + P×w_poi + Tr×w_
 
 **Competitor Analysis:** 8 known operators (LAZ, SP+, ABM, ParkJockey) with locations, spaces, and types.
 
+=== POLICY STRESS TESTING METHODOLOGY ===
+
+**Overview:** The Policy Stress Testing module evaluates how different parking planning strategies perform under various external shocks. It uses a location-aware simulation engine with zone-specific modifiers, compound pressure scenarios, and soft penalty mechanisms.
+
+**8 Policy Scenarios (each defines a unique strategy):**
+1. Status Quo (Baseline) — Weights: T25/G25/Gr20/P15/Tr15, Budget $150M. No toggles. Business-as-usual.
+2. Transit-First — Weights: T10/G15/Gr10/P10/Tr55, Budget $150M, transit=ON. Prioritizes park-and-ride, reduces downtown minimums by 30%.
+3. EV Infrastructure Mandate — Weights: T20/G30/Gr25/P10/Tr15, Budget $130M (-18% cost increase), future=ON. Requires 25% EV charging spaces.
+4. Climate Resilience — Weights: T20/G25/Gr20/P15/Tr20, Budget $120M (-22% cost), flood=ON. Excludes flood zones, requires permeable surfaces + shade.
+5. Suburban Expansion — Weights: T15/G15/Gr45/P10/Tr15, Budget $180M, future=ON. Focuses on high-growth corridors.
+6. Pure Demand-Driven — Weights: T40/G35/Gr5/P15/Tr5, Budget $150M. Strict efficiency, no equity adjustments.
+7. Budget Austerity — Weights: T20/G35/Gr10/P15/Tr20, Budget $60M, flood=ON. Surface lots only, no garages.
+8. Equity-Focused — Weights: T10/G30/Gr15/P10/Tr35, Budget $150M, transit+future=ON. Prioritizes underserved communities and transit deserts.
+
+**How simulatePolicy() works step-by-step:**
+1. Normalize weights → each weight divided by sum so they total 1.0
+2. Filter sites: if future=OFF → exclude hidden/future sites; if flood=ON → apply soft penalty (gap×0.7, cost×1.15) instead of hard exclude
+3. Apply pressure modifier if present (location-aware zone-specific multipliers)
+4. Compute score: score = T×w_traffic + G×w_gap + Gr×w_growth + P×w_poi + Tr×w_transit
+5. Sort sites by score descending
+6. Greedy selection under budget: add sites until cumulative cost exceeds budget cap
+7. Return metrics: count, totalCap, avgScore, totalCost, avgROI, highPriority, costPerSpace, zoneBreakdown
+
+**Location-Aware Zone Classification:**
+Each site is classified into a geographic zone based on lat/lng and sub-scores:
+- Downtown (lat 33.43-33.46, lng -112.09 to -112.05, transit>70): dense urban core
+- Midtown (lat 33.46-33.52, transit>50): secondary urban ring
+- Transit-Adjacent (transit score>65): near rail/bus corridors
+- Suburban-Growth (growth score>70): rapid expansion areas
+- Outer: everything else
+
+**Zone-Specific Pressure Modifiers (not uniform!):**
+Different zones react differently to the same pressure:
+- Population Boom: downtown growth×1.15, suburban growth×1.45 (suburbs grow faster)
+- Remote Work: downtown traffic×0.55 (45% drop), suburban traffic×0.85 (15% drop)
+- Gas Spike: transit-adjacent transit×1.5, outer transit×1.15 (transit areas benefit most)
+- Recession: downtown poi×0.60, suburban poi×0.80 (downtown commercial hit harder)
+- Extreme Heat: outer cost×1.25, downtown cost×1.10 (shade costs more in open areas)
+
+**Individual Pressure Scenarios (7):**
+1. Population Boom (+25%): growth×1.3, gap×1.2 (more people = more demand)
+2. Remote Work Surge (40%): traffic×0.7, gap×0.75, poi×0.85 (fewer commuters)
+3. Gas Price Spike ($6/gal): transit×1.4, traffic×0.85 (shift to public transit)
+4. Economic Recession: growth×0.5, poi×0.7, cost×0.9 (economy shrinks, land cheaper)
+5. Extreme Heat (+5°F avg): gap×1.1, cost×1.15 (shade structures, heat mitigation)
+6. EV Transition (30% EV): gap×0.9, cost×1.12 (charging infra cost, less fuel demand)
+7. Autonomous Vehicles (15%): traffic×0.8, gap×0.85, transit×0.9 (AVs reduce parking need)
+
+**Compound Pressure Scenarios (3):**
+These combine multiple individual pressures simultaneously:
+1. Green Future = Gas Spike + EV Transition + Extreme Heat (converging climate pressures)
+2. Tech Disruption = Remote Work + Autonomous Vehicles (technology reshapes mobility)
+3. Growth Under Heat = Population Boom + Extreme Heat (maximum infrastructure stress)
+Compound application: each component modifier is applied sequentially to the site, so effects multiply.
+
+**Resilience Scoring:**
+For each policy, measure avg|Δscore| across ALL pressure scenarios (individual + compound).
+- Lowest avg swing = most resilient (stable under uncertainty)
+- Highest avg swing = most volatile (risky under uncertainty)
+- Also tracks worst-case scenario (largest negative delta) and best-case per policy.
+
+**Result Metrics per Policy:**
+- Sites selected (count), Total capacity (spaces), Avg score (0-100)
+- Investment ($M), Avg ROI (%), High-priority sites (score≥85)
+- Cost per space ($), Zone breakdown (how many sites in each zone)
+
+**Key Insights Auto-Generated:**
+The system identifies: highest-scoring policy, maximum-capacity policy, best-ROI policy, most resilient (smallest avg swing), most volatile (largest avg swing), and produces a recommendation combining resilience with performance.
+
 === DASHBOARD COMMANDS ===
 • WEIGHTS: "set traffic weight to 40%", "increase poi to 30"
 • BUDGET: "set budget to $80M"  •  CAPACITY: "set min capacity to 300"
@@ -3529,6 +3598,7 @@ Formula: FinalScore = T×w_traffic + G×w_gap + Gr×w_growth + P×w_poi + Tr×w_
 • PRESETS: "use balanced/transit/growth/demand/budget preset"
 • PIPELINE: "run pipeline"  •  DATA: "fetch live data"
 • MAP LAYERS: "show/hide traffic/poi/parking/transit/recommendations layer"
+• STRESS TEST: "run stress test", "which policy is most resilient?", "compare transit-first vs equity-focused under recession"
 • NAVIGATION: "zoom to site #1", "show results", "show analytics"
 
 === RESPONSE RULES ===
@@ -3556,6 +3626,7 @@ const chatFallback = [
     { patterns: [/transit|bus|rail/i], response: "Phoenix has 58 bus routes and 35 light rail stops. 76% drive alone. We identified 14 'transit desert' zones. Try 'enable transit priority mode' to prioritize park-and-ride.", next: ['Use transit preset', 'Enable transit priority', 'Show transit layer'] },
     { patterns: [/flood|risk/i], response: "FEMA flood data is integrated. Tempe Town Lake and Laveen are in flood zones. Say 'exclude flood zones' to filter them out!", next: ['Exclude flood zones', 'Show results', 'Zoom to site #3'] },
     { patterns: [/compare|vs|versus/i], response: "Check sites in the Results table and click 'Compare Selected' for side-by-side analysis. Or ask me to 'compare top 3 sites'!", next: ['Show results', 'Zoom to downtown', 'Use balanced preset'] },
+    { patterns: [/stress|pressure|resilien|policy.*test|which.*policy/i], response: "The Policy Stress Testing module evaluates 8 policies across 10 pressure scenarios (7 individual + 3 compound). Each uses location-aware zone-specific modifiers. Try 'run stress test' or ask about a specific policy!", next: ['Run stress test', 'Which policy is most resilient?', 'Compare transit vs equity'] },
     { patterns: [/hello|hi|hey|help/i], response: "Hello! I can answer questions about locations, methodology, data, ROI, or growth. I can also adjust parameters — try 'set budget to $80M' or 'increase transit weight to 30%'. What would you like to know?", next: ['What data sources are used?', 'Run pipeline', 'Use transit preset'] }
 ];
 
@@ -3724,8 +3795,17 @@ function buildContextString() {
         lastStressData.resilience.forEach((r,i) => {
             ctx.push(`  ${i+1}. ${r.policy.title}: avg swing ±${r.avgAbsDelta.toFixed(1)}, worst=${r.worstCase.name} (${r.worstCase.delta>=0?'+':''}${r.worstCase.delta.toFixed(1)}), best=${r.bestCase.name} (${r.bestCase.delta>=0?'+':''}${r.bestCase.delta.toFixed(1)})`);
         });
-        ctx.push(`Individual pressures: ${lastStressData.pressureScenarios.map(ps => ps.name).join(', ')}`);
-        ctx.push(`Compound pressures: ${lastStressData.compoundScenarios.map(cs => cs.name).join(', ')}`);
+        ctx.push(`\nPER-POLICY PRESSURE DETAIL (Δscore from baseline):`);
+        lastStressData.allModifiers.forEach(mod => {
+            const deltas = lastStressData.policies.map(p => {
+                const base = simulatePolicy(p, null);
+                const stressed = simulatePolicy(p, mod.mod);
+                const d = stressed.avgScore - base.avgScore;
+                const cd = stressed.totalCap - base.totalCap;
+                return `${p.icon}${d>=0?'+':''}${d.toFixed(1)}(${cd>=0?'+':''}${cd}cap)`;
+            });
+            ctx.push(`  ${mod.name}: ${deltas.join(' | ')}`);
+        });
     }
 
     return ctx.join('\n') || 'No analysis has been run yet. Click "Run Agent Pipeline" first.';
@@ -3932,6 +4012,11 @@ function tryParseParameterCommand(text) {
         actions.push({ type: 'recalc', name: 'Recalculate Scores' });
     }
 
+    // Run stress test + CN
+    if (/(?:run|start|execute|launch)\s*(?:the\s*)?(?:stress|pressure|policy)\s*test|stress\s*test|pressure\s*test/i.test(lower) || /压力测试|政策测试|跑.*压力|运行.*测试/.test(text)) {
+        actions.push({ type: 'stressTest', name: 'Run Policy Stress Test' });
+    }
+
     // ===== MAP LAYER COMMANDS =====
     const layerMap = {
         traffic: ['traffic', 'traffic density', 'traffic layer'],
@@ -4073,6 +4158,11 @@ function applyParameterActions(actions) {
         } else if (action.type === 'zoomOverview') {
             map.flyTo([33.4484, -112.074], 11, { duration: 1.2 });
             descriptions.push('Map reset to Phoenix overview');
+        } else if (action.type === 'stressTest') {
+            const stressSection = document.getElementById('stress-section');
+            if (stressSection) stressSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => runStressTest(), 600);
+            descriptions.push('Running Policy Stress Test — scroll down to see results');
         } else if (action.type === 'scrollTo') {
             const el = document.getElementById(action.target);
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
