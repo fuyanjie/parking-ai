@@ -3712,16 +3712,20 @@ function buildContextString() {
 
     // === POLICY STRESS TEST RESULTS ===
     if (lastStressData) {
-        ctx.push(`\nPOLICY STRESS TEST:`);
+        ctx.push(`\nPOLICY STRESS TEST (Location-Aware Model):`);
+        ctx.push(`Methodology: Each site is classified into zones (downtown, midtown, suburban-growth, transit-adjacent, outer) using geographic coordinates and sub-scores. Pressure modifiers apply zone-specific multipliers — e.g., Remote Work Surge reduces downtown traffic by 45% but only 15% in suburbs. Flood zones receive a soft penalty (−30% gap score, +15% cost for mitigation) instead of hard exclusion.`);
         ctx.push(`Policies tested: ${lastStressData.policies.map(p => p.title).join(', ')}`);
         lastStressData.baseResults.forEach(br => {
-            ctx.push(`  ${br.policy.title}: Score=${br.result.avgScore.toFixed(1)}, Sites=${br.result.count}, Capacity=${br.result.totalCap.toLocaleString()}, Cost=$${br.result.totalCost.toFixed(1)}M, ROI=${br.result.avgROI.toFixed(1)}%`);
+            const zd = br.result.zoneBreakdown || {};
+            const zones = Object.entries(zd).map(([z,c]) => `${z}:${c}`).join(', ');
+            ctx.push(`  ${br.policy.title}: Score=${br.result.avgScore.toFixed(1)}, Sites=${br.result.count}, Capacity=${br.result.totalCap.toLocaleString()}, Cost=$${br.result.totalCost.toFixed(1)}M, ROI=${br.result.avgROI.toFixed(1)}%, Zones=[${zones}]`);
         });
-        ctx.push(`Resilience ranking (lowest avg score swing = most resilient):`);
+        ctx.push(`Resilience ranking (tested across ${lastStressData.allModifiers.length} scenarios: ${pressureScenarios.length} individual + ${compoundScenarios.length} compound):`);
         lastStressData.resilience.forEach((r,i) => {
-            ctx.push(`  ${i+1}. ${r.policy.title}: avg swing ±${r.avgAbsDelta.toFixed(1)}`);
+            ctx.push(`  ${i+1}. ${r.policy.title}: avg swing ±${r.avgAbsDelta.toFixed(1)}, worst=${r.worstCase.name} (${r.worstCase.delta>=0?'+':''}${r.worstCase.delta.toFixed(1)}), best=${r.bestCase.name} (${r.bestCase.delta>=0?'+':''}${r.bestCase.delta.toFixed(1)})`);
         });
-        ctx.push(`Pressure scenarios tested: ${lastStressData.pressureScenarios.map(ps => ps.name).join(', ')}`);
+        ctx.push(`Individual pressures: ${lastStressData.pressureScenarios.map(ps => ps.name).join(', ')}`);
+        ctx.push(`Compound pressures: ${lastStressData.compoundScenarios.map(cs => cs.name).join(', ')}`);
     }
 
     return ctx.join('\n') || 'No analysis has been run yet. Click "Run Agent Pipeline" first.';
@@ -4879,13 +4883,133 @@ const policyScenarios = [
       tags:[{t:'Gap+Transit 65%',c:'pos'},{t:'Underserved areas',c:'pos'},{t:'Social equity',c:'pos'}] }
 ];
 
+// Location-aware zone classification for each site
+function getSiteZone(site) {
+    // Downtown core: high transit, high POI, high density
+    if (site.lat > 33.43 && site.lat < 33.46 && site.lng > -112.09 && site.lng < -112.05) return 'downtown';
+    // Midtown/central corridor: transit-rich
+    if (site.lat > 33.48 && site.lat < 33.53 && site.lng > -112.09 && site.lng < -112.05) return 'midtown';
+    // Suburban: growth-driven areas
+    if (site.subScores.growth >= 85) return 'suburban-growth';
+    // Transit-adjacent: high transit score
+    if (site.subScores.transit >= 70) return 'transit-adjacent';
+    // Outer/edge: everything else
+    return 'outer';
+}
+
 const pressureScenarios = [
-    { id:'pop-boom', name:'Population Boom (+25%)', modifier: s => ({...s, subScores:{...s.subScores, growth:Math.min(100,s.subScores.growth*1.3), gap:Math.min(100,s.subScores.gap*1.2)}}) },
-    { id:'remote-surge', name:'Remote Work Surge (40%)', modifier: s => ({...s, subScores:{...s.subScores, traffic:s.subScores.traffic*0.7, gap:s.subScores.gap*0.75, poi:s.subScores.poi*0.85}}) },
-    { id:'gas-spike', name:'Gas Price Spike ($6/gal)', modifier: s => ({...s, subScores:{...s.subScores, transit:Math.min(100,s.subScores.transit*1.4), traffic:s.subScores.traffic*0.85}}) },
-    { id:'recession', name:'Economic Recession', modifier: s => ({...s, subScores:{...s.subScores, growth:s.subScores.growth*0.5, poi:s.subScores.poi*0.7}, costNum:s.costNum*0.9}) },
-    { id:'heat-extreme', name:'Extreme Heat (+5°F avg)', modifier: s => ({...s, subScores:{...s.subScores, gap:Math.min(100,s.subScores.gap*1.1)}, costNum:s.costNum*1.15}) },
+    { id:'pop-boom', name:'Population Boom (+25%)', icon:'📈',
+      desc:'Phoenix metro grows 25% faster than projected. Suburban sprawl accelerates, downtown densifies.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Suburban areas see disproportionate population growth
+          const growthMult = zone === 'suburban-growth' ? 1.5 : zone === 'outer' ? 1.35 : 1.15;
+          const gapMult = zone === 'suburban-growth' ? 1.35 : zone === 'downtown' ? 1.25 : 1.2;
+          return {...s, subScores:{...s.subScores,
+              growth: Math.min(100, s.subScores.growth * growthMult),
+              gap: Math.min(100, s.subScores.gap * gapMult),
+              traffic: Math.min(100, s.subScores.traffic * 1.15)
+          }};
+      }},
+    { id:'remote-surge', name:'Remote Work Surge (40%)', icon:'🏠',
+      desc:'40% of workers shift to remote/hybrid. Downtown office demand drops, suburban demand shifts.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Downtown hit hardest by remote work; suburban less affected
+          const trafficMult = zone === 'downtown' ? 0.55 : zone === 'midtown' ? 0.65 : 0.85;
+          const gapMult = zone === 'downtown' ? 0.6 : zone === 'midtown' ? 0.7 : 0.9;
+          const poiMult = zone === 'downtown' ? 0.7 : 0.9;
+          return {...s, subScores:{...s.subScores,
+              traffic: s.subScores.traffic * trafficMult,
+              gap: s.subScores.gap * gapMult,
+              poi: s.subScores.poi * poiMult
+          }};
+      }},
+    { id:'gas-spike', name:'Gas Price Spike ($6/gal)', icon:'⛽',
+      desc:'Fuel prices double. Transit ridership surges, car trips shift to transit-accessible locations.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Transit-adjacent sites gain value; car-dependent outer areas lose
+          const transitMult = zone === 'transit-adjacent' || zone === 'downtown' ? 1.5 : zone === 'midtown' ? 1.3 : 0.9;
+          const trafficMult = zone === 'outer' || zone === 'suburban-growth' ? 0.7 : 0.9;
+          return {...s, subScores:{...s.subScores,
+              transit: Math.min(100, s.subScores.transit * transitMult),
+              traffic: s.subScores.traffic * trafficMult,
+              gap: s.subScores.gap * (zone === 'outer' ? 0.8 : 1.05)
+          }};
+      }},
+    { id:'recession', name:'Economic Recession', icon:'📉',
+      desc:'GDP contracts 3%. Commercial vacancy rises, construction costs drop 10%, new development stalls.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Downtown/midtown commercial areas hit hardest; growth areas stall
+          const growthMult = zone === 'suburban-growth' ? 0.35 : zone === 'downtown' ? 0.6 : 0.5;
+          const poiMult = zone === 'downtown' ? 0.6 : zone === 'midtown' ? 0.65 : 0.75;
+          return {...s, subScores:{...s.subScores,
+              growth: s.subScores.growth * growthMult,
+              poi: s.subScores.poi * poiMult
+          }, costNum: s.costNum * 0.9 };
+      }},
+    { id:'heat-extreme', name:'Extreme Heat (+5°F avg)', icon:'🌡️',
+      desc:'Average temps rise 5°F. Shade structures mandated, construction windows shrink, outdoor parking less viable.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Surface lots everywhere need shade → cost increase; garages less affected
+          const costMult = s.type.includes('Surface') ? 1.25 : s.type.includes('Smart') ? 1.2 : 1.08;
+          // Covered/indoor demand increases everywhere
+          return {...s, subScores:{...s.subScores,
+              gap: Math.min(100, s.subScores.gap * 1.12),
+              poi: s.subScores.poi * (zone === 'downtown' ? 1.05 : 0.95)
+          }, costNum: s.costNum * costMult };
+      }},
+    { id:'ev-transition', name:'EV Adoption Surge (50%)', icon:'🔋',
+      desc:'EV market share hits 50%. Charging infrastructure required at all new lots. Longer dwell times.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Suburban commuters = longer charge stops → need more spaces; downtown already has alternatives
+          const gapMult = zone === 'suburban-growth' ? 1.2 : 1.08;
+          const costIncrease = s.type.includes('Surface') ? 1.18 : 1.12;
+          return {...s, subScores:{...s.subScores,
+              gap: Math.min(100, s.subScores.gap * gapMult),
+              transit: Math.min(100, s.subScores.transit * 1.1)
+          }, costNum: s.costNum * costIncrease };
+      }},
+    { id:'autonomous', name:'Autonomous Vehicles (20%)', icon:'🤖',
+      desc:'20% of vehicles are autonomous. Drop-off zones needed, parking demand per trip drops, but total trips rise.',
+      modifier: s => {
+          const zone = getSiteZone(s);
+          // Downtown: less parking needed (drop-off); suburban: still need parking (storage)
+          const gapMult = zone === 'downtown' ? 0.75 : zone === 'midtown' ? 0.8 : 0.95;
+          const trafficMult = 1.1; // more total trips on road
+          return {...s, subScores:{...s.subScores,
+              gap: s.subScores.gap * gapMult,
+              traffic: Math.min(100, s.subScores.traffic * trafficMult),
+              transit: s.subScores.transit * (zone === 'downtown' ? 0.85 : 0.95)
+          }};
+      }},
 ];
+
+// Compound pressure scenarios (combinations)
+const compoundScenarios = [
+    { id:'green-future', name:'🌿 Green Future (Gas Spike + EV + Heat)', icon:'🌿',
+      desc:'Converging climate pressures: expensive gas, EV mandates, and extreme heat reshape parking needs.',
+      components: ['gas-spike','ev-transition','heat-extreme'] },
+    { id:'tech-disruption', name:'🚀 Tech Disruption (Remote + AV)', icon:'🚀',
+      desc:'Technology reshapes commuting: remote work empties offices while autonomous vehicles change parking patterns.',
+      components: ['remote-surge','autonomous'] },
+    { id:'boom-heat', name:'🔥 Growth Under Heat (Pop Boom + Heat)', icon:'🔥',
+      desc:'Phoenix grows rapidly while becoming hotter — maximum infrastructure stress.',
+      components: ['pop-boom','heat-extreme'] },
+];
+
+function applyCompoundModifier(site, componentIds) {
+    let result = { ...site, subScores: {...site.subScores}, costNum: site.costNum };
+    for (const cid of componentIds) {
+        const ps = pressureScenarios.find(p => p.id === cid);
+        if (ps) result = ps.modifier(result);
+    }
+    return result;
+}
 
 let selectedPolicies = new Set(['status-quo','transit-first','ev-mandate','climate-resilience']);
 
@@ -4911,28 +5035,40 @@ function selectAllPolicies() {
     renderPolicyCards();
 }
 
-function simulatePolicy(policy, pressureMod) {
+function simulatePolicy(policy, pressureMod, budgetOverride) {
     const w = {...policy.weights};
     const sum = Object.values(w).reduce((a,b)=>a+b,0) || 1;
     Object.keys(w).forEach(k => w[k] = w[k]/sum);
+
+    const budget = budgetOverride || policy.budget;
 
     let sites = allSites.filter(s => {
         if (s.hidden && !policy.toggles.future) return false;
         return true;
     });
-    if (policy.toggles.flood) sites = sites.filter(s => !s.floodZone);
 
     sites = sites.map(s => {
         let sim = { ...s, subScores: {...s.subScores}, costNum: s.costNum };
         if (pressureMod) sim = pressureMod(sim);
+
+        // Flood zone: soft penalty instead of hard exclude (−20 score + 15% cost increase for mitigation)
+        if (policy.toggles.flood && s.floodZone) {
+            sim.subScores = {...sim.subScores,
+                gap: sim.subScores.gap * 0.7,
+                growth: sim.subScores.growth * 0.8
+            };
+            sim.costNum = sim.costNum * 1.15; // flood mitigation cost
+        }
+
         sim.score = Math.round(sim.subScores.traffic*w.traffic + sim.subScores.gap*w.gap + sim.subScores.growth*w.growth + sim.subScores.poi*w.poi + sim.subScores.transit*w.transit);
+        sim.zone = getSiteZone(sim);
         return sim;
     });
     sites.sort((a,b) => b.score - a.score);
 
     let cumCost = 0, selected = [];
     for (const s of sites) {
-        if (cumCost + s.costNum <= policy.budget) { selected.push(s); cumCost += s.costNum; }
+        if (cumCost + s.costNum <= budget) { selected.push(s); cumCost += s.costNum; }
     }
 
     const avgScore = selected.length ? (selected.reduce((a,s)=>a+s.score,0)/selected.length) : 0;
@@ -4940,8 +5076,10 @@ function simulatePolicy(policy, pressureMod) {
     const totalCost = cumCost;
     const avgROI = selected.length ? (selected.reduce((a,s)=>a+s.roiNum,0)/selected.length) : 0;
     const highPriority = selected.filter(s=>s.score>=85).length;
+    const zoneBreakdown = {};
+    selected.forEach(s => { zoneBreakdown[s.zone] = (zoneBreakdown[s.zone]||0) + 1; });
 
-    return { selected, avgScore, totalCap, totalCost, avgROI, highPriority, count: selected.length };
+    return { selected, avgScore, totalCap, totalCost, avgROI, highPriority, count: selected.length, zoneBreakdown, budget };
 }
 
 function runStressTest() {
@@ -4987,44 +5125,63 @@ function runStressTest() {
             }).join('')}</tr>`;
         }).join('');
 
-        // === Pressure scenarios table ===
+        // === Individual Pressure scenarios table ===
         const phead = document.getElementById('pressureHead');
         phead.innerHTML = `<tr><th>Pressure Scenario</th>${policies.map(p=>`<th>${p.icon} ${p.title}</th>`).join('')}</tr>`;
 
+        const allPressureRows = [...pressureScenarios.map(ps => ({
+            name: `${ps.icon} ${ps.name}`, desc: ps.desc, type: 'single',
+            simulate: (p) => simulatePolicy(p, ps.modifier)
+        })), ...compoundScenarios.map(cs => ({
+            name: `${cs.icon} ${cs.name}`, desc: cs.desc, type: 'compound',
+            simulate: (p) => simulatePolicy(p, s => applyCompoundModifier(s, cs.components))
+        }))];
+
         const pbody = document.getElementById('pressureBody');
-        pbody.innerHTML = pressureScenarios.map(ps => {
+        pbody.innerHTML = allPressureRows.map(ps => {
             const pressureResults = policies.map(p => {
                 const base = simulatePolicy(p, null);
-                const stressed = simulatePolicy(p, ps.modifier);
+                const stressed = ps.simulate(p);
                 const delta = stressed.avgScore - base.avgScore;
                 const capDelta = stressed.totalCap - base.totalCap;
-                return { stressed, delta, capDelta, base };
+                const costDelta = stressed.totalCost - base.totalCost;
+                return { stressed, delta, capDelta, costDelta, base };
             });
             const deltas = pressureResults.map(r => r.delta);
             const bestDelta = Math.max(...deltas);
             const worstDelta = Math.min(...deltas);
-            return `<tr><td style="font-weight:600;">${ps.name}</td>${pressureResults.map((r,i) => {
+            const rowStyle = ps.type === 'compound' ? 'background:rgba(159,122,234,0.06);' : '';
+            const namePrefix = ps.type === 'compound' ? '<span style="font-size:0.6rem;color:var(--purple);display:block;margin-bottom:2px;">COMPOUND</span>' : '';
+            return `<tr style="${rowStyle}"><td style="font-weight:600;">${namePrefix}${ps.name}<div style="font-size:0.6rem;color:var(--text3);margin-top:2px;max-width:160px;">${ps.desc}</div></td>${pressureResults.map((r,i) => {
                 const cls = r.delta === bestDelta && deltas.filter(x=>x===bestDelta).length===1 ? 'best' :
                            r.delta === worstDelta && deltas.filter(x=>x===worstDelta).length===1 ? 'worst' : '';
                 const arrow = r.delta >= 0 ? '▲' : '▼';
                 const color = r.delta >= 0 ? 'var(--green)' : 'var(--red)';
                 const capArrow = r.capDelta >= 0 ? '+' : '';
+                const costStr = r.costDelta !== 0 ? `<br><span style="font-size:0.62rem;color:${r.costDelta>0?'var(--red)':'var(--green)'};">${r.costDelta>0?'+':''}$${r.costDelta.toFixed(1)}M cost</span>` : '';
                 return `<td class="${cls}"><span style="color:${color};font-weight:700;">${arrow} ${r.delta>=0?'+':''}${r.delta.toFixed(1)}</span> score<br>
-                    <span style="font-size:0.68rem;color:var(--text3);">${capArrow}${r.capDelta.toLocaleString()} spaces · ${r.stressed.count} sites</span></td>`;
+                    <span style="font-size:0.68rem;color:var(--text3);">${capArrow}${r.capDelta.toLocaleString()} spaces · ${r.stressed.count} sites</span>${costStr}</td>`;
             }).join('')}</tr>`;
         }).join('');
 
         // === Generate insights ===
         const insightsEl = document.getElementById('stressInsights');
 
-        // Find most resilient policy (smallest avg absolute delta across pressures)
+        // Resilience: test across individual + compound pressures
+        const allModifiers = [
+            ...pressureScenarios.map(ps => ({ name: ps.name, mod: ps.modifier })),
+            ...compoundScenarios.map(cs => ({ name: cs.name, mod: s => applyCompoundModifier(s, cs.components) }))
+        ];
         const resilience = policies.map((p,i) => {
-            const avgAbsDelta = pressureScenarios.reduce((sum, ps) => {
-                const base = simulatePolicy(p, null);
-                const stressed = simulatePolicy(p, ps.modifier);
-                return sum + Math.abs(stressed.avgScore - base.avgScore);
-            }, 0) / pressureScenarios.length;
-            return { policy: p, avgAbsDelta };
+            const base = simulatePolicy(p, null);
+            const deltas = allModifiers.map(m => {
+                const stressed = simulatePolicy(p, m.mod);
+                return { name: m.name, delta: stressed.avgScore - base.avgScore, capDelta: stressed.totalCap - base.totalCap };
+            });
+            const avgAbsDelta = deltas.reduce((sum, d) => sum + Math.abs(d.delta), 0) / deltas.length;
+            const worstCase = deltas.reduce((w, d) => d.delta < w.delta ? d : w);
+            const bestCase = deltas.reduce((b, d) => d.delta > b.delta ? d : b);
+            return { policy: p, avgAbsDelta, worstCase, bestCase, base, deltas };
         });
         resilience.sort((a,b) => a.avgAbsDelta - b.avgAbsDelta);
         const mostResilient = resilience[0];
@@ -5035,22 +5192,34 @@ function runStressTest() {
         const bestROI = baseResults.reduce((best, br) => br.result.avgROI > best.result.avgROI ? br : best);
         const bestCap = baseResults.reduce((best, br) => br.result.totalCap > best.result.totalCap ? br : best);
 
+        // Zone distribution analysis
+        const zoneLabels = { 'downtown':'Downtown', 'midtown':'Midtown', 'suburban-growth':'Suburban Growth', 'transit-adjacent':'Transit-Adjacent', 'outer':'Outer Ring' };
+        const zoneAnalysis = baseResults.map(br => {
+            const zd = br.result.zoneBreakdown || {};
+            return `<b>${br.policy.icon}</b> ${Object.entries(zd).map(([z,c]) => `${zoneLabels[z]||z}: ${c}`).join(', ') || 'N/A'}`;
+        }).join('<br>');
+
         insightsEl.innerHTML = `
             <h4>🔍 Key Findings</h4>
-            <div class="si-item"><b>${bestOverall.policy.icon} ${bestOverall.policy.title}</b> achieves the highest average site score (${bestOverall.result.avgScore.toFixed(1)}) — best overall quality of selected sites.</div>
-            <div class="si-item"><b>${bestCap.policy.icon} ${bestCap.policy.title}</b> delivers the most parking capacity (${bestCap.result.totalCap.toLocaleString()} spaces) — maximizes total supply.</div>
-            <div class="si-item"><b>${bestROI.policy.icon} ${bestROI.policy.title}</b> yields the highest ROI (${bestROI.result.avgROI.toFixed(1)}%) — best financial return.</div>
-            <div class="si-item"><b>${mostResilient.policy.icon} ${mostResilient.policy.title}</b> is the <b style="color:var(--green);">most resilient</b> to external shocks (avg score swing: ±${mostResilient.avgAbsDelta.toFixed(1)}) — safest long-term bet.</div>
-            <div class="si-item"><b>${leastResilient.policy.icon} ${leastResilient.policy.title}</b> is the <b style="color:var(--red);">most volatile</b> under pressure (avg score swing: ±${leastResilient.avgAbsDelta.toFixed(1)}) — high risk under uncertainty.</div>
-            <div class="si-item"><b>Recommendation:</b> For Phoenix's balanced growth trajectory, a combination of <b>${mostResilient.policy.title}</b> (resilience) with elements of <b>${bestOverall.policy.title}</b> (performance) would provide the optimal risk-adjusted parking strategy.</div>
+            <div class="si-item"><b>${bestOverall.policy.icon} ${bestOverall.policy.title}</b> achieves the highest average site score (<b>${bestOverall.result.avgScore.toFixed(1)}</b>) — best overall quality.</div>
+            <div class="si-item"><b>${bestCap.policy.icon} ${bestCap.policy.title}</b> delivers the most parking capacity (<b>${bestCap.result.totalCap.toLocaleString()}</b> spaces) — maximizes supply.</div>
+            <div class="si-item"><b>${bestROI.policy.icon} ${bestROI.policy.title}</b> yields the highest ROI (<b>${bestROI.result.avgROI.toFixed(1)}%</b>) — best financial return.</div>
+            <h4 style="margin-top:12px;">🛡️ Resilience Analysis <span style="font-size:0.68rem;color:var(--text3);font-weight:400;">(${allModifiers.length} scenarios: ${pressureScenarios.length} individual + ${compoundScenarios.length} compound)</span></h4>
+            <div class="si-item"><b style="color:var(--green);">Most Resilient:</b> <b>${mostResilient.policy.icon} ${mostResilient.policy.title}</b> — avg swing ±${mostResilient.avgAbsDelta.toFixed(1)} pts. Worst case: ${mostResilient.worstCase.name} (${mostResilient.worstCase.delta>=0?'+':''}${mostResilient.worstCase.delta.toFixed(1)})</div>
+            <div class="si-item"><b style="color:var(--red);">Most Volatile:</b> <b>${leastResilient.policy.icon} ${leastResilient.policy.title}</b> — avg swing ±${leastResilient.avgAbsDelta.toFixed(1)} pts. Worst case: ${leastResilient.worstCase.name} (${leastResilient.worstCase.delta>=0?'+':''}${leastResilient.worstCase.delta.toFixed(1)})</div>
+            <h4 style="margin-top:12px;">📍 Zone Distribution</h4>
+            <div class="si-item" style="font-size:0.72rem;line-height:1.8;">${zoneAnalysis}</div>
+            <h4 style="margin-top:12px;">💡 Recommendation</h4>
+            <div class="si-item">For Phoenix's growth trajectory, <b>${mostResilient.policy.title}</b> provides the safest long-term strategy (withstands compound shocks). Pair with elements of <b>${bestOverall.policy.title}</b> for maximum performance. Key risk: <b>${leastResilient.worstCase.name}</b> could reduce scores by up to <b>${Math.abs(leastResilient.worstCase.delta).toFixed(1)}</b> pts under <b>${leastResilient.policy.title}</b>.</div>
         `;
 
         document.getElementById('stressResults').classList.add('show');
-        document.getElementById('stressStatus').textContent = `✓ ${policies.length} policies × ${pressureScenarios.length} scenarios = ${policies.length * pressureScenarios.length} simulations complete`;
+        const totalSims = policies.length * (pressureScenarios.length + compoundScenarios.length + 1);
+        document.getElementById('stressStatus').textContent = `✓ ${policies.length} policies × ${pressureScenarios.length + compoundScenarios.length} pressure scenarios = ${totalSims} simulations complete`;
         document.getElementById('stressRunBtn').disabled = false;
 
-        // Auto-run on show
-        lastStressData = { policies, baseResults, resilience, pressureScenarios };
+        // Store for chat context
+        lastStressData = { policies, baseResults, resilience, pressureScenarios, compoundScenarios, allModifiers };
     }, 100);
 }
 

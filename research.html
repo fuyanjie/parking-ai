@@ -323,7 +323,7 @@ a:hover { text-decoration: underline; }
             <div class="arch-out"><div class="ao-icon">🗺️</div><div class="ao-label">Interactive Map</div><div class="ao-val">3D markers, heatmaps, layers</div></div>
             <div class="arch-out"><div class="ao-icon">📈</div><div class="ao-label">Analytics Suite</div><div class="ao-val">7 charts, Monte Carlo, sensitivity</div></div>
             <div class="arch-out"><div class="ao-icon">🔍</div><div class="ao-label">Explainability</div><div class="ao-val">CoT reasoning, rejected sites</div></div>
-            <div class="arch-out"><div class="ao-icon">🔬</div><div class="ao-label">Stress Testing</div><div class="ao-val">8 policies &times; 5 scenarios</div></div>
+            <div class="arch-out"><div class="ao-icon">🔬</div><div class="ao-label">Stress Testing</div><div class="ao-val">8 policies &times; 10 scenarios (7 individual + 3 compound)</div></div>
             <div class="arch-out"><div class="ao-icon">💬</div><div class="ao-label">LLM Chat Agent</div><div class="ao-val">Natural language control</div></div>
         </div>
 
@@ -386,13 +386,14 @@ a:hover { text-decoration: underline; }
             </ul>
         </div>
         <div class="card">
-            <h3><span class="icon">🔬</span> Policy Stress Testing</h3>
-            <p>8 distinct parking policies are evaluated under 5 pressure scenarios to identify robust strategies:</p>
+            <h3><span class="icon">🔬</span> Location-Aware Policy Stress Testing</h3>
+            <p>8 policies evaluated under 10 pressure scenarios (7 individual + 3 compound) with <b>zone-specific modifiers</b>:</p>
             <ul>
-                <li><b>Policies</b> — Status Quo, Transit-Oriented, Maximum Coverage, Budget-Constrained, Green Infrastructure, Shared Parking, Dynamic Pricing, Peripheral Hub</li>
-                <li><b>Pressure Scenarios</b> — Economic Recession (-20% demand, -30% budget), Population Surge (+40% demand), Autonomous Vehicle Shift, Climate Event (flood exclusion), Transit Expansion</li>
-                <li><b>Metrics</b> — Sites selected, total capacity, avg score, investment cost, avg ROI, high-priority count, cost per space</li>
-                <li><b>Output</b> — Most resilient policy, highest ROI under stress, key insights for planners</li>
+                <li><b>Zone Classification</b> — Each site is classified by location: Downtown, Midtown, Suburban-Growth, Transit-Adjacent, or Outer Ring. Pressure effects vary by zone (e.g., Remote Work Surge reduces downtown traffic by 45% but only 15% in suburbs)</li>
+                <li><b>Individual Pressures (7)</b> — Population Boom, Remote Work Surge, Gas Spike, Recession, Extreme Heat, EV Adoption Surge, Autonomous Vehicles — each with zone-specific multipliers</li>
+                <li><b>Compound Pressures (3)</b> — Green Future (Gas+EV+Heat), Tech Disruption (Remote+AV), Growth Under Heat (Pop Boom+Heat) — combined effects stack non-linearly</li>
+                <li><b>Soft Flood Penalty</b> — Flood-zone sites receive &minus;30% gap score + 15% cost increase for mitigation instead of hard exclusion</li>
+                <li><b>Resilience Metric</b> — Average absolute score swing across all 10 scenarios identifies which policy best withstands compound shocks</li>
             </ul>
         </div>
         <div class="card">
